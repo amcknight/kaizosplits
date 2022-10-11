@@ -11,14 +11,18 @@ startup
     settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
     settings.Add("bosses", true, "Boss Levels");
     settings.SetToolTip("bosses", "Split on boss fanfare");
-    settings.Add("switchPalaces", false, "Switch Palaces");
+    settings.Add("switchPalaces", true, "Switch Palaces");
     settings.SetToolTip("switchPalaces", "Split on completing a switch palace");
-    settings.Add("levelDoorPipe", false, "Level Room Transitions");
+    settings.Add("checkpointTape", true, "Checkpoint Tape");
+    settings.SetToolTip("checkpointTape", "Split when running into the Checkpoint Tape");
+    settings.Add("levelDoorPipe", true, "Level Room Transitions");
     settings.SetToolTip("levelDoorPipe", "Split on door and pipe transitions within standard levels and switch palaces");
-    settings.Add("castleDoorPipe", false, "Castle/GH Room Transitions");
+    settings.Add("castleDoorPipe", true, "Castle/GH Room Transitions");
     settings.SetToolTip("castleDoorPipe", "Split on door and pipe transitions within ghost houses and castles");
     settings.Add("bowserPhase", false, "Bowser Phase Transition");
-    settings.SetToolTip("bowserPhase", "Split on the transition between Bowser's phases (not tested on Cloud runs)");
+    settings.SetToolTip("bowserPhase", "Split when transitioning between Bowser's phases (not tested on Cloud runs)");
+    settings.Add("enterPipe", false, "Enter a Pipe");
+    settings.SetToolTip("enterPipe", "Split when entering any pipe");
 }
 
 init
@@ -53,18 +57,21 @@ init
 
     long memoryOffset = 0;
 	if ( game.ProcessName.ToLower() == "retroarch" ) {
-		ProcessModuleWow64Safe libretromodule = modules.Where(m => m.ModuleName == "snes9x_libretro.dll").First();
-		IntPtr baseAddress = libretromodule.BaseAddress;
-		if ( game.Is64Bit() ) {
-			IntPtr result = IntPtr.Zero;
-			SigScanTarget target = new SigScanTarget(13, "83 F9 01 74 10 83 F9 02 75 2C 48 8B 05 ?? ?? ?? ?? 48 8B 40 ??");
-			SignatureScanner scanner = new SignatureScanner(game, baseAddress, (int)libretromodule.ModuleMemorySize);
-			IntPtr codeOffset = scanner.Scan(target);
-			int memoryReference = (int) ((long) memory.ReadValue<int>(codeOffset) + (long) codeOffset + 0x04 +  - (long) libretromodule.BaseAddress);
-			byte memoryReferenceoffset = memory.ReadValue<byte>(codeOffset + 7);
-			IntPtr outOffset;
-			new DeepPointer( "snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
-			memoryOffset = (long) outOffset;
+		var snes9xModules = modules.Where(m => m.ModuleName == "snes9x_libretro.dll");
+		if ( snes9xModules.Any() ) {
+			ProcessModuleWow64Safe libretromodule = snes9xModules.First();
+			IntPtr baseAddress = libretromodule.BaseAddress;
+			if ( game.Is64Bit() ) {
+				IntPtr result = IntPtr.Zero;
+				SigScanTarget target = new SigScanTarget(13, "83 F9 01 74 10 83 F9 02 75 2C 48 8B 05 ?? ?? ?? ?? 48 8B 40 ??");
+				SignatureScanner scanner = new SignatureScanner(game, baseAddress, (int)libretromodule.ModuleMemorySize);
+				IntPtr codeOffset = scanner.Scan(target);
+				int memoryReference = (int) ((long) memory.ReadValue<int>(codeOffset) + (long) codeOffset + 0x04 +  - (long) libretromodule.BaseAddress);
+				byte memoryReferenceoffset = memory.ReadValue<byte>(codeOffset + 7);
+				IntPtr outOffset;
+				new DeepPointer( "snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
+				memoryOffset = (long) outOffset;
+			}
 		}
 	} else {
 		if (states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
@@ -95,6 +102,9 @@ init
         new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x13C6) { Name = "bossDefeat" },
         new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1429) { Name = "bowserPalette" },
         new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x190D) { Name = "peach" },
+        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x13CE) { Name = "checkpointTape" },
+        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x0089) { Name = "enterOrExitPipe" },
+        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x0071) { Name = "cutScene" },
     };
 
 	vars.reInitialise = (Action)(() => {
@@ -150,11 +160,8 @@ reset
 	};
 }
 
-split
-{
-	//TimeSpan ts = vars.stopwatch.Elapsed;
-	//print(ts.ToString(@"m\:ss\.ff"));
-	switch ((string) vars.gamename){
+split {
+	switch ((string) vars.gamename) {
 
 		case "The Joy of Kaizo":
 
@@ -318,13 +325,15 @@ split
 			bluePalace = settings["switchPalaces"] && vars.watchers["blueSwitch"].Old == 0 && vars.watchers["blueSwitch"].Current == 1;
 			switchPalaceExit = (yellowPalace || bluePalace) && vars.stopwatch.ElapsedMilliseconds > 20000;
 
+			var checkpointTape = settings["checkpointTape"] && vars.watchers["checkpointTape"].Old == 0 && vars.watchers["checkpointTape"].Current == 1;
 
 			bossExit = settings["bosses"] && vars.watchers["fanfare"].Old == 0 && vars.watchers["fanfare"].Current == 1 && (vars.watchers["bossDefeat"].Current == 1 || vars.watchers["bossDefeat"].Current == 255) && vars.stopwatch.ElapsedMilliseconds > 20000;
 
 			if (goalExit == true || bossExit == true || orbExit==true || keyExit==true || switchPalaceExit==true) {
 				vars.stopwatch.Restart();
-				}
-		return goalExit || keyExit || orbExit || switchPalaceExit ||  bossExit;
+			}
+
+		return goalExit || keyExit || orbExit || switchPalaceExit || bossExit || checkpointTape;
 		break;
 
 		case "Grand Poo World 2":
@@ -536,10 +545,36 @@ split
 			bossExit = settings["bosses"] && vars.watchers["fanfare"].Old == 0 && vars.watchers["fanfare"].Current == 1 && (vars.watchers["bossDefeat"].Current == 1 || vars.watchers["bossDefeat"].Current == 255) && vars.stopwatch.ElapsedMilliseconds > 20000;
 			bowserPhase = settings["bowserPhase"] && vars.watchers["bowserPalette"].Old == 4 && vars.watchers["bowserPalette"].Current == 7;
 			bowserDefeated = settings["bosses"] && vars.watchers["peach"].Old == 0 && vars.watchers["peach"].Current == 1;
+			
+			checkpointTape = settings["checkpointTape"] && vars.watchers["checkpointTape"].Old == 0 && vars.watchers["checkpointTape"].Current == 1;
+			var enteredPipe = settings["enterPipe"] && (vars.watchers["enterOrExitPipe"].Old != vars.watchers["enterOrExitPipe"].Current) && (int) vars.watchers["enterOrExitPipe"].Current < 4 &&(vars.watchers["cutScene"].Old == 0 && (vars.watchers["cutScene"].Current == 5 || vars.watchers["cutScene"].Current == 6));
+/*
+			if (vars.watchers["enterOrExitPipe"].Old != vars.watchers["enterOrExitPipe"].Current) {
+				switch ((int) vars.watchers["enterOrExitPipe"].Current) {
+					case 0: case 1: case 2: case 3:
+						if (vars.watchers["cutScene"].Old == 0 && (vars.watchers["cutScene"].Current == 5 || vars.watchers["cutScene"].Current == 6)) {
+							print("ENTERED PIPE");
+						} else {
+							print("IN PIPE");
+						}
+					break;
+					default: print("OUT PIPE"); break;
+				}
+			}
+			if (vars.watchers["cutScene"].Old != vars.watchers["cutScene"].Current) {
+				switch ((int) vars.watchers["cutScene"].Current) {
+					case 0: print("PLAYING"); break;
+					case 5: print("WARPING HORIZONTAL"); break;
+					case 6: print("WARPING VERTICAL"); break;
+					case 9: print("DEAD"); break;
+				}
+			}
+*/
+
 			if (goalExit == true || bossExit == true || keyExit==true || switchPalaceExit==true) {
 				vars.stopwatch.Restart();
-				}
-		return goalExit || keyExit || switchPalaceExit ||  bossExit || bowserPhase || bowserDefeated;
+			}
+		return goalExit || keyExit || switchPalaceExit ||  bossExit || bowserPhase || bowserDefeated || checkpointTape || enteredPipe;
 		break;
 		};
 }
