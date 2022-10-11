@@ -1,0 +1,1 @@
+# smw_romhack_autosplitter
