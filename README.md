@@ -10,16 +10,31 @@ A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SM
 - Cleaned up the individual level logic
 - Got checkpoint splitting working
 - Added fine-grained splits to Quickie World 2
+- Create a generic orb exit checker
 
 ## Roadmap
 
-### v1
+### v1.0
 
-- Puragtory fine-grained splits
-- Add fine-grained splits for other hacks and verify existing hacks still function
+- A setting for splitting on overworld changes, for subsplitting
+- Default settings, without CPs, works for a large number of hacks by default
+  - Fix examples where 2nd CPs aren't triggering
+  - Split up orbExits that don't end in 3 to see which are orb vs other ending types
+  - Remove instances of stopwatch usage where possible
+  - Get a proper handle on BossDefeat conditions
+  - Find a new way to split other than only "orb" shifts
+
+### v1.1
+
+- Add fine-grained splits for many hacks and verify existing hacks still function
 - Explain a methodology for adding fine-grained splits for any new hack that anyone can follow
+
+### v2
+
+- Auto-skippable splits. e.g. if someone skips a CP that they usually get, and then get to the next split, it should auto-skip before auto-splitting
+- Idmnpotent splits. e.g. if we want to split on every room in a 5 room castle, but dying in room 3 brings you back to 1, then going through rooms 1 and 2 again won't split again
 
 ### Beyond
 
-- An automatic split generator
+- An automatic split generator that watches your first playthroughs for possible split events
 - Use TAS tech to create little unit test equivalents to ensure changes are mostly backwards compatible
