@@ -263,6 +263,23 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
                 || (orb.Old == 17 && orb.Current == 49)  // Final Boss Door
             );
         break;
+        case "Purgatory":
+    /* TODO:
+     * 2nd CPs don't seem to work. (Sea Moon, Summit of Salvation, maybe Paradise) 
+     * Missing important transitions in Summit of Salvation 1 and 4 (no easy orb diff)
+     * Missing almost all Paradise transitions (2,3,4,5,6,7,8,9,final) (no easy orb diff)
+     */
+            checkpoint = isCheckpointTape && ((checkpointTape.Old == 0 && checkpointTape.Current == 1)
+                || (orb.Old == 31 && orb.Current == 56)  // Sea Moon 1 Pipe
+                || (orb.Old == 41 && orb.Current == 40)  // Drifting Den 1 Pipe
+                || (orb.Old == 40 && orb.Current == 41)  // Drifting Den 3 Pipe
+                || (orb.Old == 31 && orb.Current == 40)  // Soft and Wet 1 Pipe
+                || (orb.Old == 31 && orb.Current == 55)  // Chocolate Disco 1 Pipe
+                || (orb.Old == 68 && orb.Current == 54)  // Paradise 1 Vine
+                || (orb.Old == 54 && orb.Current == 68)  // Paradise 10 Vine
+                || (orb.Old == 68 && orb.Current == 70)  // Paradise 11 Vine
+            );
+        break;
 		case "Grand Poo World 2":
 			orbExit = isLevels && (((orb.Old == 44 || orb.Old == 83 || orb.Old == 84 || orb.Old == 90) && orb.Current == 3) || (orb.Old == 86 && orb.Current == 92) || (orb.Old == 88 && orb.Current == 91)) && vars.stopwatch.ElapsedMilliseconds > 20000;
 		break;
@@ -320,11 +337,11 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
 	if (enterOrExitPipe.Old != enterOrExitPipe.Current) print("Pipes " + enterOrExitPipe.Old + "->" + enterOrExitPipe.Current);
     */
     if (orb.Old != orb.Current) print("Orbs " + orb.Old + "->" + orb.Current);
-
+/*
     if (goalExit || keyExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpoint || enteredPipe || credits) {
         print("goalExit "+goalExit+", keyExit "+keyExit+", switchPalaceExit "+switchPalaceExit+", bossExit "+bossExit+", bowserPhase "+bowserPhase+", bowserDefeated "+bowserDefeated+", checkpoint "+checkpoint+", enteredPipe"+enteredPipe+", credits "+credits);
         print("CP: "+checkpointTape.Old + ", " + checkpointTape.Current);
     }
-
+    */
 	return goalExit || keyExit || orbExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpoint || enteredPipe || credits;
 }

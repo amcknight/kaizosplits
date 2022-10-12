@@ -15,10 +15,11 @@ A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SM
 
 ### v1
 
+- Puragtory fine-grained splits
 - Add fine-grained splits for other hacks and verify existing hacks still function
 - Explain a methodology for adding fine-grained splits for any new hack that anyone can follow
 
-### Wishlist
+### Beyond
 
 - An automatic split generator
 - Use TAS tech to create little unit test equivalents to ensure changes are mostly backwards compatible
