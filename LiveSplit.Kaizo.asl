@@ -75,26 +75,24 @@ init {
 		throw new Exception("Memory not yet initialized.");
 
     vars.watchers = new MemoryWatcherList {
-        new MemoryWatcher<short>((IntPtr)memoryOffset + 0x1434) { Name = "keyholeTimer" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1ED2)  { Name = "fileSelect" },
-		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0xDB4)   { Name = "fileSelect_Baby" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x906)   { Name = "fanfare" },
-		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1B99)  { Name = "victory" },
-		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1DFB)  { Name = "orb" },  // Calling this "orbs" is a misnomer. Seems to be more about music.
-		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x18390) { Name = "orb_climb" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1493)  { Name = "endtimer" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1f28)  { Name = "yellowSwitch" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1f27)  { Name = "greenSwitch" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1f29)  { Name = "blueSwitch" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1f2a)  { Name = "redSwitch" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x141A)  { Name = "roomCounter" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1B9B)  { Name = "yoshiBanned" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x13C6)  { Name = "bossDefeat" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1429)  { Name = "bowserPalette" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x190D)  { Name = "peach" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x13CE)  { Name = "checkpointTape" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x0089)  { Name = "enterOrExitPipe" },
-        new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x0071)  { Name = "cutScene" },
+        new MemoryWatcher<short>((IntPtr)memoryOffset + 0x1434)  { Name = "keyholeTimer" }, // TODO: Can this be made an int without breaking stuff?
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1ED2)  { Name = "fileSelect" },
+		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0xDB4)   { Name = "fileSelect_Baby" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x906)   { Name = "fanfare" },
+		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B99)  { Name = "victory" },
+		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DFB)  { Name = "orb" },  // Calling this "orbs" is a misnomer. Seems to be more about music.
+		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x18390) { Name = "orb_climb" },  // Only used in Climb the Tower. TODO: Would be good to get rid of
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1493)  { Name = "endtimer" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f28)  { Name = "yellowSwitch" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f27)  { Name = "greenSwitch" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f29)  { Name = "blueSwitch" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f2a)  { Name = "redSwitch" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x141A)  { Name = "roomCounter" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13C6)  { Name = "bossDefeat" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x190D)  { Name = "peach" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13CE)  { Name = "checkpointTape" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0089)  { Name = "enterOrExitPipe" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0071)  { Name = "cutScene" },
     };
 
 	vars.reInitialise = (Action)(() => {
