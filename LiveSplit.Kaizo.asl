@@ -11,18 +11,10 @@ startup {
     settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
     settings.Add("bosses", true, "Boss Levels");
     settings.SetToolTip("bosses", "Split on boss fanfare");
-    settings.Add("switchPalaces", true, "Switch Palaces");
-    settings.SetToolTip("switchPalaces", "Split on completing a switch palace");
-    settings.Add("checkpointTape", true, "Checkpoint Tape");
-    settings.SetToolTip("checkpointTape", "Split when running into the Checkpoint Tape");
-    settings.Add("levelDoorPipe", false, "Level Room Transitions");
-    settings.SetToolTip("levelDoorPipe", "Split on door and pipe transitions within standard levels and switch palaces");
-    settings.Add("castleDoorPipe", false, "Castle/GH Room Transitions");
-    settings.SetToolTip("castleDoorPipe", "Split on door and pipe transitions within ghost houses and castles");
-    settings.Add("bowserPhase", false, "Bowser Phase Transition");
-    settings.SetToolTip("bowserPhase", "Split when transitioning between Bowser's phases (not tested on Cloud runs)");
-    settings.Add("enterPipe", false, "Enter a Pipe");
-    settings.SetToolTip("enterPipe", "Split when entering any pipe");
+    settings.Add("checkpoints", true, "Checkpoints");
+    settings.SetToolTip("checkpoints", "Split when getting a checkpoint, whether it's the tape or a room transition");
+    settings.Add("worlds", false, "Overworlds");
+    settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
 }
 
 init {
@@ -158,13 +150,10 @@ reset {
 
 split {
     // Settings
-    var isLevels =         settings["levels"];
-    var isSwitchPalaces =  settings["switchPalaces"];
-    var isLevelDoorPipe =  settings["levelDoorPipe"];
-    var isCastleDoorPipe = settings["castleDoorPipe"];
-    var isBosses =         settings["bosses"];
-    var isCheckpointTape = settings["checkpointTape"];
-    var isEnterPipe =      settings["enterPipe"];
+    var isLevels =        settings["levels"];
+    var isBosses =        settings["bosses"];
+    var isCheckpoints =   settings["checkpoints"];
+    var isWorlds =        settings["worlds"];
 
     // Vars
     var fanfare =         vars.watchers["fanfare"];
@@ -184,61 +173,62 @@ split {
     var cutScene =        vars.watchers["cutScene"];
     var endtimer =        vars.watchers["endtimer"]; // Only used by "Of Jumps and Platforms". TODO: Try to remove it.
 
-    Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
 
-    // Convenience function for testing whether a watcher var shifted from an Old value to a Current one
+    // Convenience functions
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, int, bool> shift = (watcher, o, c) => watcher.Old == o && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> shiftTo = (watcher, c) => watcher.Old != c && watcher.Current == c;
-    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> anyShift = watcher => watcher.Old != watcher.Current;
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> shifted = watcher => watcher.Old != watcher.Current;
+    Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = v => { if (v.Old != v.Current) print(v + ": " + v.Old + "->" + v.Current); return true; };
 
     // Composite Vars
-    var yellowPalace = isSwitchPalaces && shift(yellowSwitch, 0, 1);
-    var greenPalace = isSwitchPalaces && shift(greenSwitch, 0, 1);
-    var bluePalace = isSwitchPalaces && shift(blueSwitch, 0, 1);
-    var redPalace = isSwitchPalaces && shift(redSwitch, 0, 1);
-
-    // Split Conditions
-    var goalExit = isLevels && shift(fanfare, 0, 1) && bossDefeat.Current == 0;  // TODO: Mix "victory" into this condition
-    var keyExit = isLevels && keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
+    var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && (shift(cutScene, 0, 5) || shift(cutScene, 0, 6));
+    
+    // Default Split Conditions
+    var goalExit = shift(fanfare, 0, 1) && bossDefeat.Current == 0;  // TODO: Mix "victory" into this condition
+    var keyExit = keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
     var orbExit = shiftTo(orb, 3) && bossDefeat.Current == 0;
-    var bossExit = isBosses && shift(fanfare, 0, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);  // TODO: Find better bossDefeat default (and hopefully remove it from goalExit?)
-    var switchPalaceExit = yellowPalace || greenPalace || bluePalace || redPalace;
-    var bowserDefeated = isBosses && shift(peach, 0, 1);
-    var checkpoint = isCheckpointTape && shift(checkpointTape, 0, 1);
-	var enteredPipe = isEnterPipe && anyShift(enterOrExitPipe) && enterOrExitPipe.Current < 4 && cutScene.Old == 0 && (cutScene.Current == 5 || cutScene.Current == 6);
-    var credits = false;  // Not used by default. TODO: Try to make it default.
+    var switchPalaceExit = shift(yellowSwitch, 0, 1) || shift(greenSwitch, 0, 1) || shift(blueSwitch, 0, 1) || shift(redSwitch, 0, 1);
+    var bossExit = shift(fanfare, 0, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);  // TODO: Find better bossDefeat default (and hopefully remove it from goalExit?)
+    var unknownExit = false;
+    var peachReleased = shift(peach, 0, 1);
+    var tapeCP = shift(checkpointTape, 0, 1);
+    var roomCP = false;
+    var doorCP = false;
+    var pipeCP = false;
+    var credits = false;
 
     // Override Default split variables for individual games
 	switch ((string) vars.gamename) {
 		case "The Joy of Kaizo": //orb 67, 49
-			goalExit = isLevels && shift(victory, 0, 1) && bossDefeat.Current == 0;
-			bossExit = isBosses && shift(bossDefeat, 0, 1);
+			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0;
+			bossExit = shift(bossDefeat, 0, 1);
 		break;
 		case "Climb The Tower":
-			orbExit = isLevels && (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1 && afterSeconds(25);
-			bossExit = isBosses && shift(fanfare, 0, 1) && bossDefeat.Current == 1 && afterSeconds(25);
+			orbExit = (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1 && afterSeconds(25);
+			bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1 && afterSeconds(25);
 		break;
 		case "Peachy Moat World": //orb 67, 49
-			bossExit = isBosses && shift(bossDefeat, 0, 1) && afterSeconds(25);
+			bossExit = shift(bossDefeat, 0, 1) && afterSeconds(25);
 		break;
 		case "Little Mario World": //orb 66
-    		bossExit = isBosses && shift(fanfare, 0, 1) && bossDefeat.Current == 1;
+    		bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
 		break;
 		case "Super Swunsh World 2": // orb 38, 32
-			goalExit = isLevels && shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
-			orbExit = isLevels && (shiftTo(orb, 3) || shift(orb, 45, 4));
-			bossExit = isBosses && shift(fanfare, 0, 1) && bossDefeat.Current == 255 && afterSeconds(20);
-            credits = isLevels && shift(orb, 255, 56);
+			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
+            bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 255 && afterSeconds(20);
+            unknownExit = shift(orb, 45, 4);
+            credits = shift(orb, 255, 56);
 		break;
 		case "Shell's Retriever": // orb 67, 49
-			goalExit = isLevels && shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
-			bossExit = isBosses && bossDefeat.Current == 1 && afterSeconds(20);
+			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
+			bossExit = bossDefeat.Current == 1 && afterSeconds(20);
 		break;
 		case "Invictus": // orb 67, 49
-			credits = isLevels && shift(orb, 255, 107);
+			credits = shift(orb, 255, 107);
 		break;
 		case "El Dorado":
-			orbExit = isLevels && (shift(orb, 56, 64) || shift(orb, 51, 0)) && bossDefeat.Current == 0;
+			unknownExit = (shift(orb, 56, 64) || shift(orb, 51, 0)) && bossDefeat.Current == 0;
 		break;
 		case "Quickie World": // orb 6, 10
 		break;
@@ -250,15 +240,15 @@ split {
                 || orb.Old == 61  // The ChrisG Spot
                 ) && orb.Current == 3);
             */
-		    checkpoint = isCheckpointTape && ((shift(checkpointTape, 0, 1)
-                && orb.Current != 3   // Roll the Bones Boss
-                && orb.Current != 65  // Yoshi's Lair 1 Tape
-                )
-                || shift(orb, 60, 49)  // Roll the Bones Door
+		    tapeCP = shift(checkpointTape, 0, 1)
+                && orb.Current != 3    // Roll the Bones Boss
+                && orb.Current != 65;  // Yoshi's Lair 1 Tape
+            doorCP = 
+                (  shift(orb, 60, 49)  // Roll the Bones Door
                 || shift(orb, 65, 42)  // Yoshi's Lair 1 Door
-                || shift(orb, 42, 17)  // Yoshi's Lair 2 Pipe
                 || shift(orb, 17, 49)  // Final Boss Door
-            );
+                );
+            pipeCP = shift(orb, 42, 17);  // Yoshi's Lair 2 Pipe
         break;
         case "Purgatory":
     /* TODO:
@@ -266,61 +256,89 @@ split {
      * Missing important transitions in Summit of Salvation 1 and 4 (no easy orb diff)
      * Missing almost all Paradise transitions (2,3,4,5,6,7,8,9,final) (no easy orb diff)
      */
-            checkpoint = isCheckpointTape && (shift(checkpointTape, 0, 1)
-                || shift(orb, 31, 56)  // Sea Moon 1 Pipe
+            pipeCP = 
+                (  shift(orb, 31, 56)  // Sea Moon 1 Pipe
                 || shift(orb, 41, 40)  // Drifting Den 1 Pipe
                 || shift(orb, 40, 41)  // Drifting Den 3 Pipe
                 || shift(orb, 31, 40)  // Soft and Wet 1 Pipe
                 || shift(orb, 31, 55)  // Chocolate Disco 1 Pipe
-                || shift(orb, 68, 54)  // Paradise 1 Vine
+                );
+            roomCP = 
+                (  shift(orb, 68, 54)  // Paradise 1 Vine
                 || shift(orb, 54, 68)  // Paradise 10 Vine
                 || shift(orb, 68, 70)  // Paradise 11 Vine
             );
         break;
-		case "Grand Poo World 2":
-			orbExit = isLevels && (shift(orb, 44, 3) || shift(orb, 83, 3) || shift(orb, 84, 3) || shift(orb, 90, 3) || shift(orb, 86, 92) || shift(orb, 88, 91)) && afterSeconds(20);
+		case "Grand Poo World 2": // orb 44 83 84 90
+			unknownExit = (shift(orb, 86, 92) || shift(orb, 88, 91)) && afterSeconds(20);
 		break;
 		case "Mahogen": // orb 0, 71
 		break;
 		case "Shellax":
-			orbExit = isLevels && shift(orb, 255, 53) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 255, 53) && bossDefeat.Current == 0 && afterSeconds(25);
 		break;
-		case "Akogare 2":
-			orbExit = isLevels && (shift(orb, 152, 3) || shift(orb, 255, 56)) && bossDefeat.Current == 0 && afterSeconds(25);
+		case "Akogare 2": // orb 152
+			unknownExit = shift(orb, 255, 56) && bossDefeat.Current == 0 && afterSeconds(25);
 		break;
 		case "Casio Mario World":
-			orbExit = isLevels && shift(orb, 128, 26) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 128, 26) && bossDefeat.Current == 0 && afterSeconds(25);
 		break;
 		case "Orcus":
-			orbExit = isLevels && shift(orb, 63, 68) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 63, 68) && bossDefeat.Current == 0 && afterSeconds(25);
 		break;
 		case "Dreams":
-			orbExit = isLevels && (shift(orb, 57, 4) || shift(orb, 255, 54)) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = (shift(orb, 57, 4) || shift(orb, 255, 54)) && bossDefeat.Current == 0 && afterSeconds(25);
 		break;
 		case "Boogie Wonderland":
-			orbExit = isLevels && shift(orb, 83, 79) && bossDefeat.Current == 0 && afterSeconds(25);
-			bossExit = isBosses && (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
+		    unknownExit = shift(orb, 83, 79) && bossDefeat.Current == 0 && afterSeconds(25);
+			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
 		break;
 		case "Silencio":
-			goalExit = isLevels && shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
-			orbExit = isLevels && shift(orb, 255, 88) && bossDefeat.Current == 0 && afterSeconds(25);
-			bossExit = isBosses && (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
+			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
+			unknownExit = shift(orb, 255, 88) && bossDefeat.Current == 0 && afterSeconds(25);
+			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
 		break;
-		case "Polyphony":
-			orbExit = isLevels && (shift(orb, 52, 3) || shift(orb, 87, 74)) && bossDefeat.Current == 0 && afterSeconds(25);
+		case "Polyphony": // orb 52
+			unknownExit = shift(orb, 87, 74) && bossDefeat.Current == 0 && afterSeconds(25);
 		break;
-		case "Super Joe Bros. 2":
-			orbExit = isLevels && (shift(orb, 64, 3) || shift(orb, 19, 49)) && bossDefeat.Current == 0 && afterSeconds(25);
-			bossExit = isBosses && (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
+		case "Super Joe Bros. 2": // orb 64
+			unknownExit = shift(orb, 19, 49) && bossDefeat.Current == 0 && afterSeconds(25);
+			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
 		break;
 		case "Of Jumps and Platforms":
-			goalExit = isLevels && shift(endtimer, 0, 255) && afterSeconds(20);
+			goalExit = shift(endtimer, 0, 255) && afterSeconds(20);
 		break;
 	}
     
-	if (goalExit || bossExit || orbExit || keyExit || switchPalaceExit) vars.stopwatch.Restart();
+    // Construct high level split conditions
+    var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || unknownExit; // TODO: All unknownExits need to be tested and lumped into existing exit types
+    var bossDefeated = false;
+    var checkpoint = tapeCP || doorCP || pipeCP;
+    var runDone = peachReleased || credits;
+    var splitStatus = runDone || (isLevels && levelExit) || (isBosses && bossDefeated) || (isCheckpoints && checkpoint);
+
+	if (levelExit) vars.stopwatch.Restart();
+
+    // TEMPORARY DEBUG INFO
+
+    if (splitStatus) {
+        var reasons = "";
+        if (goalExit) reasons += " goalExit";
+        if (keyExit) reasons += " keyExit";
+        if (orbExit) reasons += " orbExit";
+        if (switchPalaceExit) reasons += " switchPalaceExit";
+        if (bossExit) reasons += " bossExit";
+        if (tapeCP) reasons += " tapeCP";
+        if (doorCP) reasons += " doorCP";
+        if (pipeCP) reasons += " pipeCP";
+        if (roomCP) reasons += " roomCP";
+        if (peachReleased) reasons += " peachReleased";
+        if (credits) reasons += " credits";
+        print("Split Reasons:"+reasons);
+    }
+
     /*
-	if (cutScene.Old != cutScene.Current) {
+	if (shifted(curScene)) {
 		switch ((int) cutScene.Current) {
 			case 0: print("PLAYING"); break;
 			case 5: print("WARPING HORIZONTAL"); break;
@@ -329,20 +347,10 @@ split {
             case 16: print("DOOR"); break;
 		}
 	}
-	if (enterOrExitPipe.Old != enterOrExitPipe.Current) print("Pipes " + enterOrExitPipe.Old + "->" + enterOrExitPipe.Current);
+	monitor(enterOrExitPipe);
     */
-    if (roomCounter.Old != roomCounter.Current) print("Rooms " + roomCounter.Old + "->" + roomCounter.Current);
-    if (orb.Old != orb.Current) {
-        if (orb.Current == 3) {
-            print("OOOOOOOOORRRRRRBBBB");
-        }
-        print("Orbs " + orb.Old + "->" + orb.Current);
-    }
-/*
-    if (goalExit || keyExit || switchPalaceExit || bossExit || bowserDefeated || checkpoint || enteredPipe || credits) {
-        print("goalExit "+goalExit+", keyExit "+keyExit+", switchPalaceExit "+switchPalaceExit+", bossExit "+bossExit+", bowserDefeated "+bowserDefeated+", checkpoint "+checkpoint+", enteredPipe"+enteredPipe+", credits "+credits);
-        print("CP: "+checkpointTape.Old + ", " + checkpointTape.Current);
-    }
-    */
-	return goalExit || keyExit || orbExit || switchPalaceExit || bossExit || bowserDefeated || checkpoint || enteredPipe || credits;
+    monitor(orb);
+    monitor(roomCounter);
+
+	return splitStatus;
 }
