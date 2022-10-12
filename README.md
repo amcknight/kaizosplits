@@ -4,6 +4,8 @@ A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SM
 
 ## Changelog
 
+### v0
+
 - Fixed an issue in the original splitter by NecroSky90 caused by snes9x-rr v1.6.1 (probably)
 - Cleaned up the individual level logic
 - Got checkpoint splitting working
@@ -11,6 +13,12 @@ A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SM
 
 ## Roadmap
 
+### v1
+
 - Add fine-grained splits for other hacks and verify existing hacks still function
 - Explain a methodology for adding fine-grained splits for any new hack that anyone can follow
-- Create an automatic split generator
+
+### Wishlist
+
+- An automatic split generator
+- Use TAS tech to create little unit test equivalents to ensure changes are mostly backwards compatible
