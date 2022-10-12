@@ -248,15 +248,16 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
 			orbExit = isLevels && ((orb.Old == 6 || orb.Old == 10) && orb.Current == 3) && bossDefeat.Current == 0 && vars.stopwatch.ElapsedMilliseconds > 25000;
 		break;
 		case "Quickie World 2":
-			orbExit = isLevels && ((orb.Old == 68 || orb.Old == 67 || orb.Old == 61) && orb.Current == 3) && bossDefeat.Current == 0 && vars.stopwatch.ElapsedMilliseconds > 25000;
+			orbExit = isLevels && (
+                (  orb.Old == 68  // Soaring Saguaro
+                || orb.Old == 67  // RB's Clock Tower
+                || orb.Old == 61  // The ChrisG Spot
+                ) && orb.Current == 3);
 		    checkpoint = isCheckpointTape && ((checkpointTape.Old == 0 && checkpointTape.Current == 1
                 && orb.Current != 3   // Roll the Bones Boss
                 && orb.Current != 65  // Yoshi's Lair 1 Tape
                 )
                 || (orb.Old == 60 && orb.Current == 49)  // Roll the Bones Door
-                || (orb.Old == 61 && orb.Current == 3)   // The ChrisG Spot Orb
-                || (orb.Old == 67 && orb.Current == 3)   // RB's Clock Tower Orb
-                || (orb.Old == 68 && orb.Current == 3)   // Soaring Saguaro Orb
                 || (orb.Old == 65 && orb.Current == 42)  // Yoshi's Lair 1 Door
                 || (orb.Old == 42 && orb.Current == 17)  // Yoshi's Lair 2 Pipe
                 || (orb.Old == 17 && orb.Current == 49)  // Final Boss Door
@@ -325,5 +326,5 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
         print("CP: "+checkpointTape.Old + ", " + checkpointTape.Current);
     }
 
-	return goalExit || keyExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpoint || enteredPipe || credits;
+	return goalExit || keyExit || orbExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpoint || enteredPipe || credits;
 }
