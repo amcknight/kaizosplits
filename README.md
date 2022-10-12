@@ -2,6 +2,15 @@
 
 A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606) and updated to work with snes9x-1.6.1 or some other bug that occurred right around when I installed that Core!
 
+## Changelog
+
+- Fixed an issue in the original splitter by NecroSky90 caused by snes9x-rr v1.6.1 (probably)
+- Cleaned up the individual level logic
+- Got checkpoint splitting working
+- Added fine-grained splits to Quickie World 2
+
 ## Roadmap
 
-I'm hoping to get a handle on how to get the splits more robust, working for more kaizo games automatically, and hopefully adding checkpoint splitting.
+- Add fine-grained splits for other hacks and verify existing hacks still function
+- Explain a methodology for adding fine-grained splits for any new hack that anyone can follow
+- Create an automatic split generator
