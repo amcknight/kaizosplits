@@ -15,9 +15,9 @@ startup {
     settings.SetToolTip("switchPalaces", "Split on completing a switch palace");
     settings.Add("checkpointTape", true, "Checkpoint Tape");
     settings.SetToolTip("checkpointTape", "Split when running into the Checkpoint Tape");
-    settings.Add("levelDoorPipe", true, "Level Room Transitions");
+    settings.Add("levelDoorPipe", false, "Level Room Transitions");
     settings.SetToolTip("levelDoorPipe", "Split on door and pipe transitions within standard levels and switch palaces");
-    settings.Add("castleDoorPipe", true, "Castle/GH Room Transitions");
+    settings.Add("castleDoorPipe", false, "Castle/GH Room Transitions");
     settings.SetToolTip("castleDoorPipe", "Split on door and pipe transitions within ghost houses and castles");
     settings.Add("bowserPhase", false, "Bowser Phase Transition");
     settings.SetToolTip("bowserPhase", "Split when transitioning between Bowser's phases (not tested on Cloud runs)");
@@ -33,22 +33,22 @@ init {
     var states = new Dictionary<int, long>
     {
         { 9646080,   0x97EE04 },      // Snes9x-rr 1.60
-        { 13565952,  0x140925118 },  // Snes9x-rr 1.60 (x64)
+        { 13565952,  0x140925118 },   // Snes9x-rr (x64) 1.60/1.61
         { 9027584,   0x94DB54 },      // Snes9x 1.60
-        { 12836864,  0x1408D8BE8 },  // Snes9x 1.60 (x64)
-        { 16019456,  0x94D144 },     // higan v106
-        { 15360000,  0x8AB144 },     // higan v106.112
-		{ 22388736,  0xB0ECC8 },     // higan v107
-		{ 23142400,  0xBC7CC8 },     // higan v108
-		{ 23166976,  0xBCECC8 },     // higan v109
-		{ 23224320,  0xBDBCC8 },     // higan v110
-        { 10096640,  0x72BECC },     // bsnes v107
-        { 10338304,  0x762F2C },     // bsnes v107.1
-        { 47230976,  0x765F2C },     // bsnes v107.2/107.3
-        { 131543040, 0xA9BD5C },    // bsnes v110
-        { 51924992,  0xA9DD5C },     // bsnes v111
-        { 52056064,  0xAAED7C },     // bsnes v112
-		{ 52477952,  0xB16D7C },     // bsnes v115
+        { 12836864,  0x1408D8BE8 },   // Snes9x (x64) 1.60
+        { 16019456,  0x94D144 },      // higan v106
+        { 15360000,  0x8AB144 },      // higan v106.112
+		{ 22388736,  0xB0ECC8 },      // higan v107
+		{ 23142400,  0xBC7CC8 },      // higan v108
+		{ 23166976,  0xBCECC8 },      // higan v109
+		{ 23224320,  0xBDBCC8 },      // higan v110
+        { 10096640,  0x72BECC },      // bsnes v107
+        { 10338304,  0x762F2C },      // bsnes v107.1
+        { 47230976,  0x765F2C },      // bsnes v107.2/107.3
+        { 131543040, 0xA9BD5C },      // bsnes v110
+        { 51924992,  0xA9DD5C },      // bsnes v111
+        { 52056064,  0xAAED7C },      // bsnes v112
+		{ 52477952,  0xB16D7C },      // bsnes v115
         { 7061504,   0x36F11500240 }, // BizHawk 2.3
         { 7249920,   0x36F11500240 }, // BizHawk 2.3.1
         { 6938624,   0x36F11500240 }, // BizHawk 2.3.2
@@ -88,7 +88,7 @@ init {
 		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0xDB4)   { Name = "fileSelect_Baby" },
         new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x906)   { Name = "fanfare" },
 		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1B99)  { Name = "victory" },
-		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1DFB)  { Name = "orb" },
+		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1DFB)  { Name = "orb" },  // Calling this "orbs" is a misnomer. Seems to be more about music.
 		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x18390) { Name = "orb_climb" },
         new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1493)  { Name = "endtimer" },
         new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1f28)  { Name = "yellowSwitch" },
@@ -124,34 +124,35 @@ update {
 
 start {
 	vars.stopwatch.Restart();
+    
+    var fileSelect = vars.watchers["fileSelect"];
+    var fileSelect_Baby = vars.watchers["fileSelect_Baby"];
+
 	switch ((string) vars.gamename) {
 	case "Baby Kaizo World":
-		return vars.watchers["fileSelect_Baby"].Old == 0 && vars.watchers["fileSelect_Baby"].Current == 4;
-    break;
+		return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current == 4;
 	case "Super ShyGuy's Epic Journey":
-		return vars.watchers["fileSelect_Baby"].Old == 0 && vars.watchers["fileSelect_Baby"].Current == 98;
-	break;
+		return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current == 98;
 	case "Of Jumps and Platforms":
-		return vars.watchers["fileSelect_Baby"].Old == 0 && vars.watchers["fileSelect_Baby"].Current > 0;
-	break;
+		return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current > 0;
 	default:
-		return vars.watchers["fileSelect"].Old == 0 && vars.watchers["fileSelect"].Current > 0;
+		return fileSelect.Old == 0 && fileSelect.Current > 0;
 	};
 }
 
 reset {
+    var fileSelect = vars.watchers["fileSelect"];
+    var fileSelect_Baby = vars.watchers["fileSelect_Baby"];
+
    	switch ((string) vars.gamename){
 	case "Baby Kaizo World":
-		return vars.watchers["fileSelect_Baby"].Old != 0 && vars.watchers["fileSelect_Baby"].Current == 0;
-		break;
+		return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
 	case "Super ShyGuy's Epic Journey":
-		return vars.watchers["fileSelect_Baby"].Old != 0 && vars.watchers["fileSelect_Baby"].Current == 0;
-		break;
+		return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
 	case "Of Jumps and Platforms":
-		return vars.watchers["fileSelect_Baby"].Old != 0 && vars.watchers["fileSelect_Baby"].Current == 0;
-		break;
+		return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
 	default:
-		return vars.watchers["fileSelect"].Old != 0 && vars.watchers["fileSelect"].Current == 0;
+		return fileSelect.Old != 0 && fileSelect.Current == 0;
 	};
 }
 
@@ -202,32 +203,9 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
     var bossExit = isBosses && fanfare.Old == 0 && fanfare.Current == 1 && (bossDefeat.Current == 1 || bossDefeat.Current == 255);
     var bowserPhase = isBowserPhase && bowserPalette.Old == 4 && bowserPalette.Current == 7;
     var bowserDefeated = isBosses && peach.Old == 0 && peach.Current == 1;
-    var checkpointTapeHit = isCheckpointTape && checkpointTape.Old == 0 && checkpointTape.Current == 1;
+    var checkpoint = isCheckpointTape && checkpointTape.Old == 0 && checkpointTape.Current == 1;
 	var enteredPipe = isEnterPipe && (enterOrExitPipe.Old != enterOrExitPipe.Current) && enterOrExitPipe.Current < 4 && cutScene.Old == 0 && (cutScene.Current == 5 || cutScene.Current == 6);
     var credits = false;  // Not used by default. TODO: Try to make it default.
-
-/*
-			if (vars.watchers["enterOrExitPipe"].Old != vars.watchers["enterOrExitPipe"].Current) {
-				switch ((int) vars.watchers["enterOrExitPipe"].Current) {
-					case 0: case 1: case 2: case 3:
-						if (vars.watchers["cutScene"].Old == 0 && (vars.watchers["cutScene"].Current == 5 || vars.watchers["cutScene"].Current == 6)) {
-							print("ENTERED PIPE");
-						} else {
-							print("IN PIPE");
-						}
-					break;
-					default: print("OUT PIPE"); break;
-				}
-			}
-			if (vars.watchers["cutScene"].Old != vars.watchers["cutScene"].Current) {
-				switch ((int) vars.watchers["cutScene"].Current) {
-					case 0: print("PLAYING"); break;
-					case 5: print("WARPING HORIZONTAL"); break;
-					case 6: print("WARPING VERTICAL"); break;
-					case 9: print("DEAD"); break;
-				}
-			}
-*/
 
     // Override Default split variables for individual games
 	switch ((string) vars.gamename) {
@@ -271,7 +249,19 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
 		break;
 		case "Quickie World 2":
 			orbExit = isLevels && ((orb.Old == 68 || orb.Old == 67 || orb.Old == 61) && orb.Current == 3) && bossDefeat.Current == 0 && vars.stopwatch.ElapsedMilliseconds > 25000;
-		break;
+		    checkpoint = isCheckpointTape && ((checkpointTape.Old == 0 && checkpointTape.Current == 1
+                && orb.Current != 3   // Roll the Bones Boss
+                && orb.Current != 65  // Yoshi's Lair 1 Tape
+                )
+                || (orb.Old == 60 && orb.Current == 49)  // Roll the Bones Door
+                || (orb.Old == 61 && orb.Current == 3)   // The ChrisG Spot Orb
+                || (orb.Old == 67 && orb.Current == 3)   // RB's Clock Tower Orb
+                || (orb.Old == 68 && orb.Current == 3)   // Soaring Saguaro Orb
+                || (orb.Old == 65 && orb.Current == 42)  // Yoshi's Lair 1 Door
+                || (orb.Old == 42 && orb.Current == 17)  // Yoshi's Lair 2 Pipe
+                || (orb.Old == 17 && orb.Current == 49)  // Final Boss Door
+            );
+        break;
 		case "Grand Poo World 2":
 			orbExit = isLevels && (((orb.Old == 44 || orb.Old == 83 || orb.Old == 84 || orb.Old == 90) && orb.Current == 3) || (orb.Old == 86 && orb.Current == 92) || (orb.Old == 88 && orb.Current == 91)) && vars.stopwatch.ElapsedMilliseconds > 20000;
 		break;
@@ -312,9 +302,28 @@ var after20s = vars.stopwatch.ElapsedMilliseconds > 20000;
 		case "Of Jumps and Platforms":
 			goalExit = isLevels && endtimer.Old == 0 && endtimer.Current == 255 && vars.stopwatch.ElapsedMilliseconds > 20000;
 		break;
-    
-		if (goalExit || bossExit || orbExit || keyExit || switchPalaceExit) vars.stopwatch.Restart();
-
-	    return goalExit || keyExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpointTapeHit || enteredPipe || credits;
 	}
+    
+	if (goalExit || bossExit || orbExit || keyExit || switchPalaceExit) vars.stopwatch.Restart();
+    /*
+	if (cutScene.Old != cutScene.Current) {
+		switch ((int) cutScene.Current) {
+			case 0: print("PLAYING"); break;
+			case 5: print("WARPING HORIZONTAL"); break;
+			case 6: print("WARPING VERTICAL"); break;
+			case 9: print("DEAD"); break;
+            case 16: print("DOOR"); break;
+		}
+	}
+    if (roomCounter.Old != roomCounter.Current) print("Rooms " + roomCounter.Old + "->" + roomCounter.Current);
+	if (enterOrExitPipe.Old != enterOrExitPipe.Current) print("Pipes " + enterOrExitPipe.Old + "->" + enterOrExitPipe.Current);
+    */
+    if (orb.Old != orb.Current) print("Orbs " + orb.Old + "->" + orb.Current);
+
+    if (goalExit || keyExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpoint || enteredPipe || credits) {
+        print("goalExit "+goalExit+", keyExit "+keyExit+", switchPalaceExit "+switchPalaceExit+", bossExit "+bossExit+", bowserPhase "+bowserPhase+", bowserDefeated "+bowserDefeated+", checkpoint "+checkpoint+", enteredPipe"+enteredPipe+", credits "+credits);
+        print("CP: "+checkpointTape.Old + ", " + checkpointTape.Current);
+    }
+
+	return goalExit || keyExit || switchPalaceExit || bossExit || bowserPhase || bowserDefeated || checkpoint || enteredPipe || credits;
 }
