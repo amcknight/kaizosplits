@@ -171,13 +171,12 @@ split {
     var cutScene =        vars.watchers["cutScene"];
     var endtimer =        vars.watchers["endtimer"]; // Only used by "Of Jumps and Platforms". TODO: Try to remove it.
 
-
     // Convenience functions
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, int, bool> shift = (watcher, o, c) => watcher.Old == o && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> shiftTo = (watcher, c) => watcher.Old != c && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> shifted = watcher => watcher.Old != watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
-    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = v => { if (v.Old != v.Current) print(v + ": " + v.Old + "->" + v.Current); return true; };
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => { if (watcher.Old != watcher.Current) print(watcher + ": " + watcher.Old + "->" + watcher.Current); return true; };
 
     // Composite Vars
     var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && (shift(cutScene, 0, 5) || shift(cutScene, 0, 6));
@@ -199,45 +198,38 @@ split {
     // Override Default split variables for individual games
 	switch ((string) vars.gamename) {
 		case "The Joy of Kaizo": //orb 67, 49
-			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0;
+			goalExit = shift(victory, 0, 1);
 			bossExit = shift(bossDefeat, 0, 1);
 		break;
 		case "Climb The Tower":
-			orbExit = (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1 && afterSeconds(25);
-			bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1 && afterSeconds(25);
+			orbExit = (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1;
+			bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
 		break;
 		case "Peachy Moat World": //orb 67, 49
-			bossExit = shift(bossDefeat, 0, 1) && afterSeconds(25);
+			bossExit = shift(bossDefeat, 0, 1);
 		break;
 		case "Little Mario World": //orb 66
     		bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
 		break;
 		case "Super Swunsh World 2": // orb 38, 32
-			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
-            bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 255 && afterSeconds(20);
+			goalExit = shift(victory, 0, 1);
+            bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 255;
             unknownExit = shift(orb, 45, 4);
             credits = shift(orb, 255, 56);
 		break;
 		case "Shell's Retriever": // orb 67, 49
-			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
-			bossExit = bossDefeat.Current == 1 && afterSeconds(20);
+			goalExit = shift(victory, 0, 1);
+			bossExit = bossDefeat.Current == 1;
 		break;
 		case "Invictus": // orb 67, 49
 			credits = shift(orb, 255, 107);
 		break;
 		case "El Dorado":
-			unknownExit = (shift(orb, 56, 64) || shift(orb, 51, 0)) && bossDefeat.Current == 0;
+			unknownExit = shift(orb, 56, 64) || shift(orb, 51, 0);
 		break;
 		case "Quickie World": // orb 6, 10
 		break;
 		case "Quickie World 2": // orb 68, 67, 61
-			/*
-             orbExit = isLevels && (
-                (  orb.Old == 68  // Soaring Saguaro
-                || orb.Old == 67  // RB's Clock Tower
-                || orb.Old == 61  // The ChrisG Spot
-                ) && orb.Current == 3);
-            */
 		    tapeCP = shift(checkpointTape, 0, 1)
                 && orb.Current != 3    // Roll the Bones Boss
                 && orb.Current != 65;  // Yoshi's Lair 1 Tape
@@ -268,43 +260,43 @@ split {
             );
         break;
 		case "Grand Poo World 2": // orb 44 83 84 90
-			unknownExit = (shift(orb, 86, 92) || shift(orb, 88, 91)) && afterSeconds(20);
+			unknownExit = shift(orb, 86, 92) || shift(orb, 88, 91);
 		break;
 		case "Mahogen": // orb 0, 71
 		break;
 		case "Shellax":
-			unknownExit = shift(orb, 255, 53) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 255, 53);
 		break;
 		case "Akogare 2": // orb 152
-			unknownExit = shift(orb, 255, 56) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 255, 56);
 		break;
 		case "Casio Mario World":
-			unknownExit = shift(orb, 128, 26) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 128, 26);
 		break;
 		case "Orcus":
-			unknownExit = shift(orb, 63, 68) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 63, 68);
 		break;
 		case "Dreams":
-			unknownExit = (shift(orb, 57, 4) || shift(orb, 255, 54)) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 57, 4) || shift(orb, 255, 54);
 		break;
 		case "Boogie Wonderland":
-		    unknownExit = shift(orb, 83, 79) && bossDefeat.Current == 0 && afterSeconds(25);
-			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
+		    unknownExit = shift(orb, 83, 79);
+			bossExit = shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255);
 		break;
 		case "Silencio":
-			goalExit = shift(victory, 0, 1) && bossDefeat.Current == 0 && afterSeconds(20);
-			unknownExit = shift(orb, 255, 88) && bossDefeat.Current == 0 && afterSeconds(25);
-			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
+			goalExit = shift(victory, 0, 1);
+			unknownExit = shift(orb, 255, 88);
+			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255));
 		break;
 		case "Polyphony": // orb 52
-			unknownExit = shift(orb, 87, 74) && bossDefeat.Current == 0 && afterSeconds(25);
+			unknownExit = shift(orb, 87, 74);
 		break;
 		case "Super Joe Bros. 2": // orb 64
-			unknownExit = shift(orb, 19, 49) && bossDefeat.Current == 0 && afterSeconds(25);
-			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255)) && afterSeconds(20);
+			unknownExit = shift(orb, 19, 49);
+			bossExit = shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255);
 		break;
 		case "Of Jumps and Platforms":
-			goalExit = shift(endtimer, 0, 255) && afterSeconds(20);
+			goalExit = shift(endtimer, 0, 255);
 		break;
 	}
     
