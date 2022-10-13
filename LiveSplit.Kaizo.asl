@@ -176,7 +176,7 @@ split {
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> shiftTo = (watcher, c) => watcher.Old != c && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> shifted = watcher => watcher.Old != watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
-    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => { if (watcher.Old != watcher.Current) print(watcher + ": " + watcher.Old + "->" + watcher.Current); return true; };
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => { if (watcher.Old != watcher.Current) print(watcher.Name + ": " + watcher.Old + "->" + watcher.Current); return true; };
 
     // Composite Vars
     var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && (shift(cutScene, 0, 5) || shift(cutScene, 0, 6));
@@ -227,7 +227,14 @@ split {
 		case "El Dorado":
 			unknownExit = shift(orb, 56, 64) || shift(orb, 51, 0);
 		break;
-		case "Quickie World": // orb 6, 10
+		case "Quickie World": // DONE
+            goalExit = shift(fanfare, 0, 1)
+                && orb.Current != 3;
+            tapeCP = shift(checkpointTape, 0, 1)
+                && orb.Current != 8   // Cancel Sawrfing double count (tapeCP)
+                && orb.Current != 3;  // Cencel Tower of Power double count (tapeCP)
+            pipeCP = shift(orb, 46, 52);  // Whitemoth Layer
+
 		break;
 		case "Quickie World 2": // orb 68, 67, 61
 		    tapeCP = shift(checkpointTape, 0, 1)
