@@ -175,11 +175,13 @@ split {
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, int, bool> shift = (watcher, o, c) => watcher.Old == o && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> shiftTo = (watcher, c) => watcher.Old != c && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> shifted = watcher => watcher.Old != watcher.Current;
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> stepTo = (watcher, c) => watcher.Current == c && watcher.Old + 1 == watcher.Current;
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> stepped = watcher => watcher.Old + 1 == watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
 
     // Composite Vars
     var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
-    var roomUptick = roomCounter.Old > 0 && (roomCounter.Old + 1) == roomCounter.Current;
+    var roomStep = roomCounter.Old > 0 && stepped(roomCounter);
     var toOrb = shiftTo(io, 3);
     var toGoal = shiftTo(io, 4);
     var gotOrb = io.Current == 3;
@@ -188,14 +190,14 @@ split {
     var bossUndead = bossDefeat.Current == 0;
 
     // Default Split Conditions
-    var goalExit = shift(fanfare, 0, 1) && bossUndead && !gotOrb;  // didn't defeat boss already and didn't got orb  TODO: Mix "victory" into this condition
+    var goalExit = stepTo(fanfare, 1) && bossUndead && !gotOrb;  // didn't defeat boss already and didn't got orb  TODO: Mix "victory" into this condition
     var keyExit = keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
     var orbExit = toOrb && bossUndead;
-    var switchPalaceExit = shift(yellowSwitch, 0, 1) || shift(greenSwitch, 0, 1) || shift(blueSwitch, 0, 1) || shift(redSwitch, 0, 1);
-    var bossExit = shift(fanfare, 0, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);
+    var switchPalaceExit = stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
+    var bossExit = stepTo(fanfare, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);
     var unknownExit = false;
-    var peachReleased = shift(peach, 0, 1);
-    var tapeCP = shift(checkpointTape, 0, 1) && !gotOrb && !gotGoal && !gotFadeout; // TODO: Must be a way to get tape after the first.
+    var peachReleased = stepTo(peach, 1);
+    var tapeCP = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotFadeout; // TODO: Must be a way to get tape after the first.
     var roomCP = false;
     var doorCP = false;
     var pipeCP = false;
@@ -235,7 +237,7 @@ split {
 		case "Mahogen": // orbExit 0 71
 		break;
 		case "Little Mario World": // orbExit 66
-    		bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
+    		bossExit = stepTo(fanfare, 1) && bossDefeat.Current == 1;
 		break;
 		case "Invictus": // orbExit 67 49
 			credits = shift(io, 255, 107);
@@ -276,21 +278,21 @@ split {
                 || (shift(enterOrExitPipe, 2, 6) && io.Current == 61) // Jump in Altitude 2
                 );
             roomCP = 
-                (  roomUptick && io.Current == 56  // Sea Moon rooms 2+
-                || roomUptick && io.Current == 49  // Soft and Wet
-                || roomUptick && io.Current == 63  // Summit of Salvation
+                (  roomStep && io.Current == 56  // Sea Moon rooms 2+
+                || roomStep && io.Current == 49  // Soft and Wet
+                || roomStep && io.Current == 63  // Summit of Salvation
                 || shift(io, 31, 55)  // Chocolate Disco 1
                 || shift(io, 68, 54)  // Paradise 1 Vine
-                || roomUptick && io.Current == 54  // Paradise 2-10
+                || roomStep && io.Current == 54  // Paradise 2-10
                 || shift(io, 68, 70)  // Paradise 11 Vine
-                || roomUptick && io.Current == 70  // Paradise Final
+                || roomStep && io.Current == 70  // Paradise Final
             );
         break;
 		case "Quickie World": // DONE
             pipeCP = shift(io, 46, 52);  // Whitemoth Layer
 		break;
 		case "Quickie World 2": // DONE orbExit 68 67 61
-		    tapeCP = shift(checkpointTape, 0, 1)
+		    tapeCP = stepTo(checkpointTape, 1)
                 && io.Current != 65;  // Yoshi's Lair 1 Tape
             doorCP = 
                 (shift(io, 60, 49)  // Roll the Bones Door
@@ -300,27 +302,27 @@ split {
             pipeCP = shift(io, 42, 17);  // Yoshi's Lair 2 Pipe
         break;
 		case "Shell's Retriever": // orbExit 67 49
-			goalExit = shift(victory, 0, 1);
+			goalExit = stepTo(victory, 1);
 		break;
 		case "Shellax":
 			unknownExit = shift(io, 255, 53);
 		break;
 		case "Silencio":
-			goalExit = shift(victory, 0, 1);
+			goalExit = stepTo(victory, 1);
             unknownExit = shift(io, 255, 88);
 		break;
 		case "Super Joe Bros. 2": // orbExit 64
 			unknownExit = shift(io, 19, 49);
 		break;
 		case "Super Swunsh World 2": // orbExit 38 32
-			goalExit = shift(victory, 0, 1);
-            bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 255;
+			goalExit = stepTo(victory, 1);
+            bossExit = stepTo(fanfare, 1) && bossDefeat.Current == 255;
             unknownExit = shift(io, 45, 4);
             credits = shift(io, 255, 56);
 		break;
         case "The Joy of Kaizo": // orbExit 67 49
-		    goalExit = shift(victory, 0, 1);
-            bossExit = shift(bossDefeat, 0, 1);
+		    goalExit = stepTo(victory, 1);
+            bossExit = stepTo(bossDefeat, 1);
 		break;
 	}
     
@@ -371,14 +373,14 @@ split {
     
     monitor(enterOrExitPipe);
     monitor(io);
-//if (io.Old != io.Current && io.Old != 8 && io.Current != 8) dbg(io.Name + ": " + io.Old + "->" + io.Current);
-monitor(checkpointTape);
+    //if (shifted(io) && io.Old != 8 && io.Current != 8) dbg(io.Name + ": " + io.Old + "->" + io.Current);
+    monitor(checkpointTape);
     monitor(cutScene);
-    //if (cutScene.Old != cutScene.Current && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
+    //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
 
     monitor(enterOrExitPipe);
     monitor(roomCounter);
-    //if (roomCounter.Old != roomCounter.Current && roomCounter.Old != 0 && roomCounter.Current != 0) dbg(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
+    //if (shifted(roomCounter)) dbg(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
 
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
 
