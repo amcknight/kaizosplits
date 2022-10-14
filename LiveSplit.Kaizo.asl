@@ -177,19 +177,21 @@ split {
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> shifted = watcher => watcher.Old != watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => { if (watcher.Old != watcher.Current) print(watcher.Name + ": " + watcher.Old + "->" + watcher.Current); return true; };
+    
 
     // Composite Vars
-    var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && (shift(cutScene, 0, 5) || shift(cutScene, 0, 6));
-    
+    var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
+    var roomUptick = roomCounter.Old > 0 && (roomCounter.Old + 1) == roomCounter.Current;
+
     // Default Split Conditions
-    var goalExit = shift(fanfare, 0, 1) && bossDefeat.Current == 0;  // TODO: Mix "victory" into this condition
+    var goalExit = shift(fanfare, 0, 1) && bossDefeat.Current == 0 && orb.Current != 3;  // didn't defeat boss already and didn't got orb  TODO: Mix "victory" into this condition
     var keyExit = keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
-    var orbExit = shiftTo(orb, 3) && bossDefeat.Current == 0;
+    var orbExit = shiftTo(orb, 3);
     var switchPalaceExit = shift(yellowSwitch, 0, 1) || shift(greenSwitch, 0, 1) || shift(blueSwitch, 0, 1) || shift(redSwitch, 0, 1);
     var bossExit = shift(fanfare, 0, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);  // TODO: Find better bossDefeat default (and hopefully remove it from goalExit?)
     var unknownExit = false;
     var peachReleased = shift(peach, 0, 1);
-    var tapeCP = shift(checkpointTape, 0, 1);
+    var tapeCP = shift(checkpointTape, 0, 1) && orb.Current != 3 && orb.Current != 4 && orb.Current != 8; // didn't got orb, got goal, or in fade-out
     var roomCP = false;
     var doorCP = false;
     var pipeCP = false;
@@ -197,56 +199,56 @@ split {
 
     // Override Default split variables for individual games
 	switch ((string) vars.gamename) {
-		case "The Joy of Kaizo": //orb 67, 49
-			goalExit = shift(victory, 0, 1);
-			bossExit = shift(bossDefeat, 0, 1);
+		case "Akogare 2": // orb 152
+			unknownExit = shift(orb, 255, 56);
+		break;
+		case "Boogie Wonderland":
+		    unknownExit = shift(orb, 83, 79);
+            bossExit = shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255);
+		break;
+		case "Casio Mario World":
+			unknownExit = shift(orb, 128, 26);
 		break;
 		case "Climb The Tower":
 			orbExit = (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1;
-			bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
 		break;
-		case "Peachy Moat World": //orb 67, 49
-			bossExit = shift(bossDefeat, 0, 1);
+		case "Cute Kaizo World": // DONE worlds 48->50->45
+            tapeCP = tapeCP && orb.Current != 55;  // No tape checks in Zalzion castle. Using doors
+            pipeCP = (shiftTo(enterOrExitPipe, 2) && orb.Current == 47) // Kimball Secret final Pipe. NEEDS IDEMPOTENCE
+                || (shiftTo(enterOrExitPipe, 5) && (orb.Current == 0 || orb.Current == 51)) // Pink Switch (P-Switch on=0 off=51)  
+                || (shiftTo(enterOrExitPipe, 5) && orb.Current == 40); // Blue Switch
+            doorCP = shiftTo(cutScene, 13); // NEEDS IDEMPOTENCE
+            credits = shiftTo(orb, 21);
 		break;
-		case "Little Mario World": //orb 66
-    		bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
-		break;
-		case "Super Swunsh World 2": // orb 38, 32
-			goalExit = shift(victory, 0, 1);
-            bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 255;
-            unknownExit = shift(orb, 45, 4);
-            credits = shift(orb, 255, 56);
-		break;
-		case "Shell's Retriever": // orb 67, 49
-			goalExit = shift(victory, 0, 1);
-			bossExit = bossDefeat.Current == 1;
-		break;
-		case "Invictus": // orb 67, 49
-			credits = shift(orb, 255, 107);
+		case "Dreams":
+			unknownExit = shift(orb, 57, 4) || shift(orb, 255, 54);
 		break;
 		case "El Dorado":
 			unknownExit = shift(orb, 56, 64) || shift(orb, 51, 0);
 		break;
-		case "Quickie World": // DONE
-            goalExit = shift(fanfare, 0, 1)
-                && orb.Current != 3;
-            tapeCP = shift(checkpointTape, 0, 1)
-                && orb.Current != 8   // Cancel Sawrfing double count (tapeCP)
-                && orb.Current != 3;  // Cencel Tower of Power double count (tapeCP)
-            pipeCP = shift(orb, 46, 52);  // Whitemoth Layer
-
+		case "Grand Poo World 2": // orb 44 83 84 90
+			unknownExit = shift(orb, 86, 92) || shift(orb, 88, 91);
 		break;
-		case "Quickie World 2": // orb 68, 67, 61
-		    tapeCP = shift(checkpointTape, 0, 1)
-                && orb.Current != 3    // Roll the Bones Boss
-                && orb.Current != 65;  // Yoshi's Lair 1 Tape
-            doorCP = 
-                (  shift(orb, 60, 49)  // Roll the Bones Door
-                || shift(orb, 65, 42)  // Yoshi's Lair 1 Door
-                || shift(orb, 17, 49)  // Final Boss Door
-                );
-            pipeCP = shift(orb, 42, 17);  // Yoshi's Lair 2 Pipe
-        break;
+		case "Mahogen": // orb 0, 71
+		break;
+		case "Little Mario World": //orb 66
+    		bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 1;
+		break;
+		case "Invictus": // orb 67, 49
+			credits = shift(orb, 255, 107);
+		break;
+		case "Of Jumps and Platforms":
+			goalExit = shift(endtimer, 0, 255);
+		break;
+		case "Orcus":
+			unknownExit = shift(orb, 63, 68);
+		break;	
+        case "Peachy Moat World": //orb 67, 49
+			bossExit = shift(bossDefeat, 0, 1);
+		break;
+		case "Polyphony": // orb 52
+			unknownExit = shift(orb, 87, 74);
+		break;
         case "Purgatory":
     /* TODO:
      * 2nd CPs don't seem to work. (Sea Moon, Summit of Salvation, maybe Paradise) 
@@ -266,44 +268,45 @@ split {
                 || shift(orb, 68, 70)  // Paradise 11 Vine
             );
         break;
-		case "Grand Poo World 2": // orb 44 83 84 90
-			unknownExit = shift(orb, 86, 92) || shift(orb, 88, 91);
+		case "Quickie World": // DONE
+            pipeCP = shift(orb, 46, 52);  // Whitemoth Layer
 		break;
-		case "Mahogen": // orb 0, 71
+		case "Quickie World 2": // DONE orb 68, 67, 61
+		    tapeCP = shift(checkpointTape, 0, 1)
+                && orb.Current != 3    // Roll the Bones Boss
+                && orb.Current != 65;  // Yoshi's Lair 1 Tape
+            doorCP = 
+                (shift(orb, 60, 49)  // Roll the Bones Door
+                || shift(orb, 65, 42)  // Yoshi's Lair 1 Door
+                || shift(orb, 17, 49)  // Final Boss Door
+                );
+            pipeCP = shift(orb, 42, 17);  // Yoshi's Lair 2 Pipe
+        break;
+		case "Shell's Retriever": // orb 67, 49
+			goalExit = shift(victory, 0, 1);
+            bossExit = bossDefeat.Current == 1;
 		break;
 		case "Shellax":
 			unknownExit = shift(orb, 255, 53);
 		break;
-		case "Akogare 2": // orb 152
-			unknownExit = shift(orb, 255, 56);
-		break;
-		case "Casio Mario World":
-			unknownExit = shift(orb, 128, 26);
-		break;
-		case "Orcus":
-			unknownExit = shift(orb, 63, 68);
-		break;
-		case "Dreams":
-			unknownExit = shift(orb, 57, 4) || shift(orb, 255, 54);
-		break;
-		case "Boogie Wonderland":
-		    unknownExit = shift(orb, 83, 79);
-			bossExit = shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255);
-		break;
 		case "Silencio":
 			goalExit = shift(victory, 0, 1);
-			unknownExit = shift(orb, 255, 88);
-			bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255));
-		break;
-		case "Polyphony": // orb 52
-			unknownExit = shift(orb, 87, 74);
+            unknownExit = shift(orb, 255, 88);
+            bossExit = (shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255));
 		break;
 		case "Super Joe Bros. 2": // orb 64
 			unknownExit = shift(orb, 19, 49);
-			bossExit = shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255);
+            bossExit = shift(bossDefeat, 0, 1) || shift(bossDefeat, 0, 255);
 		break;
-		case "Of Jumps and Platforms":
-			goalExit = shift(endtimer, 0, 255);
+		case "Super Swunsh World 2": // orb 38, 32
+			goalExit = shift(victory, 0, 1);
+            bossExit = shift(fanfare, 0, 1) && bossDefeat.Current == 255;
+            unknownExit = shift(orb, 45, 4);
+            credits = shift(orb, 255, 56);
+		break;
+        case "The Joy of Kaizo": //orb 67, 49
+		    goalExit = shift(victory, 0, 1);
+            bossExit = shift(bossDefeat, 0, 1);
 		break;
 	}
     
@@ -347,7 +350,14 @@ split {
 	monitor(enterOrExitPipe);
     */
     monitor(orb);
-    monitor(roomCounter);
+    //if (orb.Old != orb.Current && orb.Old != 8 && orb.Current != 8) print(orb.Name + ": " + orb.Old + "->" + orb.Current);
+    //monitor(checkpointTape);
+    //monitor(cutScene);
+    //if (cutScene.Old != cutScene.Current && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) print(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
+
+    monitor(enterOrExitPipe);
+    //monitor(roomCounter);
+    //if (roomCounter.Old != roomCounter.Current && roomCounter.Old != 0 && roomCounter.Current != 0) print(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
 
 	return splitStatus;
 }
