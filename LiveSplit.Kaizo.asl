@@ -91,7 +91,7 @@ init {
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13C6)  { Name = "bossDefeat" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x190D)  { Name = "peach" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13CE)  { Name = "checkpointTape" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0089)  { Name = "enterOrExitPipe" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0089)  { Name = "pipe" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0071)  { Name = "cutScene" },
     };
 
@@ -154,22 +154,22 @@ split {
     var isWorlds =        settings["worlds"];
 
     // Vars
-    var fanfare =         vars.watchers["fanfare"];
-    var victory =         vars.watchers["victory"];
-    var bossDefeat =      vars.watchers["bossDefeat"];
-    var keyholeTimer =    vars.watchers["keyholeTimer"];
-    var io =              vars.watchers["io"];
-    var orb_climb =       vars.watchers["orb_climb"];
-    var yellowSwitch =    vars.watchers["yellowSwitch"];
-    var greenSwitch =     vars.watchers["greenSwitch"];
-    var blueSwitch =      vars.watchers["blueSwitch"];
-    var redSwitch =       vars.watchers["redSwitch"];
-    var roomCounter =     vars.watchers["roomCounter"];
-    var peach =           vars.watchers["peach"];
-    var checkpointTape =  vars.watchers["checkpointTape"];
-    var enterOrExitPipe = vars.watchers["enterOrExitPipe"];
-    var cutScene =        vars.watchers["cutScene"];
-    var endtimer =        vars.watchers["endtimer"]; // Only used by "Of Jumps and Platforms". TODO: Try to remove it.
+    var fanfare =        vars.watchers["fanfare"];
+    var victory =        vars.watchers["victory"];
+    var bossDefeat =     vars.watchers["bossDefeat"];
+    var keyholeTimer =   vars.watchers["keyholeTimer"];
+    var io =             vars.watchers["io"];
+    var orb_climb =      vars.watchers["orb_climb"];
+    var yellowSwitch =   vars.watchers["yellowSwitch"];
+    var greenSwitch =    vars.watchers["greenSwitch"];
+    var blueSwitch =     vars.watchers["blueSwitch"];
+    var redSwitch =      vars.watchers["redSwitch"];
+    var roomCounter =    vars.watchers["roomCounter"];
+    var peach =          vars.watchers["peach"];
+    var checkpointTape = vars.watchers["checkpointTape"];
+    var pipe =           vars.watchers["pipe"];
+    var cutScene =       vars.watchers["cutScene"];
+    var endtimer =       vars.watchers["endtimer"]; // Only used by "Of Jumps and Platforms". TODO: Try to remove it.
 
     // Convenience functions
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, int, bool> shift = (watcher, o, c) => watcher.Old == o && watcher.Current == c;
@@ -180,7 +180,7 @@ split {
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
 
     // Composite Vars
-    var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
+    var enteredPipe = shifted(pipe) && pipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
     var roomStep = roomCounter.Old > 0 && stepped(roomCounter);
     var toOrb = shiftTo(io, 3);
     var toGoal = shiftTo(io, 4);
@@ -219,9 +219,9 @@ split {
 		break;
 		case "Cute Kaizo World": // DONE worlds 48->50->45
             tapeCP = tapeCP && io.Current != 55;  // No tape checks in Zalzion castle. Using doors
-            pipeCP = (shiftTo(enterOrExitPipe, 2) && io.Current == 47) // Kimball Secret final Pipe
-                || (shiftTo(enterOrExitPipe, 5) && (io.Current == 0 || io.Current == 51)) // Pink Switch (P-Switch on=0 off=51)  
-                || (shiftTo(enterOrExitPipe, 5) && io.Current == 40); // Blue Switch
+            pipeCP = (shiftTo(pipe, 2) && io.Current == 47) // Kimball Secret final Pipe
+                || (shiftTo(pipe, 5) && (io.Current == 0 || io.Current == 51)) // Pink Switch (P-Switch on=0 off=51)  
+                || (shiftTo(pipe, 5) && io.Current == 40); // Blue Switch
             doorCP = shiftTo(cutScene, 13);
             credits = shiftTo(io, 21);
 		break;
@@ -259,23 +259,23 @@ split {
                 && io.Current != 49   // Cancel for Soft and Wet
                 && io.Current != 63;  // Cancel for Summit of Salvation
             pipeCP = 
-                (  (shift(enterOrExitPipe, 3, 7) && io.Current == 58) // Dionaea 2
+                (  (shift(pipe, 3, 7) && io.Current == 58) // Dionaea 2
                 || (shiftTo(cutScene, 7) && io.Current == 43)         // Cetaceans' Call 2
-                || (shift(enterOrExitPipe, 2, 6) && io.Current == 50) // Pipeline Blockage 2
+                || (shift(pipe, 2, 6) && io.Current == 50) // Pipeline Blockage 2
                 || shift(io, 31, 56)  // Sea Moon 1
                 || shift(io, 41, 40)  // Drifting Den 1
                 || shift(io, 40, 41)  // Drifting Den 3
-                || (shift(enterOrExitPipe, 1, 5) && io.Current == 42) // Road Nowhere 2
+                || (shift(pipe, 1, 5) && io.Current == 42) // Road Nowhere 2
                 || shift(io, 31, 49)  // Soft and Wet 1
-                || (shift(enterOrExitPipe, 1, 5) && io.Current == 52) // Woodland Tango 2
-                || (shift(enterOrExitPipe, 2, 6) && io.Current == 45) // Prickly Climb 2
-                || (shift(enterOrExitPipe, 2, 6) && io.Current == 57) // Muddied Barbed 2
-                || (shift(enterOrExitPipe, 2, 6) && io.Current == 48) // Supercool Fusion Secret 2
-                || (shift(enterOrExitPipe, 1, 5) && io.Current == 55) // Chocolate Disco 3
-                || (shift(enterOrExitPipe, 1, 6) && io.Current == 46) // Supercool Fusion 2
-                || (shift(enterOrExitPipe, 1, 5) && io.Current == 59) // Toxicavity 2
-                || (shift(enterOrExitPipe, 0, 6) && io.Current == 60) // Searing Subterrane 2
-                || (shift(enterOrExitPipe, 2, 6) && io.Current == 61) // Jump in Altitude 2
+                || (shift(pipe, 1, 5) && io.Current == 52) // Woodland Tango 2
+                || (shift(pipe, 2, 6) && io.Current == 45) // Prickly Climb 2
+                || (shift(pipe, 2, 6) && io.Current == 57) // Muddied Barbed 2
+                || (shift(pipe, 2, 6) && io.Current == 48) // Supercool Fusion Secret 2
+                || (shift(pipe, 1, 5) && io.Current == 55) // Chocolate Disco 3
+                || (shift(pipe, 1, 6) && io.Current == 46) // Supercool Fusion 2
+                || (shift(pipe, 1, 5) && io.Current == 59) // Toxicavity 2
+                || (shift(pipe, 0, 6) && io.Current == 60) // Searing Subterrane 2
+                || (shift(pipe, 2, 6) && io.Current == 61) // Jump in Altitude 2
                 );
             roomCP = 
                 (  roomStep && io.Current == 56  // Sea Moon rooms 2+
@@ -371,14 +371,13 @@ split {
 		}
 	}
     
-    monitor(enterOrExitPipe);
+    monitor(pipe);
     monitor(io);
     //if (shifted(io) && io.Old != 8 && io.Current != 8) dbg(io.Name + ": " + io.Old + "->" + io.Current);
     monitor(checkpointTape);
     monitor(cutScene);
     //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
-
-    monitor(enterOrExitPipe);
+    
     monitor(roomCounter);
     //if (shifted(roomCounter)) dbg(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
 
