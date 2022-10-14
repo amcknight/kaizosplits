@@ -186,7 +186,7 @@ split {
     // Default Split Conditions
     var goalExit = shift(fanfare, 0, 1) && bossDefeat.Current == 0 && orb.Current != 3;  // didn't defeat boss already and didn't got orb  TODO: Mix "victory" into this condition
     var keyExit = keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
-    var orbExit = shiftTo(orb, 3);
+    var orbExit = shiftTo(orb, 3) && bossDefeat.Current == 0;
     var switchPalaceExit = shift(yellowSwitch, 0, 1) || shift(greenSwitch, 0, 1) || shift(blueSwitch, 0, 1) || shift(redSwitch, 0, 1);
     var bossExit = shift(fanfare, 0, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);  // TODO: Find better bossDefeat default (and hopefully remove it from goalExit?)
     var unknownExit = false;
@@ -249,23 +249,39 @@ split {
 		case "Polyphony": // orb 52
 			unknownExit = shift(orb, 87, 74);
 		break;
-        case "Purgatory":
-    /* TODO:
-     * 2nd CPs don't seem to work. (Sea Moon, Summit of Salvation, maybe Paradise) 
-     * Missing important transitions in Summit of Salvation 1 and 4 (no easy orb diff)
-     * Missing almost all Paradise transitions (2,3,4,5,6,7,8,9,final) (no easy orb diff)
-     */
+        case "Purgatory": // worlds 64 -> 65 -> 66 -> 67 -> 47
+            tapeCP = tapeCP
+                && orb.Current != 56   // Cancel for Sea Moon
+                && orb.Current != 49   // Cancel for Soft and Wet
+                && orb.Current != 63;  // Cancel for Summit of Salvation
             pipeCP = 
-                (  shift(orb, 31, 56)  // Sea Moon 1 Pipe
-                || shift(orb, 41, 40)  // Drifting Den 1 Pipe
-                || shift(orb, 40, 41)  // Drifting Den 3 Pipe
-                || shift(orb, 31, 40)  // Soft and Wet 1 Pipe
-                || shift(orb, 31, 55)  // Chocolate Disco 1 Pipe
+                (  (shift(enterOrExitPipe, 3, 7) && orb.Current == 58) // Dionaea 2
+                || (shiftTo(cutScene, 7) && orb.Current == 43)         // Cetaceans' Call 2
+                || (shift(enterOrExitPipe, 2, 6) && orb.Current == 50) // Pipeline Blockage 2
+                || shift(orb, 31, 56)  // Sea Moon 1
+                || shift(orb, 41, 40)  // Drifting Den 1
+                || shift(orb, 40, 41)  // Drifting Den 3
+                || (shift(enterOrExitPipe, 1, 5) && orb.Current == 42) // Road Nowhere 2
+                || shift(orb, 31, 49)  // Soft and Wet 1
+                || (shift(enterOrExitPipe, 1, 5) && orb.Current == 52) // Woodland Tango 2
+                || (shift(enterOrExitPipe, 2, 6) && orb.Current == 45) // Prickly Climb 2
+                || (shift(enterOrExitPipe, 2, 6) && orb.Current == 57) // Muddied Barbed 2
+                || (shift(enterOrExitPipe, 2, 6) && orb.Current == 48) // Supercool Fusion Secret 2
+                || (shift(enterOrExitPipe, 1, 5) && orb.Current == 55) // Chocolate Disco 3
+                || (shift(enterOrExitPipe, 1, 6) && orb.Current == 46) // Supercool Fusion 2
+                || (shift(enterOrExitPipe, 1, 5) && orb.Current == 59) // Toxicavity 2
+                || (shift(enterOrExitPipe, 0, 6) && orb.Current == 60) // Searing Subterrane 2
+                || (shift(enterOrExitPipe, 2, 6) && orb.Current == 61) // Jump in Altitude 2
                 );
             roomCP = 
-                (  shift(orb, 68, 54)  // Paradise 1 Vine
-                || shift(orb, 54, 68)  // Paradise 10 Vine
+                (  roomUptick && orb.Current == 56  // Sea Moon rooms
+                || roomUptick && orb.Current == 49  // Soft and Wet rooms
+                || roomUptick && orb.Current == 63  // Summit of Salvation rooms
+                || shift(orb, 31, 55)  // Chocolate Disco 1
+                || shift(orb, 68, 54)  // Paradise 1 Vine
+                || roomUptick && orb.Current == 54  // Paradise 2-10
                 || shift(orb, 68, 70)  // Paradise 11 Vine
+                || roomUptick && orb.Current == 70  // Paradise Final
             );
         break;
 		case "Quickie World": // DONE
@@ -273,7 +289,6 @@ split {
 		break;
 		case "Quickie World 2": // DONE orb 68, 67, 61
 		    tapeCP = shift(checkpointTape, 0, 1)
-                && orb.Current != 3    // Roll the Bones Boss
                 && orb.Current != 65;  // Yoshi's Lair 1 Tape
             doorCP = 
                 (shift(orb, 60, 49)  // Roll the Bones Door
@@ -313,13 +328,14 @@ split {
     // Construct high level split conditions
     var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || unknownExit; // TODO: All unknownExits need to be tested and lumped into existing exit types
     var bossDefeated = false;
-    var checkpoint = tapeCP || doorCP || pipeCP;
+    var checkpoint = tapeCP || doorCP || pipeCP || roomCP;
     var runDone = peachReleased || credits;
     var splitStatus = runDone || (isLevels && levelExit) || (isBosses && bossDefeated) || (isCheckpoints && checkpoint);
 
 	if (levelExit) vars.stopwatch.Restart();
 
     // TEMPORARY DEBUG INFO
+    // TODO: Combine into single multiline message.
 
     if (splitStatus) {
         var reasons = "";
@@ -337,8 +353,8 @@ split {
         print("Split Reasons:"+reasons);
     }
 
-    /*
-	if (shifted(curScene)) {
+    
+	if (shifted(cutScene)) {
 		switch ((int) cutScene.Current) {
 			case 0: print("PLAYING"); break;
 			case 5: print("WARPING HORIZONTAL"); break;
@@ -347,16 +363,16 @@ split {
             case 16: print("DOOR"); break;
 		}
 	}
-	monitor(enterOrExitPipe);
-    */
+    
+    monitor(enterOrExitPipe);
     monitor(orb);
     //if (orb.Old != orb.Current && orb.Old != 8 && orb.Current != 8) print(orb.Name + ": " + orb.Old + "->" + orb.Current);
     //monitor(checkpointTape);
     //monitor(cutScene);
-    //if (cutScene.Old != cutScene.Current && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) print(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
+    if (cutScene.Old != cutScene.Current && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) print(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
 
     monitor(enterOrExitPipe);
-    //monitor(roomCounter);
+    monitor(roomCounter);
     //if (roomCounter.Old != roomCounter.Current && roomCounter.Old != 0 && roomCounter.Current != 0) print(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
 
 	return splitStatus;
