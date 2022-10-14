@@ -176,8 +176,6 @@ split {
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> shiftTo = (watcher, c) => watcher.Old != c && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> shifted = watcher => watcher.Old != watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
-    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => { if (watcher.Old != watcher.Current) print(watcher.Name + ": " + watcher.Old + "->" + watcher.Current); return true; };
-    
 
     // Composite Vars
     var enteredPipe = shifted(enterOrExitPipe) && enterOrExitPipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
@@ -249,7 +247,7 @@ split {
 		case "Polyphony": // orb 52
 			unknownExit = shift(orb, 87, 74);
 		break;
-        case "Purgatory": // worlds 64 -> 65 -> 66 -> 67 -> 47
+        case "Purgatory": // DONE worlds 64 -> 65 -> 66 -> 67 -> 47
             tapeCP = tapeCP
                 && orb.Current != 56   // Cancel for Sea Moon
                 && orb.Current != 49   // Cancel for Soft and Wet
@@ -274,9 +272,9 @@ split {
                 || (shift(enterOrExitPipe, 2, 6) && orb.Current == 61) // Jump in Altitude 2
                 );
             roomCP = 
-                (  roomUptick && orb.Current == 56  // Sea Moon rooms
-                || roomUptick && orb.Current == 49  // Soft and Wet rooms
-                || roomUptick && orb.Current == 63  // Summit of Salvation rooms
+                (  roomUptick && orb.Current == 56  // Sea Moon rooms 2+
+                || roomUptick && orb.Current == 49  // Soft and Wet
+                || roomUptick && orb.Current == 63  // Summit of Salvation
                 || shift(orb, 31, 55)  // Chocolate Disco 1
                 || shift(orb, 68, 54)  // Paradise 1 Vine
                 || roomUptick && orb.Current == 54  // Paradise 2-10
@@ -335,8 +333,11 @@ split {
 	if (levelExit) vars.stopwatch.Restart();
 
     // TEMPORARY DEBUG INFO
-    // TODO: Combine into single multiline message.
-
+    
+    List<string> debugInfo = new List<string>();
+    Func<string, bool> dbg = msg => { debugInfo.Add(msg); return true; };
+    Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => { if (watcher.Old != watcher.Current) dbg(watcher.Name + ": " + watcher.Old + "->" + watcher.Current); return true; };
+    
     if (splitStatus) {
         var reasons = "";
         if (goalExit) reasons += " goalExit";
@@ -350,30 +351,32 @@ split {
         if (roomCP) reasons += " roomCP";
         if (peachReleased) reasons += " peachReleased";
         if (credits) reasons += " credits";
-        print("Split Reasons:"+reasons);
+        dbg("Split Reasons:"+reasons);
     }
 
     
 	if (shifted(cutScene)) {
 		switch ((int) cutScene.Current) {
-			case 0: print("PLAYING"); break;
-			case 5: print("WARPING HORIZONTAL"); break;
-			case 6: print("WARPING VERTICAL"); break;
-			case 9: print("DEAD"); break;
-            case 16: print("DOOR"); break;
+			case 0: dbg("PLAYING"); break;
+			case 5: dbg("WARPING HORIZONTAL"); break;
+			case 6: dbg("WARPING VERTICAL"); break;
+			case 9: dbg("DEAD"); break;
+            case 16: dbg("DOOR"); break;
 		}
 	}
     
     monitor(enterOrExitPipe);
     monitor(orb);
-    //if (orb.Old != orb.Current && orb.Old != 8 && orb.Current != 8) print(orb.Name + ": " + orb.Old + "->" + orb.Current);
-    //monitor(checkpointTape);
-    //monitor(cutScene);
-    if (cutScene.Old != cutScene.Current && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) print(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
+    //if (orb.Old != orb.Current && orb.Old != 8 && orb.Current != 8) dbg(orb.Name + ": " + orb.Old + "->" + orb.Current);
+    monitor(checkpointTape);
+    monitor(cutScene);
+    //if (cutScene.Old != cutScene.Current && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
 
     monitor(enterOrExitPipe);
     monitor(roomCounter);
-    //if (roomCounter.Old != roomCounter.Current && roomCounter.Old != 0 && roomCounter.Current != 0) print(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
+    //if (roomCounter.Old != roomCounter.Current && roomCounter.Old != 0 && roomCounter.Current != 0) dbg(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
+
+    if (debugInfo.Any()) print(string.Join("\n", debugInfo));
 
 	return splitStatus;
 }
