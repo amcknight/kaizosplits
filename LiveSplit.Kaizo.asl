@@ -256,7 +256,6 @@ split {
 			unknownExit = shift(io, 87, 74);
 		break;
         case "Purgatory": // DONE
-            worlds = shift(io, 64, 65) || shift(io, 65, 66) || shift(io, 66, 67) || shift(io, 67, 47);
             tapeCP = tapeCP
                 && io.Current != 56   // Cancel for Sea Moon
                 && io.Current != 49   // Cancel for Soft and Wet
@@ -286,6 +285,7 @@ split {
                 || roomStep && io.Current == 54  // Paradise 2-10
                 || shift(io, 68, 70)  // Paradise 11 Vine
                 || roomStep && io.Current == 70;  // Paradise Final
+            worlds = shift(io, 47, 64) || shift(io, 64, 65) || shift(io, 65, 66) || shift(io, 66, 67) || shift(io, 67, 47);
         break;
 		case "Quickie World": // DONE except worlds
             pipeCP = shift(io, 46, 52);  // Whitemoth Layer
