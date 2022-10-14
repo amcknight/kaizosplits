@@ -202,6 +202,7 @@ split {
     var doorCP = false;
     var pipeCP = false;
     var credits = false;
+    var worlds = false;
 
     // Override Default split variables for individual games
 	switch ((string) vars.gamename) {
@@ -217,7 +218,8 @@ split {
 		case "Climb The Tower":
 			orbExit = (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1;
 		break;
-		case "Cute Kaizo World": // DONE worlds 48->50->45
+		case "Cute Kaizo World": // DONE
+            worlds = shift(io, 48, 50) || shift(io, 50, 45);
             tapeCP = tapeCP && io.Current != 55;  // No tape checks in Zalzion castle. Using doors
             pipeCP = (shiftTo(pipe, 2) && io.Current == 47) // Kimball Secret final Pipe
                 || (shiftTo(pipe, 5) && (io.Current == 0 || io.Current == 51)) // Pink Switch (P-Switch on=0 off=51)  
@@ -253,52 +255,46 @@ split {
 		case "Polyphony": // orbExit 52
 			unknownExit = shift(io, 87, 74);
 		break;
-        case "Purgatory": // DONE worlds 64 -> 65 -> 66 -> 67 -> 47
+        case "Purgatory": // DONE
+            worlds = shift(io, 64, 65) || shift(io, 65, 66) || shift(io, 66, 67) || shift(io, 67, 47);
             tapeCP = tapeCP
                 && io.Current != 56   // Cancel for Sea Moon
                 && io.Current != 49   // Cancel for Soft and Wet
                 && io.Current != 63;  // Cancel for Summit of Salvation
-            pipeCP = 
-                (  (shift(pipe, 3, 7) && io.Current == 58) // Dionaea 2
-                || (shiftTo(cutScene, 7) && io.Current == 43)         // Cetaceans' Call 2
-                || (shift(pipe, 2, 6) && io.Current == 50) // Pipeline Blockage 2
+            pipeCP = shift(pipe, 3, 7) && io.Current == 58 // Dionaea 2
+                || shiftTo(cutScene, 7) && io.Current == 43 // Cetaceans' Call 2
+                || shift(pipe, 2, 6) && io.Current == 50 // Pipeline Blockage 2
                 || shift(io, 31, 56)  // Sea Moon 1
                 || shift(io, 41, 40)  // Drifting Den 1
                 || shift(io, 40, 41)  // Drifting Den 3
-                || (shift(pipe, 1, 5) && io.Current == 42) // Road Nowhere 2
+                || shift(pipe, 1, 5) && io.Current == 42 // Road Nowhere 2
                 || shift(io, 31, 49)  // Soft and Wet 1
-                || (shift(pipe, 1, 5) && io.Current == 52) // Woodland Tango 2
-                || (shift(pipe, 2, 6) && io.Current == 45) // Prickly Climb 2
-                || (shift(pipe, 2, 6) && io.Current == 57) // Muddied Barbed 2
-                || (shift(pipe, 2, 6) && io.Current == 48) // Supercool Fusion Secret 2
-                || (shift(pipe, 1, 5) && io.Current == 55) // Chocolate Disco 3
-                || (shift(pipe, 1, 6) && io.Current == 46) // Supercool Fusion 2
-                || (shift(pipe, 1, 5) && io.Current == 59) // Toxicavity 2
-                || (shift(pipe, 0, 6) && io.Current == 60) // Searing Subterrane 2
-                || (shift(pipe, 2, 6) && io.Current == 61) // Jump in Altitude 2
-                );
-            roomCP = 
-                (  roomStep && io.Current == 56  // Sea Moon rooms 2+
+                || shift(pipe, 1, 5) && io.Current == 52 // Woodland Tango 2
+                || shift(pipe, 2, 6) && io.Current == 45 // Prickly Climb 2
+                || shift(pipe, 2, 6) && io.Current == 57 // Muddied Barbed 2
+                || shift(pipe, 2, 6) && io.Current == 48 // Supercool Fusion Secret 2
+                || shift(pipe, 1, 5) && io.Current == 55 // Chocolate Disco 3
+                || shift(pipe, 1, 6) && io.Current == 46 // Supercool Fusion 2
+                || shift(pipe, 1, 5) && io.Current == 59 // Toxicavity 2
+                || shift(pipe, 0, 6) && io.Current == 60 // Searing Subterrane 2
+                || shift(pipe, 2, 6) && io.Current == 61; // Jump in Altitude 2
+            roomCP = roomStep && io.Current == 56  // Sea Moon rooms 2+
                 || roomStep && io.Current == 49  // Soft and Wet
                 || roomStep && io.Current == 63  // Summit of Salvation
                 || shift(io, 31, 55)  // Chocolate Disco 1
                 || shift(io, 68, 54)  // Paradise 1 Vine
                 || roomStep && io.Current == 54  // Paradise 2-10
                 || shift(io, 68, 70)  // Paradise 11 Vine
-                || roomStep && io.Current == 70  // Paradise Final
-            );
+                || roomStep && io.Current == 70;  // Paradise Final
         break;
-		case "Quickie World": // DONE
+		case "Quickie World": // DONE except worlds
             pipeCP = shift(io, 46, 52);  // Whitemoth Layer
 		break;
-		case "Quickie World 2": // DONE orbExit 68 67 61
-		    tapeCP = stepTo(checkpointTape, 1)
-                && io.Current != 65;  // Yoshi's Lair 1 Tape
-            doorCP = 
-                (shift(io, 60, 49)  // Roll the Bones Door
+		case "Quickie World 2": // DONE except worlds. orbExit 68 67 61. TODO: Test room transition instead of door+pipe+final door in Yoshi's Lair
+		    tapeCP = tapeCP && io.Current != 65;  // Yoshi's Lair 1 Tape
+            doorCP = shift(io, 60, 49)  // Roll the Bones Door
                 || shift(io, 65, 42)  // Yoshi's Lair 1 Door
-                || shift(io, 17, 49)  // Final Boss Door
-                );
+                || shift(io, 17, 49);  // Final Boss Door
             pipeCP = shift(io, 42, 17);  // Yoshi's Lair 2 Pipe
         break;
 		case "Shell's Retriever": // orbExit 67 49
@@ -331,7 +327,7 @@ split {
     var bossDefeated = false;
     var checkpoint = tapeCP || doorCP || pipeCP || roomCP;
     var runDone = peachReleased || credits;
-    var splitStatus = runDone || (isLevels && levelExit) || (isBosses && bossDefeated) || (isCheckpoints && checkpoint);
+    var splitStatus = runDone || (isLevels && levelExit) || (isBosses && bossDefeated) || (isCheckpoints && checkpoint) || (isWorlds && worlds);
 
 	if (levelExit) vars.stopwatch.Restart();
 
@@ -357,6 +353,7 @@ split {
         if (roomCP) reasons += " roomCP";
         if (peachReleased) reasons += " peachReleased";
         if (credits) reasons += " credits";
+        if (worlds) reasons += " worlds";
         dbg("Split Reasons:"+reasons);
     }
 
