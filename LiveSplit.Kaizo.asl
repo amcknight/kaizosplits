@@ -12,7 +12,9 @@ startup {
     settings.Add("bosses", true, "Boss Levels");
     settings.SetToolTip("bosses", "Split on boss fanfare");
     settings.Add("checkpoints", true, "Checkpoints");
-    settings.SetToolTip("checkpoints", "Split when getting a checkpoint, whether it's the tape or a room transition");
+    settings.SetToolTip("checkpoints", "Split when getting a checkpoint, whether it's the tape or a room transition CP");
+    settings.Add("flags", false, "Flags");
+    settings.SetToolTip("flags", "Split when getting special non-CP states. Warning about idempotence!");
     settings.Add("worlds", false, "Overworlds");
     settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
 }
@@ -81,7 +83,6 @@ init {
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x906)   { Name = "fanfare" },
 		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B99)  { Name = "victory" },
 		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DFB)  { Name = "io" },  // SPC700 I/0 Ports. Related to music? Important for many transitions.
-		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x18390) { Name = "orb_climb" },  // Only used in Climb the Tower. TODO: Would be good to get rid of
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1493)  { Name = "endtimer" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f28)  { Name = "yellowSwitch" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f27)  { Name = "greenSwitch" },
@@ -93,7 +94,11 @@ init {
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13CE)  { Name = "checkpointTape" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0089)  { Name = "pipe" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0071)  { Name = "cutScene" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1420)  { Name = "yoshiCoin" },
     };
+
+    vars.prevIO = -1;
+    vars.died = false;
 
 	vars.reInitialise = (Action)(() => {
 		vars.gamename = timer.Run.GameName;
@@ -148,10 +153,11 @@ reset {
 
 split {
     // Settings
-    var isLevels =        settings["levels"];
-    var isBosses =        settings["bosses"];
-    var isCheckpoints =   settings["checkpoints"];
-    var isWorlds =        settings["worlds"];
+    var isLevels =      settings["levels"];
+    var isBosses =      settings["bosses"];
+    var isCheckpoints = settings["checkpoints"];
+    var isFlags =       settings["flags"];
+    var isWorlds =      settings["worlds"];
 
     // Vars
     var fanfare =        vars.watchers["fanfare"];
@@ -159,7 +165,6 @@ split {
     var bossDefeat =     vars.watchers["bossDefeat"];
     var keyholeTimer =   vars.watchers["keyholeTimer"];
     var io =             vars.watchers["io"];
-    var orb_climb =      vars.watchers["orb_climb"];
     var yellowSwitch =   vars.watchers["yellowSwitch"];
     var greenSwitch =    vars.watchers["greenSwitch"];
     var blueSwitch =     vars.watchers["blueSwitch"];
@@ -170,6 +175,7 @@ split {
     var pipe =           vars.watchers["pipe"];
     var cutScene =       vars.watchers["cutScene"];
     var endtimer =       vars.watchers["endtimer"]; // Only used by "Of Jumps and Platforms". TODO: Try to remove it.
+    var yoshiCoin =      vars.watchers["yoshiCoin"]; // Only for BunBun 2
 
     // Convenience functions
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, int, bool> shift = (watcher, o, c) => watcher.Old == o && watcher.Current == c;
@@ -179,29 +185,47 @@ split {
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> stepped = watcher => watcher.Old + 1 == watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
 
+
+    // Stateful Vars
+    var died = vars.died || shift(cutScene, 9, 6);
+    var roomStep = false;  // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.]]]]
+    if (stepped(roomCounter)) {
+        roomStep = roomCounter.Current != 1 || !died;
+        died = false;
+    }
+    vars.died = died;
+    var prevIO = vars.prevIO; // PrevIO is basically Current IO except when a P-Switch or Star shifts the io to 0
+    if (io.Current != 0) {prevIO = io.Current;}
+    vars.prevIO = prevIO;
+
     // Composite Vars
     var enteredPipe = shifted(pipe) && pipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
-    var roomStep = roomCounter.Old > 0 && stepped(roomCounter);
     var toOrb = shiftTo(io, 3);
     var toGoal = shiftTo(io, 4);
     var gotOrb = io.Current == 3;
     var gotGoal = io.Current == 4;
+    var gotKey = io.Current == 7;
     var gotFadeout = io.Current == 8;
     var bossUndead = bossDefeat.Current == 0;
 
     // Default Split Conditions
-    var goalExit = stepTo(fanfare, 1) && bossUndead && !gotOrb;  // didn't defeat boss already and didn't got orb  TODO: Mix "victory" into this condition
-    var keyExit = keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
+    var goalExit = stepTo(fanfare, 1) && bossUndead && !gotOrb;  // didn't defeat boss already or get an Orb TODO: Mix "victory" into this condition
+    var keyExit = shiftTo(io, 7); // OLD VERSION: keyholeTimer.Old == 0 && keyholeTimer.Current == 48; // Doesn't use shift because it's a short
     var orbExit = toOrb && bossUndead;
     var switchPalaceExit = stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
-    var bossExit = stepTo(fanfare, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255);
+    var bossExit = stepTo(fanfare, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255); // TODO: Test whether non-zero would work here.
     var unknownExit = false;
     var peachReleased = stepTo(peach, 1);
-    var tapeCP = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotFadeout; // TODO: Must be a way to get tape after the first.
+    var tapeCP = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotKey && !gotFadeout; // TODO: Must be a way to get tape after the first.
     var roomCP = false;
     var doorCP = false;
     var pipeCP = false;
+    var roomFlag = false;
+    var doorFlag = false;
+    var pipeFlag = false;
+    var coinFlag = false;
     var credits = false;
+    var intro = false;
     var worlds = false;
 
     // Override Default split variables for individual games
@@ -212,17 +236,42 @@ split {
 		case "Boogie Wonderland":
 		    unknownExit = shift(io, 83, 79);
 		break;
+        case "Bunbun World 2": // DONE
+            intro = shift(io, 0, 69);
+            tapeCP = tapeCP
+                && io.Current != 61 // KLDC Dolphins
+                && prevIO != 48 // Mirror Temple
+                ;
+            roomCP = shift(io, 64, 59) // Crystal Cove
+                || roomStep && (io.Current == 68 || prevIO == 83) // Shifting Stronghold
+                || roomStep && prevIO == 48 // Mirror Temple
+                || roomStep && (prevIO == 81 || prevIO == 85) // Playtester Palace
+                ;
+            doorCP = shift(io, 75, 70); // Sumo Summit secret
+            pipeCP = shift(pipe, 3, 7) && io.Current == 61  // KLDC Dolphins both CPs
+                || roomStep && prevIO == 46 // Hazy Kaizo Cave pipes
+                || roomStep && prevIO == 50 // Under Pressure (no tapes to cancel)
+                || shift(pipe, 2, 5) && io.Current == 41 // Fire Wall Fortress 1st pipe
+                || roomStep && prevIO == 55 // Twilight Thicket (no tapes to cancel)
+                ;
+            coinFlag = stepped(yoshiCoin) && io.Current == 65;
+            worlds = shift(io, 69, 66) || shift(io, 66, 69) // World 1 and 2 transitions
+                || shift(io, 69, 43)  // World 2 to 3
+                || shift(io, 21, 43)  // Mario after Reset
+                || shift(io, 43, 77); // Luigi in Starworld
+		break;
 		case "Casio Mario World":
 			unknownExit = shift(io, 128, 26);
 		break;
 		case "Climb The Tower":
-			orbExit = (orb_climb.Old == 57 || orb_climb.Old == 3) && orb_climb.Current == 56 && fanfare.Current != 1;
+            intro = shift(io, 41, 45);
+            doorCP = shift(io, 50, 41);
 		break;
-		case "Cute Kaizo World": // DONE
+		case "Cute Kaizo World": // DONE (but missing intro)
             worlds = shift(io, 48, 50) || shift(io, 50, 45);
             tapeCP = tapeCP && io.Current != 55;  // No tape checks in Zalzion castle. Using doors
             pipeCP = (shiftTo(pipe, 2) && io.Current == 47) // Kimball Secret final Pipe
-                || (shiftTo(pipe, 5) && (io.Current == 0 || io.Current == 51)) // Pink Switch (P-Switch on=0 off=51)  
+                || (shiftTo(pipe, 5) && prevIO == 51) // Pink Switch 
                 || (shiftTo(pipe, 5) && io.Current == 40); // Blue Switch
             doorCP = shiftTo(cutScene, 13);
             credits = shiftTo(io, 21);
@@ -326,8 +375,10 @@ split {
     var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || unknownExit; // TODO: All unknownExits need to be tested and lumped into existing exit types
     var bossDefeated = false;
     var checkpoint = tapeCP || doorCP || pipeCP || roomCP;
+    var flag = doorFlag || pipeFlag || coinFlag;
     var runDone = peachReleased || credits;
-    var splitStatus = runDone || (isLevels && levelExit) || (isBosses && bossDefeated) || (isCheckpoints && checkpoint) || (isWorlds && worlds);
+    var overworld = intro || worlds;
+    var splitStatus = runDone || (isLevels && levelExit) || (isBosses && bossDefeated) || (isCheckpoints && checkpoint) || (isFlags && flag) || (isWorlds && overworld);
 
 	if (levelExit) vars.stopwatch.Restart();
 
@@ -357,7 +408,7 @@ split {
         dbg("Split Reasons:"+reasons);
     }
 
-    
+    /*
 	if (shifted(cutScene)) {
 		switch ((int) cutScene.Current) {
 			case 0: dbg("PLAYING"); break;
@@ -366,19 +417,19 @@ split {
 			case 9: dbg("DEAD"); break;
             case 16: dbg("DOOR"); break;
 		}
-	}
+	}*/
     
     monitor(pipe);
     monitor(io);
-    //if (shifted(io) && io.Old != 8 && io.Current != 8) dbg(io.Name + ": " + io.Old + "->" + io.Current);
     monitor(checkpointTape);
-    monitor(cutScene);
+    //monitor(cutScene);
     //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
-    
+
+    monitor(yoshiCoin);
     monitor(roomCounter);
-    //if (shifted(roomCounter)) dbg(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
+    //if (shifted(roomCounter) && roomCounter.Old != 0 && roomCounter.Current != 0) dbg(roomCounter.Name + ": " + roomCounter.Old + "->" + roomCounter.Current);
+    //if (shifted(io)) print("PREV: "+prevIO);
 
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
-
 	return splitStatus;
 }

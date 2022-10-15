@@ -35,3 +35,15 @@ A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SM
 
 - An automatic split generator that watches your first playthroughs for possible split events
 - Use TAS tech to create little unit test equivalents to ensure changes are mostly backwards compatible
+
+## Notes on Custom Splitters
+
+- They aren't designed with different % in mind yet
+- Could use a clear CP signal and maybe a clear Save signal to help with idempotence
+- Post-orb and post-goal deaths are possible, but are always split
+
+### Bunbun 2 100%
+
+- Doesn't distinguish idempotent vs other rooms. Could use a clear signal of CP and Save.
+- Splits on YoshiCoins steps rather than #s 1 thru 4
+- Two Darkanine Splits is awkward. Could solve by removing roomstep when "in" a 6->3->6 pipe in io81 (but 0->3->0) is also in io81
