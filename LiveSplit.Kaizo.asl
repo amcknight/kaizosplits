@@ -13,13 +13,13 @@ startup {
     settings.SetToolTip("bosses", "Split on boss fanfare");
     settings.Add("checkpoints", true, "Checkpoints");
     settings.SetToolTip("checkpoints", "Split when getting a checkpoint, whether it's the tape or a room transition CP");
+    settings.Add("worlds", true, "Overworlds");
+    settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
     settings.Add("rooms", false, "All Room Changes");
     settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
     settings.Add("flags", false, "Flags");
     settings.SetToolTip("flags", "Split when getting special non-CP states. Warning about idempotence!");
-    settings.Add("worlds", false, "Overworlds");
-    settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
-    settings.Add("levelStarts", true, "Level Starts");
+    settings.Add("levelStarts", false, "Level Starts");
     settings.SetToolTip("levelStarts", "Split at the start of each level");
 }
 
@@ -31,7 +31,7 @@ init {
     var states = new Dictionary<int, long>
     {
         { 9646080,   0x97EE04 },      // Snes9x-rr 1.60
-        { 13565952,  0x140925118 },   // Snes9x-rr (x64) 1.60/1.61
+        { 13565952,  0x140925118 },   // Snes9x-rr (x64) 1.61
         { 9027584,   0x94DB54 },      // Snes9x 1.60
         { 12836864,  0x1408D8BE8 },   // Snes9x (x64) 1.60
         { 16019456,  0x94D144 },      // higan v106
@@ -104,6 +104,8 @@ init {
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13BF)  { Name = "levelNum" },
         new MemoryWatcher<short>((IntPtr)memoryOffset + 0x00D1)  { Name = "playerX" },
         new MemoryWatcher<short>((IntPtr)memoryOffset + 0x00D3)  { Name = "playerY" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1F11)  { Name = "submap" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B9C)  { Name = "overworldPortal" },
         // Screen Width 005E
         // Screen height 005F
         // In Water 0075
@@ -130,13 +132,13 @@ init {
         // 0080 Player Y (2 byte) within borders
         // 00D1 Player X (2 byte) within level
         // 00D3 Player Y (2 byte) within level
+        // 0DD5 How a level was exited
+        // 13BF Status of level (beaten, midway, directions enabled)
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0100)  { Name = "gameMode" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0DB3)  { Name = "player" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1925)  { Name = "levelMode" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1935)  { Name = "levelStart" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B9C)  { Name = "overworldPortal" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DEA)  { Name = "overworldExitEvent" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1F11)  { Name = "submap" },
     };
 
     vars.prevIO = -1;
@@ -255,7 +257,7 @@ split {
     vars.died = died;
     // PrevIO is basically Current IO except when a P-Switch or Star shifts the io to 0
     var prevIO = vars.prevIO;
-    if (io.Current != 0) {prevIO = io.Current;}
+    if (io.Current != 0) prevIO = io.Current;
     vars.prevIO = prevIO;
 
     // Composite Vars
@@ -279,24 +281,12 @@ split {
     var bossExit = stepTo(fanfare, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255); // TODO: Test whether non-zero would work here.
     var unknownExit = false;
     var peachReleased = stepTo(peach, 1);
-    var tape = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotKey && !gotFadeout; // TODO: Must be a way to get tape after the first
-    var room = roomStep; // TODO: If relying on this, may want to remove the room, door, pipe CPs above
+    var tape = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotKey && !gotFadeout;
+    var room = roomStep; // TODO: If relying on this, may want to remove the room, door, pipe CPs above. This also counts place changes within the same room
     var coinFlag = false;
     var credits = false;
     var introExit = shift(weirdLevVal, 233, 0);
     var worlds = exitOverworldPortal || shifted(submap);
-
-    /* NOTES:
-     * A clear CP signal would be super helpful
-     * Check that autosplit allows for autoskip and autoback
-     * Could use a checkpointTapeCounter implementation
-     * Split cases should work with different %
-     * Split cases should work with different split settings
-     * Use Exit and other signals to detect and roll back Post-orb and post-goal deaths
-     * Need to decide the defaults for retesting. With or without rooms? Seems should be with, but need to redo a bunch and deal with double-splits
-     * Try C# Enums for pipes and cutScenes and maybe other nums
-     * Can we infer a world jump from the overworld X and Y changing with io or roomNum or levNum
-     */
 
     // Override Default split variables for individual games
 	switch ((string) vars.gamename) {
@@ -381,17 +371,6 @@ split {
         if (worlds) reasons += " worlds";
         dbg("SPLIT: "+reasons);
     }   
-
-    /*
-	if (shifted(cutScene)) {
-		switch ((int) cutScene.Current) {
-			case 0: dbg("PLAYING"); break;
-			case 5: dbg("WARPING HORIZONTAL"); break;
-			case 6: dbg("WARPING VERTICAL"); break;
-			case 9: dbg("DEAD"); break;
-            case 16: dbg("DOOR"); break;
-		}
-	}*/
     
     //monitor(pipe);
     //monitor(io);
@@ -404,18 +383,16 @@ split {
     //monitor(player);
     //monitor(levelNum);
     //monitor(levelMode);
-    monitor(overworldPortal);
-    monitor(overworldExitEvent);
-    monitor(submap);
+    //monitor(overworldPortal);
+    //monitor(overworldExitEvent);
+    //monitor(submap);
 
-    var place = "X "+playerX.Current+", Y "+playerY.Current+"(io: "+prevIO+", room#: "+ roomNum.Current+", lev#: "+ levelNum.Current+")";
-
-
+    //var place = "X "+playerX.Current+", Y "+playerY.Current+"(io: "+prevIO+", room#: "+ roomNum.Current+", lev#: "+ levelNum.Current+")";
+    //if (placed) dbg("PLACED | "+place);
     //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
     //if (stepped(eventsTriggered)) dbg("EXIT");
-    if (placed) dbg("PLACED | "+place);
-    if (shiftTo(cutScene,  9)) dbg("DEAD | "+place);
+
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
 	return splitStatus;
 }
