@@ -1,6 +1,8 @@
-# smw_romhack_autosplitter
+# Kaizosplits
 
-A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606) and updated to work with snes9x-1.6.1 or some other bug that occurred right around when I installed that Core!
+A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a couple years ago.
+
+The current plan is to create a v1 decent autosplitter that works as well as possible by default and then an ambitious v2 split manager that can robustly handle fine-grained and custom autosplits and that will help you to create initial split files by watching your runs.
 
 ## Changelog
 
@@ -28,7 +30,7 @@ A Super Mario World romhack autosplitter originally taken from [NecroSky90 on SM
 - Get a clear signal of whether a room change was a room CP, if possible
 
 ### v2
-- A separate kaizo plug-in, not just an ASL file
+- A separate kaizo plug-in, not just an ASL file (or possibly adding to Scriptable Autosplitter if they're up for pull-requests)
 - Watches a run and uses it to create a file that represents the possible split-points of your run
 - A split generator that uses run representations to generate aligned empty split files and a custom autosplitter for that split file
 - Pull names of the levels from the ROM values
