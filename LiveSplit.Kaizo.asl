@@ -6,7 +6,7 @@ state("emuhawk") {}
 state("retroarch") {}
 
 startup {
-	vars.stopwatch = new Stopwatch();
+    vars.stopwatch = new Stopwatch();
     settings.Add("levels", true, "Normal Levels");
     settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
     settings.Add("bosses", true, "Boss Levels");
@@ -24,9 +24,9 @@ startup {
 }
 
 init {
-	vars.gamename = timer.Run.GameName;
-	vars.livesplitGameName = vars.gamename;
-	print(vars.gamename);
+    vars.gamename = timer.Run.GameName;
+    vars.livesplitGameName = vars.gamename;
+    print(vars.gamename);
 
     var states = new Dictionary<int, long>
     {
@@ -36,57 +36,57 @@ init {
         { 12836864,  0x1408D8BE8 },   // Snes9x (x64) 1.60
         { 16019456,  0x94D144 },      // higan v106
         { 15360000,  0x8AB144 },      // higan v106.112
-		{ 22388736,  0xB0ECC8 },      // higan v107
-		{ 23142400,  0xBC7CC8 },      // higan v108
-		{ 23166976,  0xBCECC8 },      // higan v109
-		{ 23224320,  0xBDBCC8 },      // higan v110
+        { 22388736,  0xB0ECC8 },      // higan v107
+        { 23142400,  0xBC7CC8 },      // higan v108
+        { 23166976,  0xBCECC8 },      // higan v109
+        { 23224320,  0xBDBCC8 },      // higan v110
         { 10096640,  0x72BECC },      // bsnes v107
         { 10338304,  0x762F2C },      // bsnes v107.1
         { 47230976,  0x765F2C },      // bsnes v107.2/107.3
         { 131543040, 0xA9BD5C },      // bsnes v110
         { 51924992,  0xA9DD5C },      // bsnes v111
         { 52056064,  0xAAED7C },      // bsnes v112
-		{ 52477952,  0xB16D7C },      // bsnes v115
+        { 52477952,  0xB16D7C },      // bsnes v115
         { 7061504,   0x36F11500240 }, // BizHawk 2.3
         { 7249920,   0x36F11500240 }, // BizHawk 2.3.1
         { 6938624,   0x36F11500240 }, // BizHawk 2.3.2
     };
 
     long memoryOffset = 0;
-	if ( game.ProcessName.ToLower() == "retroarch" ) {
-		var snes9xModules = modules.Where(m => m.ModuleName == "snes9x_libretro.dll");
-		if ( snes9xModules.Any() ) {
-			ProcessModuleWow64Safe libretromodule = snes9xModules.First();
-			IntPtr baseAddress = libretromodule.BaseAddress;
-			if ( game.Is64Bit() ) {
-				IntPtr result = IntPtr.Zero;
-				SigScanTarget target = new SigScanTarget(13, "83 F9 01 74 10 83 F9 02 75 2C 48 8B 05 ?? ?? ?? ?? 48 8B 40 ??");
-				SignatureScanner scanner = new SignatureScanner(game, baseAddress, (int)libretromodule.ModuleMemorySize);
-				IntPtr codeOffset = scanner.Scan(target);
-				int memoryReference = (int) ((long) memory.ReadValue<int>(codeOffset) + (long) codeOffset + 0x04 +  - (long) libretromodule.BaseAddress);
-				byte memoryReferenceoffset = memory.ReadValue<byte>(codeOffset + 7);
-				IntPtr outOffset;
-				new DeepPointer( "snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
-				memoryOffset = (long) outOffset;
-			}
-		}
-	} else {
-		if (states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
-			if (memory.ProcessName.ToLower().Contains("snes9x"))
-				memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
-	}
+    if ( game.ProcessName.ToLower() == "retroarch" ) {
+        var snes9xModules = modules.Where(m => m.ModuleName == "snes9x_libretro.dll");
+        if ( snes9xModules.Any() ) {
+            ProcessModuleWow64Safe libretromodule = snes9xModules.First();
+            IntPtr baseAddress = libretromodule.BaseAddress;
+            if ( game.Is64Bit() ) {
+                IntPtr result = IntPtr.Zero;
+                SigScanTarget target = new SigScanTarget(13, "83 F9 01 74 10 83 F9 02 75 2C 48 8B 05 ?? ?? ?? ?? 48 8B 40 ??");
+                SignatureScanner scanner = new SignatureScanner(game, baseAddress, (int)libretromodule.ModuleMemorySize);
+                IntPtr codeOffset = scanner.Scan(target);
+                int memoryReference = (int) ((long) memory.ReadValue<int>(codeOffset) + (long) codeOffset + 0x04 +  - (long) libretromodule.BaseAddress);
+                byte memoryReferenceoffset = memory.ReadValue<byte>(codeOffset + 7);
+                IntPtr outOffset;
+                new DeepPointer( "snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
+                memoryOffset = (long) outOffset;
+            }
+        }
+    } else {
+        if (states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
+            if (memory.ProcessName.ToLower().Contains("snes9x"))
+                memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
+    }
 
     // TODO: This gets thrown repeatedly in retroarch until a game is loaded. It works but is very loud when debugging
-	if (memoryOffset == 0)
-		throw new Exception("Memory not yet initialized.");
+    if (memoryOffset == 0)
+        throw new Exception("Memory not yet initialized.");
 
     vars.watchers = new MemoryWatcherList {
         new MemoryWatcher<short>((IntPtr)memoryOffset + 0x1434)  { Name = "keyholeTimer" }, // TODO: Can this be made an byte without breaking stuff?
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1ED2)  { Name = "fileSelect" },
-		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0xDB4)   { Name = "fileSelect_Baby" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0xDB4)   { Name = "fileSelect_Baby" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x906)   { Name = "fanfare" },
-		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B99)  { Name = "victory" },
-		new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DFB)  { Name = "io" },  // SPC700 I/0 Ports. Related to music. Important for many transitions.
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B99)  { Name = "victory" },
+        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DFB)  { Name = "io" },  // SPC700 I/0 Ports. Related to music. Important for many transitions.
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f28)  { Name = "yellowSwitch" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f27)  { Name = "greenSwitch" },
         new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f29)  { Name = "blueSwitch" },
@@ -144,55 +144,55 @@ init {
     vars.prevIO = -1;
     vars.died = false;
 
-	vars.reInitialise = (Action)(() => {
-		vars.gamename = timer.Run.GameName;
-		vars.livesplitGameName = vars.gamename;
-		print(vars.gamename);
-	});
+    vars.reInitialise = (Action)(() => {
+        vars.gamename = timer.Run.GameName;
+        vars.livesplitGameName = vars.gamename;
+        print(vars.gamename);
+    });
 
-	vars.reInitialise();
+    vars.reInitialise();
 }
 
 update {
     vars.watchers.UpdateAll(game);
-	if (vars.livesplitGameName != timer.Run.GameName) {
-		vars.gamename = timer.Run.GameName;
+    if (vars.livesplitGameName != timer.Run.GameName) {
+        vars.gamename = timer.Run.GameName;
         vars.reInitialise();
-	}
+    }
 }
 
 start {
-	vars.stopwatch.Restart();
+    vars.stopwatch.Restart();
     
     var fileSelect = vars.watchers["fileSelect"];
     var fileSelect_Baby = vars.watchers["fileSelect_Baby"];
 
-	switch ((string) vars.gamename) {
-	case "Baby Kaizo World":
-		return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current == 4;
-	case "Super ShyGuy's Epic Journey":
-		return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current == 98;
-	case "Of Jumps and Platforms":
-		return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current > 0;
-	default:
-		return fileSelect.Old == 0 && fileSelect.Current > 0;
-	};
+    switch ((string) vars.gamename) {
+    case "Baby Kaizo World":
+        return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current == 4;
+    case "Super ShyGuy's Epic Journey":
+        return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current == 98;
+    case "Of Jumps and Platforms":
+        return fileSelect_Baby.Old == 0 && fileSelect_Baby.Current > 0;
+    default:
+        return fileSelect.Old == 0 && fileSelect.Current > 0;
+    };
 }
 
 reset {
     var fileSelect = vars.watchers["fileSelect"];
     var fileSelect_Baby = vars.watchers["fileSelect_Baby"];
 
-   	switch ((string) vars.gamename){
-	case "Baby Kaizo World":
-		return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
-	case "Super ShyGuy's Epic Journey":
-		return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
-	case "Of Jumps and Platforms":
-		return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
-	default:
-		return fileSelect.Old != 0 && fileSelect.Current == 0;
-	};
+       switch ((string) vars.gamename){
+    case "Baby Kaizo World":
+        return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
+    case "Super ShyGuy's Epic Journey":
+        return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
+    case "Of Jumps and Platforms":
+        return fileSelect_Baby.Old != 0 && fileSelect_Baby.Current == 0;
+    default:
+        return fileSelect.Old != 0 && fileSelect.Current == 0;
+    };
 }
 
 split {
@@ -289,7 +289,7 @@ split {
     var worlds = exitOverworldPortal || shifted(submap);
 
     // Override Default split variables for individual games
-	switch ((string) vars.gamename) {
+    switch ((string) vars.gamename) {
         case "Bunbun World 2": // TODO: Retest
             tape = tape
                 && io.Current != 61 // KLDC Dolphins
@@ -297,13 +297,13 @@ split {
                 ;
             room = room && io.Current != 65; // Using yoshiCoins
             coinFlag = stepped(yoshiCoin) && io.Current == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
-		break;
-		case "Climb The Tower": // TODO: Retest
-		break;
-		case "Cute Kaizo World": // TODO: Retest
+        break;
+        case "Climb The Tower": // TODO: Retest
+        break;
+        case "Cute Kaizo World": // TODO: Retest
             tape = tape && io.Current != 55;  // Using doors
             credits = shiftTo(io, 21);
-		break;
+        break;
         case "Love Yourself": // TODO: Retest
             /* TODO: Double-splitting to fix:
              * tape then room: CS, TT, TFW23
@@ -321,12 +321,12 @@ split {
                 && io.Current != 63  // Cancel for Summit of Salvation
                 ;
         break;
-		case "Quickie World": // TODO: Retest
-		break;
-		case "Quickie World 2": // TODO: Retest
-		    tape = tape && io.Current != 65;  // Yoshi's Lair 1 Tape
+        case "Quickie World": // TODO: Retest
         break;
-	}
+        case "Quickie World 2": // TODO: Retest
+            tape = tape && io.Current != 65;  // Yoshi's Lair 1 Tape
+        break;
+    }
     
     // Construct high level split conditions
     var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || introExit || unknownExit; // TODO: All unknownExits need to be tested and lumped into existing exit types
@@ -343,7 +343,7 @@ split {
         || (isFlags && flag)
         || (isWorlds && overworld);
 
-	if (levelExit) vars.stopwatch.Restart();
+    if (levelExit) vars.stopwatch.Restart();
 
     // TEMPORARY DEBUG INFO
     
@@ -394,5 +394,5 @@ split {
     //if (stepped(eventsTriggered)) dbg("EXIT");
 
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
-	return splitStatus;
+    return splitStatus;
 }
