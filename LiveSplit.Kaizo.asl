@@ -155,6 +155,7 @@ split {
     var gotOrb = io.Current == 3;
     var gotGoal = io.Current == 4;
     var gotKey = io.Current == 7;
+    var gotFanfare = io.Current == 8;
     var bossDead = shiftFrom(bossDefeat, 0);
     var exitOverworldPortal = shift(overworldPortal, 1, 0);
 
@@ -163,15 +164,15 @@ split {
     var orbExit = toOrb && !bossDead;
     var goalExit = stepTo(fanfare, 1) && !bossDead && !gotOrb; // TODO: Try just using toGoal
     var keyExit = toKey;
-    var switchPalaceExit = stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
+    var palaceExit = stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
     var peachReleased = stepTo(peach, 1);
-    var tape = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotKey;
+    var tape = stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotKey && !gotFanfare;
     var credits = false; // TODO: Search for common credits signal
     var worlds = exitOverworldPortal || shifted(submap);
     var intro = shift(weirdLevVal, 233, 0);
 
     // Composite split conditions
-    var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit;
+    var levelExit = goalExit || keyExit || orbExit || palaceExit || bossExit;
     var runDone = peachReleased || credits;
     var splitStatus = runDone
         || (isLevels && levelExit)
@@ -190,22 +191,20 @@ split {
         if (watcher.Old != watcher.Current) dbg(watcher.Name + ": " + watcher.Old + "->" + watcher.Current);
         return true;
     };
-    
-    monitor(bossDefeat);
 
     if (splitStatus) {
         var reasons = "";
         if (goalExit) reasons += " goalExit";
         if (keyExit) reasons += " keyExit";
         if (orbExit) reasons += " orbExit";
-        if (switchPalaceExit) reasons += " switchPalaceExit";
+        if (palaceExit) reasons += " palaceExit";
         if (bossExit) reasons += " bossExit";
         if (tape) reasons += " tape";
         if (peachReleased) reasons += " peachReleased";
         if (credits) reasons += " credits";
         if (worlds) reasons += " worlds";
         if (intro) reasons += " intro";
-        dbg("SPLIT: "+reasons);
+        dbg("SPLIT: "+reasons+", IO: "+io.Current);
     }
     
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
