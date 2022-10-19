@@ -6,7 +6,6 @@ state("emuhawk") {}
 state("retroarch") {}
 
 startup {
-    vars.stopwatch = new Stopwatch();
     settings.Add("levels", true, "Normal Levels");
     settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
     settings.Add("checkpoints", false, "First H");
@@ -110,7 +109,6 @@ update {
 }
 
 start {
-    vars.stopwatch.Restart();
     var fileSelect = vars.watchers["fileSelect"];
     return fileSelect.Old == 0 && fileSelect.Current != 0;
 }
@@ -180,8 +178,6 @@ split {
         || (isWorlds && worlds)
         || (isIntro && intro)
         ;
-
-    if (levelExit) vars.stopwatch.Restart();
 
     // TEMPORARY DEBUG INFO
     
