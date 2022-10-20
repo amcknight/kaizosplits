@@ -23,122 +23,51 @@ startup {
     settings.SetToolTip("flags", "Split when getting special non-CP states. Warning about idempotence!");
     settings.Add("levelStarts", false, "Level Starts");
     settings.SetToolTip("levelStarts", "Split at the start of each level");
+
+    // Load SMW lib
+    byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
+    Assembly asm = Assembly.Load(bytes);
+    Type type = asm.GetType("SMW.SMW");
+    vars.smw = Activator.CreateInstance(type);
 }
 
 init {
     vars.gamename = timer.Run.GameName;
     vars.livesplitGameName = vars.gamename;
-    print(vars.gamename);
-
-    var states = new Dictionary<int, long>
-    {
-        { 9646080,   0x97EE04 },      // Snes9x-rr 1.60
-        { 13565952,  0x140925118 },   // Snes9x-rr (x64) 1.61
-        { 9027584,   0x94DB54 },      // Snes9x 1.60
-        { 12836864,  0x1408D8BE8 },   // Snes9x (x64) 1.60
-        { 16019456,  0x94D144 },      // higan v106
-        { 15360000,  0x8AB144 },      // higan v106.112
-        { 22388736,  0xB0ECC8 },      // higan v107
-        { 23142400,  0xBC7CC8 },      // higan v108
-        { 23166976,  0xBCECC8 },      // higan v109
-        { 23224320,  0xBDBCC8 },      // higan v110
-        { 10096640,  0x72BECC },      // bsnes v107
-        { 10338304,  0x762F2C },      // bsnes v107.1
-        { 47230976,  0x765F2C },      // bsnes v107.2/107.3
-        { 131543040, 0xA9BD5C },      // bsnes v110
-        { 51924992,  0xA9DD5C },      // bsnes v111
-        { 52056064,  0xAAED7C },      // bsnes v112
-        { 52477952,  0xB16D7C },      // bsnes v115
-        { 7061504,   0x36F11500240 }, // BizHawk 2.3
-        { 7249920,   0x36F11500240 }, // BizHawk 2.3.1
-        { 6938624,   0x36F11500240 }, // BizHawk 2.3.2
-    };
 
     long memoryOffset = 0;
-    if ( game.ProcessName.ToLower() == "retroarch" ) {
+    if (game.ProcessName.ToLower() == "retroarch") {
         var snes9xModules = modules.Where(m => m.ModuleName == "snes9x_libretro.dll");
-        if ( snes9xModules.Any() ) {
+        if (snes9xModules.Any()) {
             ProcessModuleWow64Safe libretromodule = snes9xModules.First();
             IntPtr baseAddress = libretromodule.BaseAddress;
-            if ( game.Is64Bit() ) {
+            if (game.Is64Bit()) {
                 IntPtr result = IntPtr.Zero;
                 SigScanTarget target = new SigScanTarget(13, "83 F9 01 74 10 83 F9 02 75 2C 48 8B 05 ?? ?? ?? ?? 48 8B 40 ??");
                 SignatureScanner scanner = new SignatureScanner(game, baseAddress, (int)libretromodule.ModuleMemorySize);
                 IntPtr codeOffset = scanner.Scan(target);
-                int memoryReference = (int) ((long) memory.ReadValue<int>(codeOffset) + (long) codeOffset + 0x04 +  - (long) libretromodule.BaseAddress);
+                int memoryReference = (int)((long)memory.ReadValue<int>(codeOffset) + (long)codeOffset + 0x04 + -(long)libretromodule.BaseAddress);
                 byte memoryReferenceoffset = memory.ReadValue<byte>(codeOffset + 7);
                 IntPtr outOffset;
-                new DeepPointer( "snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
-                memoryOffset = (long) outOffset;
+                new DeepPointer("snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
+                memoryOffset = (long)outOffset;
             }
         }
-    } else {
-        if (states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
-            if (memory.ProcessName.ToLower().Contains("snes9x"))
-                memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
+    } else if (vars.smw.states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
+      if (memory.ProcessName.ToLower().Contains("snes9x"))
+          memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
+
+    if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
+
+    vars.watchers = new MemoryWatcherList();
+    foreach (KeyValuePair<int, string> entry in vars.smw.shortMemoryMap) {
+        vars.watchers.Add(new MemoryWatcher<short>((IntPtr)memoryOffset + entry.Key)  { Name = entry.Value });
+    }
+    foreach (KeyValuePair<int, string> entry  in vars.smw.byteMemoryMap) {
+        vars.watchers.Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key)  { Name = entry.Value });
     }
 
-    // TODO: This gets thrown repeatedly in retroarch until a game is loaded. It works but is very loud when debugging
-    if (memoryOffset == 0)
-        throw new Exception("Memory not yet initialized.");
-
-    vars.watchers = new MemoryWatcherList {
-        new MemoryWatcher<short>((IntPtr)memoryOffset + 0x1434)  { Name = "keyholeTimer" }, // TODO: Can this be made an byte without breaking stuff?
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1ED2)  { Name = "fileSelect" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0xDB4)   { Name = "fileSelect_Baby" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x906)   { Name = "fanfare" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B99)  { Name = "victory" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DFB)  { Name = "io" },  // SPC700 I/0 Ports. Related to music. Important for many transitions.
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f28)  { Name = "yellowSwitch" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f27)  { Name = "greenSwitch" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f29)  { Name = "blueSwitch" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1f2a)  { Name = "redSwitch" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x141A)  { Name = "roomCounter" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13C6)  { Name = "bossDefeat" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x190D)  { Name = "peach" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13CE)  { Name = "checkpointTape" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0089)  { Name = "pipe" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0071)  { Name = "cutScene" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1420)  { Name = "yoshiCoin" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0109)  { Name = "weirdLevVal" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1F2E)  { Name = "eventsTriggered" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x010B)  { Name = "roomNum" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x13BF)  { Name = "levelNum" },
-        new MemoryWatcher<short>((IntPtr)memoryOffset + 0x00D1)  { Name = "playerX" },
-        new MemoryWatcher<short>((IntPtr)memoryOffset + 0x00D3)  { Name = "playerY" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1F11)  { Name = "submap" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1B9C)  { Name = "overworldPortal" },
-        // Screen Width 005E
-        // Screen height 005F
-        // In Water 0075
-        // 0100 Game Mode
-        // 0109 weird level value
-        // 010B 245 bytes stack, but first two bytes are usually level num
-        // 0D9B IRQ or whatever for game modes
-        // 0DB3 Player in play
-        // 13C1 Overworld tile number
-        // 13C5 Moon counter
-        // 141C Goal flag type
-        // 1925 Level mode
-        // 1935 Used by Mario start
-        // 19B8 32byte exit table
-        // 19D8 32byte exit table flags
-        // 1B95 Yoshi wings to the sky flag
-        // 1B96 Side exits enabled
-        // 1B99 Mario peace sign
-        // 1B9C Overworld Pipe or Star
-        // 1DEA Overworld event to run at level end
-        // 1EA2 First 12 beaten level, next 12 midway, then a bunch more
-        // 1F2E Events triggered / Levels beaten
-        // 0DD5 How a level was exited
-        // 13BF Status of level (beaten, midway, directions enabled)
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0100)  { Name = "gameMode" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x0DB3)  { Name = "player" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1925)  { Name = "levelMode" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1935)  { Name = "levelStart" },
-        new MemoryWatcher<byte>((IntPtr) memoryOffset + 0x1DEA)  { Name = "overworldExitEvent" },
-    };
-
+    // Initialize vars tracked across updates
     vars.prevIO = -1;
     vars.died = false;
 
@@ -147,7 +76,7 @@ init {
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
         vars.livesplitGameName = vars.gamename;
-        print(vars.gamename);
+        print("Game: "+vars.gamename+", Splits: "+vars.livesplitGameName);
     });
 
     vars.reInitialise();
@@ -197,13 +126,13 @@ split {
     var checkpointTape =  vars.watchers["checkpointTape"];
     var pipe =            vars.watchers["pipe"];
     var cutScene =        vars.watchers["cutScene"];
-    var yoshiCoin =       vars.watchers["yoshiCoin"]; // Only for BunBun 2
+    var yoshiCoin =       vars.watchers["yoshiCoin"];
     var levelStart =      vars.watchers["levelStart"];
     var weirdLevVal =     vars.watchers["weirdLevVal"];
     var eventsTriggered = vars.watchers["eventsTriggered"];
     var overworldPortal = vars.watchers["overworldPortal"];
     var levelNum =        vars.watchers["levelNum"];
-    var roomNum =         vars.watchers["roomNum"]; // Not unique. Use in conjunction with levelNum.
+    var roomNum =         vars.watchers["roomNum"];
     var playerX =         vars.watchers["playerX"];
     var playerY =         vars.watchers["playerY"];
 
@@ -214,6 +143,8 @@ split {
     var overworldExitEvent = vars.watchers["overworldExitEvent"];
     var submap = vars.watchers["submap"];
 
+    vars.smw.update(settings, vars.watchers);
+
     // Convenience functions
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, int, bool> shift = (watcher, o, c) => watcher.Old == o && watcher.Current == c;
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, int, bool> shiftTo = (watcher, c) => watcher.Old != c && watcher.Current == c;
@@ -223,7 +154,7 @@ split {
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
 
     // Composite Vars
-    var enteredPipe = shifted(pipe) && pipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
+    var enteredPipe = shifted(pipe) && pipe.Current < 4 && (cutScene.Current == 5 || cutScene.Current == 6);
     var toOrb = shiftTo(io, 3);
     var toGoal = shiftTo(io, 4);
     var toKey = shiftTo(io, 7);
@@ -288,7 +219,7 @@ split {
              * room then tape: RTB, W, PO
              * room then tape forced: TFW12
              * All room changes are not CPs in the above 7 double-splits
-             * 
+             *
              * TFW 2nd and 3rd tapes don't work. Will need to fix double-splitting if tape counting is implemented.
              */
         break;
@@ -305,7 +236,7 @@ split {
             tape = tape && io.Current != 65;  // Yoshi's Lair 1 Tape
         break;
     }
-    
+
     // Construct high level split conditions
     var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || introExit;
     var bossDefeated = false;
@@ -314,9 +245,9 @@ split {
     var overworld = worlds;
     var splitStatus = runDone
         || (isLevelStarts && start)
-        || (isLevels && levelExit) 
-        || (isBosses && bossDefeated) 
-        || (isCheckpoints && tape) 
+        || (isLevels && levelExit)
+        || (isBosses && bossDefeated)
+        || (isCheckpoints && tape)
         || (isRooms && room)
         || (isFlags && flag)
         || (isWorlds && overworld);
@@ -324,14 +255,14 @@ split {
     if (levelExit) vars.stopwatch.Restart();
 
     // TEMPORARY DEBUG INFO
-    
+
     List<string> debugInfo = new List<string>();
     Func<string, bool> dbg = msg => { debugInfo.Add(msg); return true; };
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => {
         if (watcher.Old != watcher.Current) dbg(watcher.Name + ": " + watcher.Old + "->" + watcher.Current);
         return true;
     };
-    
+
     if (splitStatus) {
         var reasons = "";
         if (start) reasons += " levelStart";
@@ -348,8 +279,8 @@ split {
         if (credits) reasons += " credits";
         if (worlds) reasons += " worlds";
         dbg("SPLIT: "+reasons);
-    }   
-    
+    }
+
     //monitor(pipe);
     //monitor(io);
     //monitor(checkpointTape);
