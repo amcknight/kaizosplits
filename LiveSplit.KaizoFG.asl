@@ -7,6 +7,8 @@ state("retroarch") {}
 
 startup {
     vars.stopwatch = new Stopwatch();
+    settings.Add("record", false, "Record Events");
+    settings.SetToolTip("record", "Record events for SPlit Synthesis");
     settings.Add("levels", true, "Normal Levels");
     settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
     settings.Add("bosses", true, "Boss Levels");
@@ -140,6 +142,8 @@ init {
     vars.prevIO = -1;
     vars.died = false;
 
+    vars.splitPoints = new List<string>();
+
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
         vars.livesplitGameName = vars.gamename;
@@ -218,10 +222,23 @@ split {
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> stepped = watcher => watcher.Old + 1 == watcher.Current;
     Func<int, bool> afterSeconds = s => vars.stopwatch.ElapsedMilliseconds > s*1000;
 
+    // Composite Vars
+    var enteredPipe = shifted(pipe) && pipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
+    var toOrb = shiftTo(io, 3);
+    var toGoal = shiftTo(io, 4);
+    var toKey = shiftTo(io, 7);
+    var gotOrb = io.Current == 3;
+    var gotGoal = io.Current == 4;
+    var gotKey = io.Current == 7;
+    var gotFadeout = io.Current == 8;
+    var bossUndead = bossDefeat.Current == 0;
+    var placed = shiftTo(gameMode, 20);
+    var exitOverworldPortal = shift(overworldPortal, 1, 0);
+    var diedNow = shift(cutScene, 9, 6);
 
     // Stateful Vars
     // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
-    var died = vars.died || shift(cutScene, 9, 6);
+    var died = vars.died || diedNow;
     var roomStep = false;
     if (stepped(roomCounter)) {
         roomStep = roomCounter.Current != 1 || !died;
@@ -233,22 +250,10 @@ split {
     if (io.Current != 0) prevIO = io.Current;
     vars.prevIO = prevIO;
 
-    // Composite Vars
-    var enteredPipe = shifted(pipe) && pipe.Current < 4 && ((cutScene.Current == 5) || (cutScene.Current == 6));
-    var toOrb = shiftTo(io, 3);
-    var toGoal = shiftTo(io, 4);
-    var gotOrb = io.Current == 3;
-    var gotGoal = io.Current == 4;
-    var gotKey = io.Current == 7;
-    var gotFadeout = io.Current == 8;
-    var bossUndead = bossDefeat.Current == 0;
-    var placed = shiftTo(gameMode, 20);
-    var exitOverworldPortal = shift(overworldPortal, 1, 0);
-
     // Default Split Conditions
     var start = stepTo(levelStart, 1);
     var goalExit = stepTo(fanfare, 1) && bossUndead && !gotOrb;  // didn't defeat boss already or get an Orb TODO: Mix "victory" into this condition
-    var keyExit = shiftTo(io, 7);
+    var keyExit = toKey;
     var orbExit = toOrb && bossUndead;
     var switchPalaceExit = stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
     var bossExit = stepTo(fanfare, 1) && (bossDefeat.Current == 1 || bossDefeat.Current == 255); // TODO: Test whether non-zero would work here.
@@ -302,7 +307,7 @@ split {
     }
     
     // Construct high level split conditions
-    var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || introExit || unknownExit; // TODO: All unknownExits need to be tested and lumped into existing exit types
+    var levelExit = goalExit || keyExit || orbExit || switchPalaceExit || bossExit || introExit;
     var bossDefeated = false;
     var flag = coinFlag;
     var runDone = peachReleased || credits;
@@ -360,12 +365,29 @@ split {
     //monitor(overworldExitEvent);
     //monitor(submap);
 
-    //var place = "X "+playerX.Current+", Y "+playerY.Current+"(io: "+prevIO+", room#: "+ roomNum.Current+", lev#: "+ levelNum.Current+")";
-    //if (placed) dbg("PLACED | "+place);
+    Func<bool, string, bool> track = (condition, name) => {
+        if (condition) {
+            var str = name+": Map "+submap.Current+", Level "+ levelNum.Current+", Room "+roomNum.Current+", Pos ("+playerX.Current+", "+playerY.Current+")";
+            vars.splitPoints.Add(str);
+        }
+        return true;
+    };
+
+    track(diedNow, "Died  ");
+    track(placed, "Placed");
+    track(tape, "Tape  ");
+    track(room, "Room  ");
+
     //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
     //if (stepped(eventsTriggered)) dbg("EXIT");
 
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
     return splitStatus;
+}
+
+onReset {
+    if (settings["record"]) {
+        print(string.Join("\n", vars.splitPoints));
+    }
 }
