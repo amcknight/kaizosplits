@@ -17,3 +17,5 @@
 
 ### v2
 - Has basic run watching for some events but doesn't do anything with them
+- Detecting Deaths and Spawns and Events
+- Writing out initial runs and routes
