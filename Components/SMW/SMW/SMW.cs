@@ -1,6 +1,7 @@
 ﻿using LiveSplit.ComponentUtil;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SMW {
     public class SMW {
@@ -117,11 +118,24 @@ namespace SMW {
         public MemoryWatcher<byte> overworldExitEvent;
 
         // Stateful Vars
-        public bool died = false;
-        public bool roomStep = false;
-        public ushort prevIO = 256; // 256 is a junk default value
+        public bool died;
+        public bool roomStep;
+        public ushort prevIO;
 
-        public List<string> debugInfo;
+        public SMW() {
+            init();
+        }
+
+        public void init() {
+            died = false;
+            roomStep = false;
+            prevIO = 256; // 256 is a junk default value
+            events = new List<Event>();
+        }
+
+        public void reset() {
+            init();
+        }
 
         // Composite Vars
         public bool enteredPipe => shifted(pipe) && curr(pipe) < 4 && (curr(cutScene) == 5 || curr(cutScene) == 6);
@@ -134,7 +148,11 @@ namespace SMW {
         public bool gotFadeout => curr(io) == 8;
         public bool bossUndead => curr(bossDefeat) == 0;
         public bool placed => shiftTo(gameMode, 20);
-        public bool diedNow => shift(cutScene, 9, 6);
+        public bool diedNow => shiftTo(cutScene, 6);
+        public bool put => placed && !died;
+        public bool spawn => placed && died;
+
+        public List<string> debugInfo;
 
         public void update(MemoryWatcherList watchers) {
             debugInfo = new List<string>();
@@ -182,6 +200,9 @@ namespace SMW {
             if (curr(io) != 0) {
                 prevIO = curr(io);
             }
+
+            //track(diedNow, "Died");
+            track(spawn, "Spawn");
         }
 
 
@@ -211,7 +232,7 @@ namespace SMW {
 
         // Default Split Conditions
         public bool start => stepTo(levelStart, 1);
-        public bool goalExit => stepTo(fanfare, 1) && bossUndead && !gotOrb;  // didn't defeat boss already or get an Orb TODO: Mix "victory" into this condition
+        public bool goalExit => stepTo(fanfare, 1) && bossUndead && !gotOrb;
         public bool keyExit => toKey;
         public bool orbExit => toOrb && bossUndead;
         public bool palaceExit => stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
@@ -242,16 +263,10 @@ namespace SMW {
             }
         }
 
-        public List<string> splitPoints = new List<string>();
+        public List<Event> events = new List<Event>();
         public void track(bool condition, string name) {
             if (condition) {
-                splitPoints.Add(name + ": " + string.Join(", ", new List<string> {
-                    "Map " + curr(submap),
-                    "Level " + curr(levelNum),
-                    "Room " + curr(roomNum),
-                    "Pos (" + curr(playerX) + ", " + curr(playerY) + ")"
-                    }
-                ));
+                events.Add(new Event(name, new Place(curr(submap), curr(levelNum), curr(roomNum), curr(playerX), curr(playerY))));
             }
         }
 
@@ -279,6 +294,46 @@ namespace SMW {
 
         public ushort curr(MemoryWatcher w) {
             return Convert.ToUInt16(w.Current);
+        }
+
+        public void writeRun(string path, int num) {
+            List<string> eventStrs = new List<string>();
+            foreach (Event e in events) {
+                eventStrs.Add(e.ToString());
+            }
+            File.WriteAllLines(path + "/run" + num + ".txt", eventStrs);
+            List<string> routeStrs = new List<string>();
+            foreach (Event e in buildRoute()) {
+                routeStrs.Add(e.ToString());
+            }
+            File.WriteAllLines(path + "/route" + num + ".txt", routeStrs);
+        }
+
+        public List<Event> buildRoute() {
+            List<Event> route = new List<Event>();
+            List<Event> candidates = new List<Event>();
+            Event lastSpawn = null;
+            foreach (Event e in events) {
+                switch (e.name) {
+                case "Spawn":
+                    if (lastSpawn != e) {
+                        if (candidates.Count == 1) {
+                            route.Add(candidates[0]);
+                        } else {
+                            foreach (Event c in candidates) {
+                                route.Add(new Event("~" + c.name, c.place));
+                            }
+                        }
+                    }
+                    candidates = new List<Event>();
+
+                    break;
+                default:
+                    candidates.Add(e);
+                    break;
+                }
+            }
+            return route;
         }
     }
 }

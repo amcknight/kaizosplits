@@ -33,6 +33,7 @@ startup {
 init {
     vars.gamename = timer.Run.GameName;
     vars.livesplitGameName = vars.gamename;
+    vars.runNum = 0;
 
     long memoryOffset = 0;
     if (game.ProcessName.ToLower() == "retroarch") {
@@ -159,38 +160,28 @@ split {
 
     if (splitStatus) smw.dbg("SPLIT: "+smw.splitReasons());
 
-    //monitor(smw.pipe);
-    //monitor(smw.io);
-    //monitor(smw.checkpointTape);
-    //monitor(smw.cutScene);
-    //monitor(smw.roomCounter);
-    //monitor(smw.gameMode);
-    //monitor(smw.weirdLevVal);
-    //monitor(smw.roomNum);
-    //monitor(smw.player);
-    //monitor(smw.levelNum);
-    //monitor(smw.levelMode);
-    //monitor(smw.overworldPortal);
-    //monitor(smw.overworldExitEvent);
-    smw.monitor(smw.submap);
+    //smw.monitor(smw.cutScene);
 
-    smw.track(smw.diedNow, "Died  ");
-    smw.track(smw.placed,  "Placed");
-    smw.track(smw.tape,    "Tape  ");
-    smw.track(smw.room,    "Room  ");
+    smw.track(smw.tape, "Tape");
+    smw.track(smw.room, "Room");
+    smw.track(smw.start, "Start");
 
     //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
     //if (stepped(eventsTriggered)) dbg("EXIT");
 
     if (smw.debugInfo.Count > 0) print(string.Join("\n", smw.debugInfo));
-//    return splitStatus;
     vars.smw = smw;
-    return false;
+    return splitStatus;
+}
+
+onStart {
+    vars.runNum = vars.runNum + 1;
 }
 
 onReset {
     if (settings["record"]) {
-        print(string.Join("\n", vars.smw.splitPoints));
+        vars.smw.writeRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
     }
+    vars.smw.reset();
 }

@@ -2,3 +2,4 @@
 .vscode/
 Components/SMW/SMW/bin
 Components/SMW/SMW/obj
+runs/*

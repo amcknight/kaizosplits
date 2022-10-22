@@ -2,23 +2,9 @@
 
 A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a couple years ago.
 
-The current plan is to create a v1 decent autosplitter that works as well as possible by default and then an ambitious v2 split manager that can robustly handle fine-grained and custom autosplits and that will help you to create initial split files by watching your runs.
+Their's a v1 decent autosplitter that works as well as possible by default. This is the simple file you probably want to use in many cases, especially if you don't care about splitting after every event that you "should" split on. If you just want level splits, this is the one.
 
-## Changelog
-
-### v0
-- Fixed an issue in the original splitter by NecroSky90 caused by snes9x-rr v1.6.1 (probably)
-- Got checkpoint splitting working for first CP
-- Created a generic orb exit check
-- A setting for splitting on overworld changes, for subsplitting
-- Split orbExits into actual orb exits vs unknown exits
-- Made roomCounter reliable
-- Found a post-level exit counter
-- Found a level start counter
-- Got good default overworld and intro splitting
-
-### v1
-- Got basically everything working somewhat ok
+However, there's also an ambitious v2 split manager that will robustly handles fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress!
 
 ## Roadmap
 
@@ -29,9 +15,10 @@ The current plan is to create a v1 decent autosplitter that works as well as pos
 - Get better BossDefeat conditions which include non-level-ending bosses
 
 ### v2
-- A separate kaizo plug-in
-- Watches your run and uses it to create a file that represents the possible split-points of that run
-- A split generator that uses run representations to generate aligned empty split files and a custom autosplitter for that split file
+- Need a well defined run representation file contains all info for representing autosplit preferences, splits, skips, undos, merges
+- Creates a file that represents the possible split-points of that run
+- A split generator that uses run representations to generate aligned empty split files
+- An autosplitter config that is based on your run representation
 - Pull names of the levels from the ROM values
 - Use overworld directions to add flags to the titles (e.g. secrets as "*" or turn back as "<--" or H vs P vs D vs R for cp Tape vs pipe vs door vs room splits)
 - Auto-skip and auto-undo splits
