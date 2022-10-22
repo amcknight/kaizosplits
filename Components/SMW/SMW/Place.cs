@@ -1,9 +1,10 @@
 ﻿public class Place {
-    private readonly ushort submap;
-    private readonly ushort level;
-    private readonly ushort room;
-    private readonly ushort x;
-    private readonly ushort y;
+    readonly ushort submap;
+    readonly ushort level;
+    readonly ushort room;
+    readonly ushort x;
+    readonly ushort y;
+
     public Place(ushort submap, ushort level, ushort room, ushort x, ushort y) {
         this.submap = submap;
         this.level = level;
@@ -14,5 +15,14 @@
 
     public override string ToString() {
         return "Map " + submap + ", Level " + level + ", Room " + room + ", Pos (" + x + ", " + y + ")";
+    }
+
+    public override bool Equals(object obj) {
+        if ((obj == null) || !GetType().Equals(obj.GetType())) {
+            return false;
+        } else {
+            Place p = (Place)obj;
+            return submap.Equals(p.submap) && level.Equals(p.level) && room.Equals(p.room) && x.Equals(p.x) && y.Equals(p.y);
+        }
     }
 }

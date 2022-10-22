@@ -179,7 +179,7 @@ split {
         ;
 
     // TEMPORARY DEBUG INFO
-    
+
     List<string> debugInfo = new List<string>();
     Func<string, bool> dbg = msg => { debugInfo.Add(msg); return true; };
     Func<LiveSplit.ComponentUtil.MemoryWatcher<byte>, bool> monitor = watcher => {
@@ -201,7 +201,7 @@ split {
         if (intro) reasons += " intro";
         dbg("SPLIT: "+reasons+", IO: "+io.Current);
     }
-    
+
     if (debugInfo.Any()) print(string.Join("\n", debugInfo));
     return splitStatus;
 }

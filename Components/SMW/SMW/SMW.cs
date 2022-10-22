@@ -5,7 +5,6 @@ using System.IO;
 
 namespace SMW {
     public class SMW {
-
         public Dictionary<int, long> states = new Dictionary<int, long> {
             { 9646080,   0x97EE04 },      // Snes9x-rr 1.60
             { 13565952,  0x140925118 },   // Snes9x-rr (x64) 1.61
@@ -48,7 +47,7 @@ namespace SMW {
           {0x190D, "peach"},
           {0x13CE, "checkpointTape"},
           {0x0089, "pipe"},
-          {0x0071, "cutScene"},
+          {0x0071, "playerAnimation"},
           {0x1420, "yoshiCoin"},
           {0x0109, "weirdLevVal"},
           {0x1F2E, "eventsTriggered"},
@@ -56,8 +55,8 @@ namespace SMW {
           {0x13BF, "levelNum"},
           {0x1F11, "submap"},
           {0x1B9C, "overworldPortal"},
-          // STILL TESTING
           {0x0100, "gameMode"},
+          // STILL TESTING
           {0x0DB3, "player"},
           {0x1925, "levelMode"},
           {0x1935, "levelStart"},
@@ -101,7 +100,7 @@ namespace SMW {
         public MemoryWatcher<byte> peach;
         public MemoryWatcher<byte> checkpointTape;
         public MemoryWatcher<byte> pipe;
-        public MemoryWatcher<byte> cutScene;
+        public MemoryWatcher<byte> playerAnimation;
         public MemoryWatcher<byte> yoshiCoin;
         public MemoryWatcher<byte> levelStart;
         public MemoryWatcher<byte> weirdLevVal;
@@ -123,38 +122,46 @@ namespace SMW {
         public ushort prevIO;
 
         public SMW() {
-            init();
+            Init();
         }
 
-        public void init() {
+        public void Init() {
             died = false;
             roomStep = false;
             prevIO = 256; // 256 is a junk default value
             events = new List<Event>();
         }
 
-        public void reset() {
-            init();
+        public void Reset() {
+            Init();
         }
 
-        // Composite Vars
-        public bool enteredPipe => shifted(pipe) && curr(pipe) < 4 && (curr(cutScene) == 5 || curr(cutScene) == 6);
-        public bool toOrb => shiftTo(io, 3);
-        public bool toGoal => shiftTo(io, 4);
-        public bool toKey => shiftTo(io, 7);
-        public bool gotOrb => curr(io) == 3;
-        public bool gotGoal => curr(io) == 4;
-        public bool gotKey => curr(io) == 7;
-        public bool gotFadeout => curr(io) == 8;
-        public bool bossUndead => curr(bossDefeat) == 0;
-        public bool placed => shiftTo(gameMode, 20);
-        public bool diedNow => shiftTo(cutScene, 6);
-        public bool put => placed && !died;
-        public bool spawn => placed && died;
+        // Composite Vars. TODO: Use static functions and Enums for these.
+        public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
+        public bool ToOrb => ShiftTo(io, 3);
+        public bool ToGoal => ShiftTo(io, 4);
+        public bool ToKey => ShiftTo(io, 7);
+        public bool GotOrb => Curr(io) == 3;
+        public bool GotGoal => Curr(io) == 4;
+        public bool GotKey => Curr(io) == 7;
+        public bool GotFadeout => Curr(io) == 8;
+        public bool BossUndead => Curr(bossDefeat) == 0;
+        public bool GmFadeToLevel => ShiftTo(gameMode, 15);
+        public bool GmFadeToLevelBlack => ShiftTo(gameMode, 16);
+        public bool GmLoadLevel => ShiftTo(gameMode, 17);
+        public bool GmPrepareLevel => ShiftTo(gameMode, 18);
+        public bool GmLevelFadeIn => ShiftTo(gameMode, 19);
+        public bool GmLevel => ShiftTo(gameMode, 20);
+        public bool DiedNow => ShiftTo(playerAnimation, 9);
+
+        // TODO: Should these rely on gmPrepareLevel even tho it isn't accurate?
+        // It is consistent, but does Mario get placed after gmPrepareLevel after a CP, especially a 2nd CP?
+        public bool Put => GmPrepareLevel && !died;
+        public bool Spawn => GmPrepareLevel && died;
 
         public List<string> debugInfo;
 
-        public void update(MemoryWatcherList watchers) {
+        public void Update(MemoryWatcherList watchers) {
             debugInfo = new List<string>();
 
             fileSelect = (MemoryWatcher<byte>)watchers["fileSelect"];
@@ -171,7 +178,7 @@ namespace SMW {
             peach = (MemoryWatcher<byte>)watchers["peach"];
             checkpointTape = (MemoryWatcher<byte>)watchers["checkpointTape"];
             pipe = (MemoryWatcher<byte>)watchers["pipe"];
-            cutScene = (MemoryWatcher<byte>)watchers["cutScene"];
+            playerAnimation = (MemoryWatcher<byte>)watchers["playerAnimation"];
             yoshiCoin = (MemoryWatcher<byte>)watchers["yoshiCoin"];
             levelStart = (MemoryWatcher<byte>)watchers["levelStart"];
             weirdLevVal = (MemoryWatcher<byte>)watchers["weirdLevVal"];
@@ -190,143 +197,155 @@ namespace SMW {
 
             // Stateful Vars
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
-            died = died || diedNow;
+            died = died || DiedNow;
             roomStep = false;
-            if (stepped(roomCounter)) {
-                roomStep = curr(roomCounter) != 1 || !died;
-                died = false;
+            if (Stepped(roomCounter)) {
+                roomStep = Curr(roomCounter) != 1 || !died;
             }
             // PrevIO is basically Current IO except when a P-Switch or Star shifts the io to 0
-            if (curr(io) != 0) {
-                prevIO = curr(io);
+            if (Curr(io) != 0) {
+                prevIO = Curr(io);
             }
-
-            //track(diedNow, "Died");
-            track(spawn, "Spawn");
+            
+            Track(Spawn, "Spawn");
+            if (Spawn) died = false;
         }
 
 
-        public bool shift(MemoryWatcher w, ushort o, ushort c) {
-            return prev(w) == o && curr(w) == c;
+        public bool Shift(MemoryWatcher w, ushort o, ushort c) {
+            return Prev(w) == o && Curr(w) == c;
         }
 
-        public bool shiftTo(MemoryWatcher w, ushort c) {
-            return prev(w) != c && curr(w) == c;
+        public bool ShiftTo(MemoryWatcher w, ushort c) {
+            return Prev(w) != c && Curr(w) == c;
         }
 
-        public bool shiftFrom(MemoryWatcher w, ushort o) {
-            return prev(w) == o && curr(w) != o;
+        public bool ShiftFrom(MemoryWatcher w, ushort o) {
+            return Prev(w) == o && Curr(w) != o;
         }
 
-        public bool shifted(MemoryWatcher w) {
-            return prev(w) != curr(w);
+        public bool Shifted(MemoryWatcher w) {
+            return Prev(w) != Curr(w);
         }
 
-        public bool stepTo(MemoryWatcher w, ushort c) {
-            return curr(w) == c && prev(w) + 1 == curr(w);
+        public bool StepTo(MemoryWatcher w, ushort c) {
+            return Curr(w) == c && Prev(w) + 1 == Curr(w);
         }
 
-        public bool stepped(MemoryWatcher w) {
-            return prev(w) + 1 == curr(w);
+        public bool Stepped(MemoryWatcher w) {
+            return Prev(w) + 1 == Curr(w);
         }
 
         // Default Split Conditions
-        public bool start => stepTo(levelStart, 1);
-        public bool goalExit => stepTo(fanfare, 1) && bossUndead && !gotOrb;
-        public bool keyExit => toKey;
-        public bool orbExit => toOrb && bossUndead;
-        public bool palaceExit => stepTo(yellowSwitch, 1) || stepTo(greenSwitch, 1) || stepTo(blueSwitch, 1) || stepTo(redSwitch, 1);
-        public bool bossExit => stepTo(fanfare, 1) && curr(bossDefeat) != 0;
-        public bool peachReleased => stepTo(peach, 1);
-        public bool tape => stepTo(checkpointTape, 1) && !gotOrb && !gotGoal && !gotKey && !gotFadeout;
-        public bool room => roomStep;
-        public bool coinFlag => false;
-        public bool credits => false;
-        public bool introExit => shift(weirdLevVal, 233, 0);
-        public bool exitOverworldPortal => shift(overworldPortal, 1, 0);
-        public bool submapShift => shifted(submap);
+        public bool Start => StepTo(levelStart, 1);
+        public bool GoalExit => StepTo(fanfare, 1) && BossUndead && !GotOrb;
+        public bool KeyExit => ToKey;
+        public bool OrbExit => ToOrb && BossUndead;
+        public bool PalaceExit => StepTo(yellowSwitch, 1) || StepTo(greenSwitch, 1) || StepTo(blueSwitch, 1) || StepTo(redSwitch, 1);
+        public bool BossExit => StepTo(fanfare, 1) && Curr(bossDefeat) != 0;
+        public bool PeachReleased => StepTo(peach, 1);
+        public bool Tape => StepTo(checkpointTape, 1) && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
+        public bool Room => roomStep;
+        public bool CoinFlag => false;
+        public bool Credits => false;
+        public bool IntroExit => Shift(weirdLevVal, 233, 0);
+        public bool ExitOverworldPortal => Shift(overworldPortal, 1, 0);
+        public bool SubmapShift => Shifted(submap);
 
         // Construct high level split conditions
-        public bool levelExit => goalExit || keyExit || orbExit || palaceExit || bossExit || introExit;
-        public bool bossDefeated => false;
-        public bool flag => coinFlag;
-        public bool runDone => peachReleased || credits;
-        public bool overworld => exitOverworldPortal || submapShift;
+        public bool LevelExit => GoalExit || KeyExit || OrbExit || PalaceExit || BossExit || IntroExit;
+        public bool BossDefeated => false;
+        public bool Flag => CoinFlag;
+        public bool RunDone => PeachReleased || Credits;
+        public bool Overworld => ExitOverworldPortal || SubmapShift; // TODO: Only split on these if in the overworld
 
-        public void dbg(string msg) {
+        public void Dbg(string msg) {
             debugInfo.Add(msg);
         }
 
-        public void monitor(MemoryWatcher w) {
-            if (prev(w) != curr(w)) {
-                dbg(w.Name + ": " + prev(w) + "->" + curr(w));
+        public void Monitor(MemoryWatcher w) {
+            if (Prev(w) != Curr(w)) {
+                Dbg(w.Name + ": " + Prev(w) + "->" + Curr(w));
             }
         }
 
         public List<Event> events = new List<Event>();
-        public void track(bool condition, string name) {
+        public void Track(bool condition, string name) {
             if (condition) {
-                events.Add(new Event(name, new Place(curr(submap), curr(levelNum), curr(roomNum), curr(playerX), curr(playerY))));
+                events.Add(new Event(name, new Place(Curr(submap), Curr(levelNum), Curr(roomNum), Curr(playerX), Curr(playerY))));
             }
         }
 
-        public string splitReasons() {
+        public string SplitReasons() {
             string reasons = "";
-            reasons += start ? " levelStart" : "";
-            reasons += goalExit ? " goalExit" : "";
-            reasons += keyExit ? " keyExit" : "";
-            reasons += orbExit ? " orbExit" : "";
-            reasons += palaceExit ? " palaceExit" : "";
-            reasons += bossExit ? " bossExit" : "";
-            reasons += tape ? " tape" : "";
-            reasons += room ? " room" : "";
-            reasons += coinFlag ? " coinFlag" : "";
-            reasons += peachReleased ? " peachReleased" : "";
-            reasons += credits ? " credits" : "";
-            reasons += submapShift ? " submapShift" : "";
-            reasons += exitOverworldPortal ? " exitOverworldPortal" : "";
+            reasons += Start ? " levelStart" : "";
+            reasons += GoalExit ? " goalExit" : "";
+            reasons += KeyExit ? " keyExit" : "";
+            reasons += OrbExit ? " orbExit" : "";
+            reasons += PalaceExit ? " palaceExit" : "";
+            reasons += BossExit ? " bossExit" : "";
+            reasons += Tape ? " tape" : "";
+            reasons += Room ? " room" : "";
+            reasons += CoinFlag ? " coinFlag" : "";
+            reasons += PeachReleased ? " peachReleased" : "";
+            reasons += Credits ? " credits" : "";
+            reasons += SubmapShift ? " submapShift" : "";
+            reasons += ExitOverworldPortal ? " exitOverworldPortal" : "";
             return reasons;
         }
 
-        public ushort prev(MemoryWatcher w) {
+        public ushort Prev(MemoryWatcher w) {
             return Convert.ToUInt16(w.Old);
         }
 
-        public ushort curr(MemoryWatcher w) {
+        public ushort Curr(MemoryWatcher w) {
             return Convert.ToUInt16(w.Current);
         }
 
-        public void writeRun(string path, int num) {
+        public void WriteRun(string path, int num) {
             List<string> eventStrs = new List<string>();
             foreach (Event e in events) {
                 eventStrs.Add(e.ToString());
             }
             File.WriteAllLines(path + "/run" + num + ".txt", eventStrs);
             List<string> routeStrs = new List<string>();
-            foreach (Event e in buildRoute()) {
+            foreach (Event e in BuildRoute()) {
                 routeStrs.Add(e.ToString());
             }
             File.WriteAllLines(path + "/route" + num + ".txt", routeStrs);
         }
 
-        public List<Event> buildRoute() {
+        private Event numEvent(int num, Event e) => new Event(num + ") " + e.name, e.place);
+
+        public List<Event> BuildRoute() {
             List<Event> route = new List<Event>();
             List<Event> candidates = new List<Event>();
             Event lastSpawn = null;
+            int splitNum = 0;
             foreach (Event e in events) {
                 switch (e.name) {
                 case "Spawn":
-                    if (lastSpawn != e) {
-                        if (candidates.Count == 1) {
-                            route.Add(candidates[0]);
-                        } else {
+                    if (!e.Equals(lastSpawn)) {
+                        if (candidates.Count != 0) {
+                            splitNum++;
                             foreach (Event c in candidates) {
-                                route.Add(new Event("~" + c.name, c.place));
+                                route.Add(numEvent(splitNum, c));
                             }
                         }
                     }
+                    lastSpawn = e;
                     candidates = new List<Event>();
-
+                    break;
+                case "Tape":
+                    if (candidates.Count != 0) {
+                        splitNum++;
+                        foreach (Event c in candidates) {
+                            route.Add(numEvent(splitNum, c));
+                        }
+                    }
+                    splitNum++;
+                    route.Add(numEvent(splitNum, e));
+                    candidates = new List<Event>();
                     break;
                 default:
                     candidates.Add(e);

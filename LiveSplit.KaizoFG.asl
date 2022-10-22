@@ -106,23 +106,23 @@ split {
     var isFlags =       settings["flags"];
     var isWorlds =      settings["worlds"];
 
-    smw.update(vars.watchers);
+    smw.Update(vars.watchers);
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
         case "Bunbun World 2": // TODO: Retest
-            smw.tape = smw.tape
-                && smw.prev(smw.io) != 61 // KLDC Dolphins
+            smw.Tape = smw.Tape
+                && smw.Prev(smw.io) != 61 // KLDC Dolphins
                 && smw.prevIO != 48 // Mirror Temple
                 ;
-            smw.room = smw.room && smw.prev(smw.io) != 65; // Using yoshiCoins
-            smw.coinFlag = smw.stepped(smw.yoshiCoin) && smw.prev(smw.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
+            smw.Room = smw.Room && smw.Prev(smw.io) != 65; // Using yoshiCoins
+            smw.CoinFlag = smw.Stepped(smw.yoshiCoin) && smw.Prev(smw.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
         break;
         case "Climb The Tower": // TODO: Retest
         break;
         case "Cute Kaizo World": // TODO: Retest
-            smw.tape = smw.tape && smw.prev(smw.io) != 55;  // Using doors
-            smw.credits = smw.shiftTo(smw.io, 21);
+            smw.Tape = smw.Tape && smw.Prev(smw.io) != 55;  // Using doors
+            smw.Credits = smw.ShiftTo(smw.io, 21);
         break;
         case "Love Yourself": // TODO: Retest
             // TODO: Double-splitting to fix:
@@ -132,41 +132,55 @@ split {
             // All room changes are not CPs in the above 7 double-splits
             // TFW 2nd and 3rd tapes don't work. Will need to fix double-splitting if tape counting is implemented.
         break;
-        case "Purgatory": // TODO: Retest
-            smw.tape = smw.tape
-                && smw.prev(smw.io) != 56  // Cancel for Sea Moon
-                && smw.prev(smw.io) != 49  // Cancel for Soft and Wet
-                && smw.prev(smw.io) != 63  // Cancel for Summit of Salvation
-                ;
-        break;
+        //case "Purgatory": // TODO: Retest
+            //smw.Tape = smw.Tape
+            //    && smw.Prev(smw.io) != 56  // Cancel for Sea Moon
+            //    && smw.Prev(smw.io) != 49  // Cancel for Soft and Wet
+            //    && smw.Prev(smw.io) != 63  // Cancel for Summit of Salvation
+            //    ;
+        //break;
         case "Quickie World": // TODO: Retest
         break;
         case "Quickie World 2": // TODO: Retest
-            smw.tape = smw.tape && smw.prev(smw.io) != 65;  // Yoshi's Lair 1 Tape
+            smw.Tape = smw.Tape && smw.Prev(smw.io) != 65;  // Yoshi's Lair 1 Tape
         break;
     }
 
-    var splitStatus = smw.runDone
-        || (isLevelStarts && smw.levelStart)
-        || (isLevels && smw.levelExit)
-        || (isBosses && smw.bossDefeated)
-        || (isCheckpoints && smw.tape)
-        || (isRooms && smw.room)
-        || (isFlags && smw.flag)
-        || (isWorlds && smw.overworld);
+    var splitStatus = smw.RunDone
+        || (isLevelStarts && smw.LevelStart)
+        || (isLevels && smw.LevelExit)
+        || (isBosses && smw.BossDefeated)
+        || (isCheckpoints && smw.Tape)
+        || (isRooms && smw.Room)
+        || (isFlags && smw.Flag)
+        || (isWorlds && smw.Overworld);
 
 
     // TEMPORARY DEBUG INFO
 
-    if (splitStatus) smw.dbg("SPLIT: "+smw.splitReasons());
+    if (splitStatus) smw.Dbg("SPLIT: "+smw.splitReasons());
 
-    //smw.monitor(smw.cutScene);
+    //smw.Monitor(smw.playerAnimation);
+    //smw.Monitor(smw.gameMode);
+    //smw.Monitor(smw.roomCounter);
 
-    smw.track(smw.tape, "Tape");
-    smw.track(smw.room, "Room");
-    smw.track(smw.start, "Start");
+    smw.Track(smw.Tape, "Tape");
+    smw.Track(smw.Room, "Room");
+    smw.Track(smw.Start, "Start");
+    smw.Track(smw.GoalExit, "Goal");
+    smw.Track(smw.KeyExit, "Key");
+    smw.Track(smw.OrbExit, "Orb");
+    smw.Track(smw.PalaceExit, "Palace");
+    smw.Track(smw.BossExit, "Boss");
+    smw.Track(smw.IntroExit, "Intro");
+    smw.Track(smw.ExitOverworldPortal, "Portal");
+    smw.Track(smw.SubmapShift, "Map");
+    //if (smw.died) smw.Dbg("Died");
+    if (smw.DiedNow) smw.Dbg("DiedNow");
+    //smw.Track(smw.gmPrepareLevel, "Prep");
+    //smw.Monitor(smw.overworldExitEvent);
 
-    //if (shifted(cutScene) && cutScene.Current != 0 && cutScene.Current != 6 && cutScene.Current != 9) dbg(cutScene.Name + ": " + cutScene.Old + "->" + cutScene.Current);
+    //if (shifted(playerAnimation) && playerAnimation.Current != 0 && playerAnimation.Current != 6 && playerAnimation.Current != 9) dbg(playerAnimation.Name + ": " + playerAnimation.Old + "->" + playerAnimation.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
     //if (stepped(eventsTriggered)) dbg("EXIT");
 
@@ -181,7 +195,7 @@ onStart {
 
 onReset {
     if (settings["record"]) {
-        vars.smw.writeRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
+        vars.smw.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
     }
-    vars.smw.reset();
+    vars.smw.Reset();
 }

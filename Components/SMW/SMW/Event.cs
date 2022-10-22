@@ -11,4 +11,13 @@
     public override string ToString() {
         return name + ": " + place.ToString();
     }
+
+    public override bool Equals(object obj) {
+        if ((obj == null) || !GetType().Equals(obj.GetType())) {
+            return false;
+        } else {
+            Event e = (Event)obj;
+            return name.Equals(e.name) && place.Equals(e.place);
+        }
+    }
 }
