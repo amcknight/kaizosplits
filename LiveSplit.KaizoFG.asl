@@ -6,8 +6,12 @@ state("emuhawk") {}
 state("retroarch") {}
 
 startup {
-    settings.Add("record", false, "Record Events");
-    settings.SetToolTip("record", "Record events for SPlit Synthesis");
+    settings.Add("recording", false, "Record Events");
+    settings.SetToolTip("recording", "Record events for Split Synthesis");
+    settings.Add("introExits", true, "Intro Exit");
+    settings.SetToolTip("introExits", "Split and end of the intro");
+    settings.Add("newEvent", true, "New Events");
+    settings.SetToolTip("newEvent", "Split after an overworld event");
     settings.Add("levels", true, "Normal Levels");
     settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
     settings.Add("bosses", true, "Boss Levels");
@@ -98,6 +102,9 @@ split {
     var smw = vars.smw;
 
     // Settings
+    var isRecording =   settings["recording"];
+    var isIntroExit =   settings["introExits"];
+    var isNewEvent =    settings["newEvent"];
     var isLevels =      settings["levels"];
     var isLevelStarts = settings["levelStarts"];
     var isBosses =      settings["bosses"];
@@ -146,39 +153,46 @@ split {
         break;
     }
 
-    var splitStatus = smw.RunDone
+    var splitStatus = !isRecording && (smw.RunDone
+        || (isIntroExit && smw.IntroExit)
+        || (isNewEvent && smw.NewEvent)
         || (isLevelStarts && smw.LevelStart)
         || (isLevels && smw.LevelExit)
         || (isBosses && smw.BossDefeated)
         || (isCheckpoints && smw.Tape)
         || (isRooms && smw.Room)
         || (isFlags && smw.Flag)
-        || (isWorlds && smw.Overworld);
+        || (isWorlds && smw.Overworld)
+        );
 
 
     // TEMPORARY DEBUG INFO
 
-    if (splitStatus) smw.Dbg("SPLIT: "+smw.splitReasons());
+    if (splitStatus) smw.Dbg("SPLIT: "+smw.SplitReasons());
 
     //smw.Monitor(smw.playerAnimation);
     //smw.Monitor(smw.gameMode);
     //smw.Monitor(smw.roomCounter);
 
-    smw.Track(smw.Tape, "Tape");
-    smw.Track(smw.Room, "Room");
-    smw.Track(smw.Start, "Start");
+    smw.Track(smw.IntroExit, "Intro");
+    smw.Track(smw.NewEvent, "Event");
     smw.Track(smw.GoalExit, "Goal");
     smw.Track(smw.KeyExit, "Key");
     smw.Track(smw.OrbExit, "Orb");
     smw.Track(smw.PalaceExit, "Palace");
     smw.Track(smw.BossExit, "Boss");
-    smw.Track(smw.IntroExit, "Intro");
+    smw.Track(smw.Tape, "Tape");
+    smw.Track(smw.Room, "Room");
+    smw.Track(smw.Start, "Start");
     smw.Track(smw.ExitOverworldPortal, "Portal");
     smw.Track(smw.SubmapShift, "Map");
     //if (smw.died) smw.Dbg("Died");
-    if (smw.DiedNow) smw.Dbg("DiedNow");
+    //if (smw.DiedNow) smw.Dbg("DiedNow");
     //smw.Track(smw.gmPrepareLevel, "Prep");
     //smw.Monitor(smw.overworldExitEvent);
+    //smw.Monitor(smw.io);
+    smw.Monitor(smw.weirdLevVal);
+    smw.Monitor(smw.eventsTriggered);
 
     //if (shifted(playerAnimation) && playerAnimation.Current != 0 && playerAnimation.Current != 6 && playerAnimation.Current != 9) dbg(playerAnimation.Name + ": " + playerAnimation.Old + "->" + playerAnimation.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
@@ -194,7 +208,7 @@ onStart {
 }
 
 onReset {
-    if (settings["record"]) {
+    if (settings["recording"]) {
         vars.smw.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
     }
     vars.smw.Reset();

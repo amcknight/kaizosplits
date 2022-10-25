@@ -65,7 +65,6 @@ namespace SMW {
             // Screen Width 005E
             // Screen height 005F
             // In Water 0075
-            // 0100 Game Mode
             // 0109 weird level value
             // 010B 245 bytes stack, but first two bytes are usually level num
             // 0D9B IRQ or whatever for game modes
@@ -153,6 +152,7 @@ namespace SMW {
         public bool GmLevelFadeIn => ShiftTo(gameMode, 19);
         public bool GmLevel => ShiftTo(gameMode, 20);
         public bool DiedNow => ShiftTo(playerAnimation, 9);
+        public bool NewEvent => Stepped(eventsTriggered);
 
         // TODO: Should these rely on gmPrepareLevel even tho it isn't accurate?
         // It is consistent, but does Mario get placed after gmPrepareLevel after a CP, especially a 2nd CP?
@@ -253,11 +253,12 @@ namespace SMW {
         public bool SubmapShift => Shifted(submap);
 
         // Construct high level split conditions
-        public bool LevelExit => GoalExit || KeyExit || OrbExit || PalaceExit || BossExit || IntroExit;
+        // TODO: Only split on these if in or out of the overworld
+        public bool LevelExit => GoalExit || KeyExit || OrbExit || PalaceExit || BossExit;
         public bool BossDefeated => false;
         public bool Flag => CoinFlag;
         public bool RunDone => PeachReleased || Credits;
-        public bool Overworld => ExitOverworldPortal || SubmapShift; // TODO: Only split on these if in the overworld
+        public bool Overworld => ExitOverworldPortal || SubmapShift;
 
         public void Dbg(string msg) {
             debugInfo.Add(msg);
@@ -278,6 +279,7 @@ namespace SMW {
 
         public string SplitReasons() {
             string reasons = "";
+            reasons += IntroExit ? " introExit" : "";
             reasons += Start ? " levelStart" : "";
             reasons += GoalExit ? " goalExit" : "";
             reasons += KeyExit ? " keyExit" : "";
@@ -315,7 +317,15 @@ namespace SMW {
             File.WriteAllLines(path + "/route" + num + ".txt", routeStrs);
         }
 
-        private Event numEvent(int num, Event e) => new Event(num + ") " + e.name, e.place);
+        private Event numEvent(bool clinched, int num, Event e) {
+            string name;
+            if (clinched) {
+                name = "-" + num + ") " + e.name;
+            } else {
+                name = "~" + num + ") " + e.name;
+            }
+            return new Event(name, e.place);
+        }
 
         public List<Event> BuildRoute() {
             List<Event> route = new List<Event>();
@@ -329,22 +339,26 @@ namespace SMW {
                         if (candidates.Count != 0) {
                             splitNum++;
                             foreach (Event c in candidates) {
-                                route.Add(numEvent(splitNum, c));
+                                route.Add(numEvent(false, splitNum, c));
                             }
                         }
                     }
                     lastSpawn = e;
                     candidates = new List<Event>();
                     break;
+                case "Intro":
+                case "Event":
+                case "Key":
+                case "Start":
                 case "Tape":
                     if (candidates.Count != 0) {
                         splitNum++;
                         foreach (Event c in candidates) {
-                            route.Add(numEvent(splitNum, c));
+                            route.Add(numEvent(false, splitNum, c));
                         }
                     }
                     splitNum++;
-                    route.Add(numEvent(splitNum, e));
+                    route.Add(numEvent(true, splitNum, e));
                     candidates = new List<Event>();
                     break;
                 default:
