@@ -113,6 +113,8 @@ split {
     var isFlags =       settings["flags"];
     var isWorlds =      settings["worlds"];
 
+    var other = false;
+
     smw.Update(vars.watchers);
 
     // Override Default split variables for individual games
@@ -132,6 +134,11 @@ split {
             smw.Credits = smw.ShiftTo(smw.io, 21);
         break;
         case "Love Yourself": // TODO: Retest
+            other =
+                (smw.Shift(smw.roomNum, 39, 40) && smw.Curr(smw.levelNum) == 74) ||
+                (smw.Shift(smw.roomNum, 40, 42) && smw.Curr(smw.levelNum) == 74) ||
+                (smw.Stepped(smw.roomNum) && smw.Curr(smw.roomNum) > 50 && smw.Curr(smw.levelNum) == 85)
+                ;
             // TODO: Double-splitting to fix:
             // tape then room: CS, TT, TFW23
             // room then tape: RTB, W, PO
@@ -163,6 +170,7 @@ split {
         || (isRooms && smw.Room)
         || (isFlags && smw.Flag)
         || (isWorlds && smw.Overworld)
+        || other
         );
 
 
@@ -191,8 +199,10 @@ split {
     //smw.Track(smw.gmPrepareLevel, "Prep");
     //smw.Monitor(smw.overworldExitEvent);
     //smw.Monitor(smw.io);
-    smw.Monitor(smw.weirdLevVal);
-    smw.Monitor(smw.eventsTriggered);
+    //smw.Monitor(smw.weirdLevVal);
+    //smw.Monitor(smw.eventsTriggered);
+    smw.Monitor(smw.roomNum);
+    smw.Monitor(smw.levelNum);
 
     //if (shifted(playerAnimation) && playerAnimation.Current != 0 && playerAnimation.Current != 6 && playerAnimation.Current != 9) dbg(playerAnimation.Name + ": " + playerAnimation.Old + "->" + playerAnimation.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
