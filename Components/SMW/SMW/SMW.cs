@@ -1,4 +1,5 @@
 ﻿using LiveSplit.ComponentUtil;
+using LiveSplit.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,33 +57,40 @@ namespace SMW {
           {0x1F11, "submap"},
           {0x1B9C, "overworldPortal"},
           {0x0100, "gameMode"},
+          {0x1DEA, "overworldExitEvent"},
           // STILL TESTING
           {0x0DB3, "player"},
           {0x1925, "levelMode"},
           {0x1935, "levelStart"},
-          {0x1DEA, "overworldExitEvent"},
+          {0x1421, "cp1up"},
+          {0x0DD5, "exitMode"},
+          
           // OTHER THINGS TO TEST
             // Screen Width 005E
             // Screen height 005F
             // In Water 0075
-            // 0109 weird level value
             // 010B 245 bytes stack, but first two bytes are usually level num
             // 0D9B IRQ or whatever for game modes
             // 0DB3 Player in play
             // 13C1 Overworld tile number
-            // 13C5 Moon counter
             // 141C Goal flag type
             // 1935 Used by Mario start
-            // 19B8 32byte exit table
-            // 19D8 32byte exit table flags
-            // 1B95 Yoshi wings to the sky flag
             // 1B96 Side exits enabled
             // 1B99 Mario peace sign
-            // 1DEA Overworld event to run at level end
             // 1EA2 First 12 beaten level, next 12 midway, then a bunch more
-            // 1F2E Events triggered / Levels beaten
-            // 0DD5 How a level was exited
             // 13BF Status of level (beaten, midway, directions enabled)
+            // 19B8 (32 bytes) Exit table
+            // 19D8 (32 bytes) Exit table flags
+            // 0D9B Battle mode
+            // 0DD5 Exit mode
+            // 13FB Freeze player (yoshi grow, keyhole, yoshi eat berry, some bosses, etc)
+            // 1421 1-up checkpoint counter (but maybe includes normal ones?)
+          // Useful in rare scenarios?
+            // 13C5 Moon counter
+            // 1B95 Yoshi wings to the sky flag
+            // 18E8 Get yoshi timer (starts at 64 and goes down?)
+            // 9AC5 Level names (460 bytes)
+            // A0FC How to put level names together (186 bytes, 16 bytes at a time)
         };
 
         public MemoryWatcher<byte> fileSelect;
@@ -109,11 +117,13 @@ namespace SMW {
         public MemoryWatcher<byte> roomNum;
         public MemoryWatcher<short> playerX;
         public MemoryWatcher<short> playerY;
+        public MemoryWatcher<byte> overworldExitEvent;
         // Temporary Test Watchers
         public MemoryWatcher<byte> gameMode;
         public MemoryWatcher<byte> levelMode;
         public MemoryWatcher<byte> player;
-        public MemoryWatcher<byte> overworldExitEvent;
+        public MemoryWatcher<byte> cp1up;
+        public MemoryWatcher<byte> exitMode;
 
         // Stateful Vars
         public bool died;
@@ -188,12 +198,14 @@ namespace SMW {
             roomNum = (MemoryWatcher<byte>)watchers["roomNum"];
             playerX = (MemoryWatcher<short>)watchers["playerX"];
             playerY = (MemoryWatcher<short>)watchers["playerY"];
+            overworldExitEvent = (MemoryWatcher<byte>)watchers["overworldExitEvent"];
 
             // Temporary Test properties
             gameMode = (MemoryWatcher<byte>)watchers["gameMode"];
             levelMode = (MemoryWatcher<byte>)watchers["levelMode"];
             player = (MemoryWatcher<byte>)watchers["player"];
-            overworldExitEvent = (MemoryWatcher<byte>)watchers["overworldExitEvent"];
+            cp1up = (MemoryWatcher<byte>)watchers["cp1up"];
+            exitMode = (MemoryWatcher<byte>)watchers["exitMode"];
 
             // Stateful Vars
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
@@ -206,11 +218,10 @@ namespace SMW {
             if (Curr(io) != 0) {
                 prevIO = Curr(io);
             }
-            
+
             Track(Spawn, "Spawn");
             if (Spawn) died = false;
         }
-
 
         public bool Shift(MemoryWatcher w, ushort o, ushort c) {
             return Prev(w) == o && Curr(w) == c;
@@ -367,6 +378,14 @@ namespace SMW {
                 }
             }
             return route;
+        }
+
+        public void Skip(LiveSplitState timer) {
+            new TimerModel { CurrentState = timer }.SkipSplit();
+        }
+
+        public void Undo(LiveSplitState timer) {
+            new TimerModel { CurrentState = timer }.UndoSplit();
         }
     }
 }
