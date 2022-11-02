@@ -191,8 +191,10 @@ split {
     //smw.Track(smw.gmPrepareLevel, "Prep");
     //smw.Monitor(smw.overworldExitEvent);
     //smw.Monitor(smw.io);
-    smw.Monitor(smw.weirdLevVal);
-    smw.Monitor(smw.eventsTriggered);
+    //smw.Monitor(smw.weirdLevVal);
+    //smw.Monitor(smw.eventsTriggered);
+    smw.Monitor(smw.cp1up);
+    smw.Monitor(smw.exitMode);
 
     //if (shifted(playerAnimation) && playerAnimation.Current != 0 && playerAnimation.Current != 6 && playerAnimation.Current != 9) dbg(playerAnimation.Name + ": " + playerAnimation.Old + "->" + playerAnimation.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
