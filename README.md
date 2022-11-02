@@ -9,9 +9,10 @@ However, there's also an ambitious v2 split manager that will robustly handles f
 ## Roadmap
 
 ### v1.1
+- Use the SMW class in v1
+- Switch Exits from using different finish types to the simle exit mode
 - Fix examples where CPs aren't triggering after 1st (Multiple Midway Points Tool makes this complicated)
 - Get a clear signal of whether a room change is a CP, if possible
-- Use Exit and other signals to detect and not split until we know there isn't a post-orb or post-goal or post-boss-defeat death
 
 ### v2
 - Need a well defined run representation file that contains all info for representing autosplit preferences, splits, skips, undos, merges

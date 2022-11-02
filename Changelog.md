@@ -1,5 +1,16 @@
 ## Changelog
 
+### v2
+- Has basic run watching for some events but doesn't do anything with them
+- Detecting Deaths and Spawns and Events
+- Writing out initial runs and routes
+- Functionality for Undo and Skip exit but are unused
+- Found a better Exit detector using exit modes
+
+### v1
+- Got basically everything working somewhat ok
+- Cleared out custom game splits
+
 ### v0
 - Fixed an issue in the original splitter by NecroSky90 caused by snes9x-rr v1.6.1 (probably)
 - Got checkpoint splitting working for first CP
@@ -10,12 +21,3 @@
 - Found a post-level exit counter
 - Found a level start counter
 - Got good default overworld and intro splitting
-
-### v1
-- Got basically everything working somewhat ok
-- Cleared out custom game splits
-
-### v2
-- Has basic run watching for some events but doesn't do anything with them
-- Detecting Deaths and Spawns and Events
-- Writing out initial runs and routes
