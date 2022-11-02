@@ -115,15 +115,15 @@ namespace SMW {
         public MemoryWatcher<byte> overworldPortal;
         public MemoryWatcher<byte> levelNum;
         public MemoryWatcher<byte> roomNum;
+        public MemoryWatcher<byte> overworldExitEvent;
+        public MemoryWatcher<byte> exitMode;
         public MemoryWatcher<short> playerX;
         public MemoryWatcher<short> playerY;
-        public MemoryWatcher<byte> overworldExitEvent;
         // Temporary Test Watchers
         public MemoryWatcher<byte> gameMode;
         public MemoryWatcher<byte> levelMode;
         public MemoryWatcher<byte> player;
         public MemoryWatcher<byte> cp1up;
-        public MemoryWatcher<byte> exitMode;
 
         // Stateful Vars
         public bool died;
@@ -146,7 +146,6 @@ namespace SMW {
         }
 
         // Composite Vars. TODO: Use static functions and Enums for these.
-        public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool ToOrb => ShiftTo(io, 3);
         public bool ToGoal => ShiftTo(io, 4);
         public bool ToKey => ShiftTo(io, 7);
@@ -163,6 +162,8 @@ namespace SMW {
         public bool GmLevel => ShiftTo(gameMode, 20);
         public bool DiedNow => ShiftTo(playerAnimation, 9);
         public bool NewEvent => Stepped(eventsTriggered);
+        public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
+        public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
 
         // TODO: Should these rely on gmPrepareLevel even tho it isn't accurate?
         // It is consistent, but does Mario get placed after gmPrepareLevel after a CP, especially a 2nd CP?
@@ -196,16 +197,16 @@ namespace SMW {
             overworldPortal = (MemoryWatcher<byte>)watchers["overworldPortal"];
             levelNum = (MemoryWatcher<byte>)watchers["levelNum"];
             roomNum = (MemoryWatcher<byte>)watchers["roomNum"];
+            overworldExitEvent = (MemoryWatcher<byte>)watchers["overworldExitEvent"];
+            exitMode = (MemoryWatcher<byte>)watchers["exitMode"];
             playerX = (MemoryWatcher<short>)watchers["playerX"];
             playerY = (MemoryWatcher<short>)watchers["playerY"];
-            overworldExitEvent = (MemoryWatcher<byte>)watchers["overworldExitEvent"];
 
             // Temporary Test properties
             gameMode = (MemoryWatcher<byte>)watchers["gameMode"];
             levelMode = (MemoryWatcher<byte>)watchers["levelMode"];
             player = (MemoryWatcher<byte>)watchers["player"];
             cp1up = (MemoryWatcher<byte>)watchers["cp1up"];
-            exitMode = (MemoryWatcher<byte>)watchers["exitMode"];
 
             // Stateful Vars
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
@@ -247,29 +248,29 @@ namespace SMW {
             return Prev(w) + 1 == Curr(w);
         }
 
-        // Default Split Conditions
+        // Split Conditions
+        public bool OverworldPortal => Shift(overworldPortal, 1, 0);
+        public bool SubmapShift => Shifted(submap);
+        public bool LevelExit => ToExit;
+        public bool IntroExit => Shift(weirdLevVal, 233, 0);
+        public bool Goal => StepTo(fanfare, 1) && BossUndead && !GotOrb;
+        public bool Key => ToKey;
+        public bool Orb => ToOrb && BossUndead;
+        public bool Palace => StepTo(yellowSwitch, 1) || StepTo(greenSwitch, 1) || StepTo(blueSwitch, 1) || StepTo(redSwitch, 1);
+        public bool Boss => StepTo(fanfare, 1) && Curr(bossDefeat) != 0;
         public bool Start => StepTo(levelStart, 1);
-        public bool GoalExit => StepTo(fanfare, 1) && BossUndead && !GotOrb;
-        public bool KeyExit => ToKey;
-        public bool OrbExit => ToOrb && BossUndead;
-        public bool PalaceExit => StepTo(yellowSwitch, 1) || StepTo(greenSwitch, 1) || StepTo(blueSwitch, 1) || StepTo(redSwitch, 1);
-        public bool BossExit => StepTo(fanfare, 1) && Curr(bossDefeat) != 0;
-        public bool PeachReleased => StepTo(peach, 1);
+        public bool PeachRelease => StepTo(peach, 1);
         public bool Tape => StepTo(checkpointTape, 1) && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
         public bool Room => roomStep;
         public bool CoinFlag => false;
         public bool Credits => false;
-        public bool IntroExit => Shift(weirdLevVal, 233, 0);
-        public bool ExitOverworldPortal => Shift(overworldPortal, 1, 0);
-        public bool SubmapShift => Shifted(submap);
 
         // Construct high level split conditions
         // TODO: Only split on these if in or out of the overworld
-        public bool LevelExit => GoalExit || KeyExit || OrbExit || PalaceExit || BossExit;
-        public bool BossDefeated => false;
+        public bool LevelFinish => Goal || Key || Orb || Palace || Boss;
         public bool Flag => CoinFlag;
-        public bool RunDone => PeachReleased || Credits;
-        public bool Overworld => ExitOverworldPortal || SubmapShift;
+        public bool RunDone => PeachRelease || Credits;
+        public bool Overworld => OverworldPortal || SubmapShift;
 
         public void Dbg(string msg) {
             debugInfo.Add(msg);
@@ -290,20 +291,20 @@ namespace SMW {
 
         public string SplitReasons() {
             string reasons = "";
-            reasons += IntroExit ? " introExit" : "";
-            reasons += Start ? " levelStart" : "";
-            reasons += GoalExit ? " goalExit" : "";
-            reasons += KeyExit ? " keyExit" : "";
-            reasons += OrbExit ? " orbExit" : "";
-            reasons += PalaceExit ? " palaceExit" : "";
-            reasons += BossExit ? " bossExit" : "";
-            reasons += Tape ? " tape" : "";
-            reasons += Room ? " room" : "";
-            reasons += CoinFlag ? " coinFlag" : "";
-            reasons += PeachReleased ? " peachReleased" : "";
-            reasons += Credits ? " credits" : "";
-            reasons += SubmapShift ? " submapShift" : "";
-            reasons += ExitOverworldPortal ? " exitOverworldPortal" : "";
+            reasons += IntroExit ? " IntroExit" : "";
+            reasons += Start ? " Start" : "";
+            reasons += Goal ? " Goal" : "";
+            reasons += Key ? " Key" : "";
+            reasons += Orb ? " Orb" : "";
+            reasons += Palace ? " Palace" : "";
+            reasons += Boss ? " Boss" : "";
+            reasons += Tape ? " Tape" : "";
+            reasons += Room ? " Room" : "";
+            reasons += CoinFlag ? " CoinFlag" : "";
+            reasons += PeachRelease ? " PeachRelease" : "";
+            reasons += Credits ? " Credits" : "";
+            reasons += SubmapShift ? " SubmapShift" : "";
+            reasons += OverworldPortal ? " OverworldPortal" : "";
             return reasons;
         }
 

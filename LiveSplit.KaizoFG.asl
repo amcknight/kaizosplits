@@ -8,24 +8,20 @@ state("retroarch") {}
 startup {
     settings.Add("recording", false, "Record Events");
     settings.SetToolTip("recording", "Record events for Split Synthesis");
-    settings.Add("introExits", true, "Intro Exit");
-    settings.SetToolTip("introExits", "Split and end of the intro");
-    settings.Add("newEvent", true, "New Events");
-    settings.SetToolTip("newEvent", "Split after an overworld event");
-    settings.Add("levels", true, "Normal Levels");
-    settings.SetToolTip("levels", "Split on crossing goal tapes and activating keyholes");
-    settings.Add("bosses", true, "Boss Levels");
-    settings.SetToolTip("bosses", "Split on boss fanfare");
-    settings.Add("checkpoints", true, "Checkpoints");
-    settings.SetToolTip("checkpoints", "Split when getting a checkpoint, whether it's the tape or a room transition CP");
     settings.Add("worlds", true, "Overworlds");
     settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
-    settings.Add("rooms", false, "All Room Changes");
-    settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
-    settings.Add("flags", false, "Flags");
-    settings.SetToolTip("flags", "Split when getting special non-CP states. Warning about idempotence!");
+    settings.Add("levelExits", true, "Level Exits");
+    settings.SetToolTip("levelExits", "Split when leaving a level without start/select");
+    settings.Add("introExits", true, "Intro Exits");
+    settings.SetToolTip("introExits", "Split and end of the intro");
     settings.Add("levelStarts", false, "Level Starts");
     settings.SetToolTip("levelStarts", "Split at the start of each level");
+    settings.Add("levelFinishes", false, "Goals, Orbs, Keys, and Bosses");
+    settings.SetToolTip("levelFinishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
+    settings.Add("firstTapes", true, "First checkpoint tape");
+    settings.SetToolTip("firstTapes", "Split when getting the first checkpoint tape in the level");
+    settings.Add("rooms", false, "All Room Changes");
+    settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
 
     // Load SMW lib
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
@@ -102,16 +98,14 @@ split {
     var smw = vars.smw;
 
     // Settings
-    var isRecording =   settings["recording"];
-    var isIntroExit =   settings["introExits"];
-    var isNewEvent =    settings["newEvent"];
-    var isLevels =      settings["levels"];
+    var isRecording = settings["recording"];
+    var isWorlds = settings["worlds"];
+    var isLevelExits = settings["levelExits"];
+    var isIntroExits = settings["introExits"];
     var isLevelStarts = settings["levelStarts"];
-    var isBosses =      settings["bosses"];
-    var isCheckpoints = settings["checkpoints"];
-    var isRooms =       settings["rooms"];
-    var isFlags =       settings["flags"];
-    var isWorlds =      settings["worlds"];
+    var isLevelFinishes = settings["levelFinishes"];
+    var isFirstTapes = settings["firstTapes"];
+    var isRooms = settings["rooms"];
 
     var other = false;
 
@@ -161,15 +155,13 @@ split {
     }
 
     var splitStatus = !isRecording && (smw.RunDone
-        || (isIntroExit && smw.IntroExit)
-        || (isNewEvent && smw.NewEvent)
-        || (isLevelStarts && smw.LevelStart)
-        || (isLevels && smw.LevelExit)
-        || (isBosses && smw.BossDefeated)
-        || (isCheckpoints && smw.Tape)
-        || (isRooms && smw.Room)
-        || (isFlags && smw.Flag)
         || (isWorlds && smw.Overworld)
+        || (isLevelExits && smw.LevelExit)
+        || (isIntroExits && smw.IntroExit)
+        || (isLevelStarts && smw.LevelStart)
+        || (isLevelFinishes && smw.LevelFinish)
+        || (isFirstTapes && smw.Tape)
+        || (isRooms && smw.Room)
         || other
         );
 
@@ -182,17 +174,17 @@ split {
     //smw.Monitor(smw.gameMode);
     //smw.Monitor(smw.roomCounter);
 
+    smw.Track(smw.LevelExit, "Exit");
     smw.Track(smw.IntroExit, "Intro");
-    smw.Track(smw.NewEvent, "Event");
-    smw.Track(smw.GoalExit, "Goal");
-    smw.Track(smw.KeyExit, "Key");
-    smw.Track(smw.OrbExit, "Orb");
-    smw.Track(smw.PalaceExit, "Palace");
-    smw.Track(smw.BossExit, "Boss");
+    smw.Track(smw.Start, "Start");
+    smw.Track(smw.Goal, "Goal");
+    smw.Track(smw.Key, "Key");
+    smw.Track(smw.Orb, "Orb");
+    smw.Track(smw.Palace, "Palace");
+    smw.Track(smw.Boss, "Boss");
     smw.Track(smw.Tape, "Tape");
     smw.Track(smw.Room, "Room");
-    smw.Track(smw.Start, "Start");
-    smw.Track(smw.ExitOverworldPortal, "Portal");
+    smw.Track(smw.OverworldPortal, "Portal");
     smw.Track(smw.SubmapShift, "Map");
     //if (smw.died) smw.Dbg("Died");
     //if (smw.DiedNow) smw.Dbg("DiedNow");
@@ -201,8 +193,8 @@ split {
     //smw.Monitor(smw.io);
     //smw.Monitor(smw.weirdLevVal);
     //smw.Monitor(smw.eventsTriggered);
-    smw.Monitor(smw.roomNum);
-    smw.Monitor(smw.levelNum);
+    //smw.Monitor(smw.roomNum);
+    //smw.Monitor(smw.levelNum);
     smw.Monitor(smw.cp1up);
     smw.Monitor(smw.exitMode);
 
