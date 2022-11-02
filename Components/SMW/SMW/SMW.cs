@@ -1,4 +1,5 @@
 ﻿using LiveSplit.ComponentUtil;
+using LiveSplit.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -88,6 +89,8 @@ namespace SMW {
             // 13C5 Moon counter
             // 1B95 Yoshi wings to the sky flag
             // 18E8 Get yoshi timer (starts at 64 and goes down?)
+            // 9AC5 Level names (460 bytes)
+            // A0FC How to put level names together (186 bytes, 16 bytes at a time)
         };
 
         public MemoryWatcher<byte> fileSelect;
@@ -219,7 +222,6 @@ namespace SMW {
             Track(Spawn, "Spawn");
             if (Spawn) died = false;
         }
-
 
         public bool Shift(MemoryWatcher w, ushort o, ushort c) {
             return Prev(w) == o && Curr(w) == c;
@@ -376,6 +378,14 @@ namespace SMW {
                 }
             }
             return route;
+        }
+
+        public void Skip(LiveSplitState timer) {
+            new TimerModel { CurrentState = timer }.SkipSplit();
+        }
+
+        public void Undo(LiveSplitState timer) {
+            new TimerModel { CurrentState = timer }.UndoSplit();
         }
     }
 }

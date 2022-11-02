@@ -11,13 +11,13 @@ However, there's also an ambitious v2 split manager that will robustly handles f
 ### v1.1
 - Fix examples where CPs aren't triggering after 1st (Multiple Midway Points Tool makes this complicated)
 - Get a clear signal of whether a room change is a CP, if possible
-- Use Exit and other signals to detect and not split until we know there isn't a post-orb or post-goal or bost-boss-defeat death
-- Get better BossDefeat conditions which include non-level-ending bosses
+- Use Exit and other signals to detect and not split until we know there isn't a post-orb or post-goal or post-boss-defeat death
 
 ### v2
-- Need a well defined run representation file contains all info for representing autosplit preferences, splits, skips, undos, merges
-- Creates a file that represents the possible split-points of that run
-- A split generator that uses run representations to generate aligned empty split files
+- Need a well defined run representation file that contains all info for representing autosplit preferences, splits, skips, undos, merges
+- Monitor a run to create a file that represents that run
+- Allow for easy mod of the representation to the user's preference
+- A split generator that uses run representations to generate empty split files
 - An autosplitter config that is based on your run representation
 - Pull names of the levels from the ROM values
 - Use overworld directions to add flags to the titles (e.g. secrets as "*" or turn back as "<--" or H vs P vs D vs R for cp Tape vs pipe vs door vs room splits)
