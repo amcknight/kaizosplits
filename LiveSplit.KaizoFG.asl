@@ -53,17 +53,17 @@ init {
                 memoryOffset = (long)outOffset;
             }
         }
-    } else if (vars.smw.states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
+    } else if (vars.smw.States.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
       if (memory.ProcessName.ToLower().Contains("snes9x"))
           memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
 
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
 
     vars.watchers = new MemoryWatcherList();
-    foreach (KeyValuePair<int, string> entry in vars.smw.shortMemoryMap) {
+    foreach (KeyValuePair<int, string> entry in vars.smw.ShortMemoryMap) {
         vars.watchers.Add(new MemoryWatcher<short>((IntPtr)memoryOffset + entry.Key)  { Name = entry.Value });
     }
-    foreach (KeyValuePair<int, string> entry  in vars.smw.byteMemoryMap) {
+    foreach (KeyValuePair<int, string> entry  in vars.smw.ByteMemoryMap) {
         vars.watchers.Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key)  { Name = entry.Value });
     }
 
@@ -129,24 +129,18 @@ split {
         break;
         case "Love Yourself": // TODO: Retest
             other =
-                (smw.Shift(smw.roomNum, 39, 40) && smw.Curr(smw.levelNum) == 74) ||
-                (smw.Shift(smw.roomNum, 40, 42) && smw.Curr(smw.levelNum) == 74) ||
-                (smw.Stepped(smw.roomNum) && smw.Curr(smw.roomNum) > 50 && smw.Curr(smw.levelNum) == 85)
+                (smw.s.Shift(smw.s.mem.roomNum, 39, 40) && smw.s.mem.Curr(smw.s.mem.levelNum) == 74) ||
+                (smw.s.Shift(smw.s.mem.roomNum, 40, 42) && smw.s.mem.Curr(smw.s.mem.levelNum) == 74) ||
+                (smw.s.Stepped(smw.s.mem.roomNum) && smw.s.mem.Curr(smw.s.mem.roomNum) > 50 && smw.s.mem.Curr(smw.s.mem.levelNum) == 85)
                 ;
-            // TODO: Double-splitting to fix:
-            // tape then room: CS, TT, TFW23
-            // room then tape: RTB, W, PO
-            // room then tape forced: TFW12
-            // All room changes are not CPs in the above 7 double-splits
-            // TFW 2nd and 3rd tapes don't work. Will need to fix double-splitting if tape counting is implemented.
         break;
-        //case "Purgatory": // TODO: Retest
-            //smw.Tape = smw.Tape
-            //    && smw.Prev(smw.io) != 56  // Cancel for Sea Moon
-            //    && smw.Prev(smw.io) != 49  // Cancel for Soft and Wet
-            //    && smw.Prev(smw.io) != 63  // Cancel for Summit of Salvation
-            //    ;
-        //break;
+        case "Purgatory": // TODO: Retest
+            smw.Tape = smw.Tape
+                && smw.Prev(smw.io) != 56  // Cancel for Sea Moon
+                && smw.Prev(smw.io) != 49  // Cancel for Soft and Wet
+                && smw.Prev(smw.io) != 63  // Cancel for Summit of Salvation
+                ;
+        break;
         case "Quickie World": // TODO: Retest
         break;
         case "Quickie World 2": // TODO: Retest
@@ -157,7 +151,7 @@ split {
     var splitStatus = !isRecording && (smw.RunDone
         || (isWorlds && smw.Overworld)
         || (isLevelExits && smw.LevelExit)
-        || (isIntroExits && smw.IntroExit)
+        || (isIntroExits && smw.Intro)
         || (isLevelStarts && smw.LevelStart)
         || (isLevelFinishes && smw.LevelFinish)
         || (isFirstTapes && smw.Tape)
@@ -175,8 +169,8 @@ split {
     //smw.Monitor(smw.roomCounter);
 
     smw.Track(smw.LevelExit, "Exit");
-    smw.Track(smw.IntroExit, "Intro");
-    smw.Track(smw.Start, "Start");
+    smw.Track(smw.Intro, "Intro");
+    smw.Track(smw.LevelStart, "Start");
     smw.Track(smw.Goal, "Goal");
     smw.Track(smw.Key, "Key");
     smw.Track(smw.Orb, "Orb");
@@ -184,8 +178,8 @@ split {
     smw.Track(smw.Boss, "Boss");
     smw.Track(smw.Tape, "Tape");
     smw.Track(smw.Room, "Room");
-    smw.Track(smw.OverworldPortal, "Portal");
-    smw.Track(smw.SubmapShift, "Map");
+    smw.Track(smw.Portal, "Portal");
+    smw.Track(smw.Submap, "Map");
     //if (smw.died) smw.Dbg("Died");
     //if (smw.DiedNow) smw.Dbg("DiedNow");
     //smw.Track(smw.gmPrepareLevel, "Prep");
@@ -195,8 +189,8 @@ split {
     //smw.Monitor(smw.eventsTriggered);
     //smw.Monitor(smw.roomNum);
     //smw.Monitor(smw.levelNum);
-    smw.Monitor(smw.cp1up);
-    smw.Monitor(smw.exitMode);
+    smw.Monitor(smw.s.mem.cp1up);
+    smw.Monitor(smw.s.mem.exitMode);
 
     //if (shifted(playerAnimation) && playerAnimation.Current != 0 && playerAnimation.Current != 6 && playerAnimation.Current != 9) dbg(playerAnimation.Name + ": " + playerAnimation.Old + "->" + playerAnimation.Current);
     //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
