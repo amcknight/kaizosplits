@@ -137,11 +137,11 @@ namespace SMW {
             cp1up = (MemoryWatcher<byte>)watchers["cp1up"];
         }
 
-        public static ushort Prev(MemoryWatcher w) {
+        public ushort Prev(MemoryWatcher w) {
             return Convert.ToUInt16(w.Old);
         }
 
-        public static ushort Curr(MemoryWatcher w) {
+        public ushort Curr(MemoryWatcher w) {
             return Convert.ToUInt16(w.Current);
         }
     }

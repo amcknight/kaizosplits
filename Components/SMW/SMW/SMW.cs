@@ -77,8 +77,8 @@ namespace SMW {
         }
 
         public void Monitor(MemoryWatcher w) {
-            if (Memory.Prev(w) != Memory.Curr(w)) {
-                Dbg(w.Name + ": " + Memory.Prev(w) + "->" + Memory.Curr(w));
+            if (s.mem.Prev(w) != s.mem.Curr(w)) {
+                Dbg(w.Name + ": " + s.mem.Prev(w) + "->" + s.mem.Curr(w));
             }
         }
 

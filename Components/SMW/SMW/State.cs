@@ -18,11 +18,11 @@ namespace SMW {
         public bool ToOrb => ShiftTo(mem.io, 3);
         public bool ToGoal => ShiftTo(mem.io, 4);
         public bool ToKey => ShiftTo(mem.io, 7);
-        public bool GotOrb => Memory.Curr(mem.io) == 3;
-        public bool GotGoal => Memory.Curr(mem.io) == 4;
-        public bool GotKey => Memory.Curr(mem.io) == 7;
-        public bool GotFadeout => Memory.Curr(mem.io) == 8;
-        public bool BossUndead => Memory.Curr(mem.bossDefeat) == 0;
+        public bool GotOrb => mem.Curr(mem.io) == 3;
+        public bool GotGoal => mem.Curr(mem.io) == 4;
+        public bool GotKey => mem.Curr(mem.io) == 7;
+        public bool GotFadeout => mem.Curr(mem.io) == 8;
+        public bool BossUndead => mem.Curr(mem.bossDefeat) == 0;
         public bool GmFadeToLevel => ShiftTo(mem.gameMode, 15);
         public bool GmFadeToLevelBlack => ShiftTo(mem.gameMode, 16);
         public bool GmLoadLevel => ShiftTo(mem.gameMode, 17);
@@ -32,7 +32,7 @@ namespace SMW {
         public bool DiedNow => ShiftTo(mem.playerAnimation, 9);
         public bool NewEvent => Stepped(mem.eventsTriggered);
         public bool ToExit => ShiftFrom(mem.exitMode, 0) && !ShiftTo(mem.exitMode, 128);
-        public bool EnteredPipe => Shifted(mem.pipe) && Memory.Curr(mem.pipe) < 4 && (Memory.Curr(mem.playerAnimation) == 5 || Memory.Curr(mem.playerAnimation) == 6);
+        public bool EnteredPipe => Shifted(mem.pipe) && mem.Curr(mem.pipe) < 4 && (mem.Curr(mem.playerAnimation) == 5 || mem.Curr(mem.playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;
         public bool Spawn => GmPrepareLevel && died;
         public bool ToOverworldPortal => Shift(mem.overworldPortal, 1, 0);
@@ -54,42 +54,42 @@ namespace SMW {
             died = died || DiedNow;
             roomStep = false;
             if (Stepped(mem.roomCounter)) {
-                roomStep = Memory.Curr(mem.roomCounter) != 1 || !died;
+                roomStep = mem.Curr(mem.roomCounter) != 1 || !died;
             }
             // PrevIO is basically Current IO except when a P-Switch or Star shifts the io to 0
-            if (Memory.Curr(mem.io) != 0) {
-                prevIO = Memory.Curr(mem.io);
+            if (mem.Curr(mem.io) != 0) {
+                prevIO = mem.Curr(mem.io);
             }
 
             if (Spawn) died = false;
         }
 
         public bool Shift(MemoryWatcher w, ushort o, ushort c) {
-            return Memory.Prev(w) == o && Memory.Curr(w) == c;
+            return mem.Prev(w) == o && mem.Curr(w) == c;
         }
 
         public bool ShiftTo(MemoryWatcher w, ushort c) {
-            return Memory.Prev(w) != c && Memory.Curr(w) == c;
+            return mem.Prev(w) != c && mem.Curr(w) == c;
         }
 
         public bool ShiftFrom(MemoryWatcher w, ushort o) {
-            return Memory.Prev(w) == o && Memory.Curr(w) != o;
+            return mem.Prev(w) == o && mem.Curr(w) != o;
         }
 
         public bool Shifted(MemoryWatcher w) {
-            return Memory.Prev(w) != Memory.Curr(w);
+            return mem.Prev(w) != mem.Curr(w);
         }
 
         public bool StepTo(MemoryWatcher w, ushort c) {
-            return Memory.Curr(w) == c && Memory.Prev(w) + 1 == Memory.Curr(w);
+            return mem.Curr(w) == c && mem.Prev(w) + 1 == mem.Curr(w);
         }
 
         public bool Stepped(MemoryWatcher w) {
-            return Memory.Prev(w) + 1 == Memory.Curr(w);
+            return mem.Prev(w) + 1 == mem.Curr(w);
         }
 
         public Event BuildEvent(string name) {
-            return new Event(name, new Place(Memory.Curr(mem.submap), Memory.Curr(mem.levelNum), Memory.Curr(mem.roomNum), Memory.Curr(mem.playerX), Memory.Curr(mem.playerY)));
+            return new Event(name, new Place(mem.Curr(mem.submap), mem.Curr(mem.levelNum), mem.Curr(mem.roomNum), mem.Curr(mem.playerX), mem.Curr(mem.playerY)));
         }
     }
 }
