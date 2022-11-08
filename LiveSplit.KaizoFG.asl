@@ -34,6 +34,8 @@ init {
     vars.gamename = timer.Run.GameName;
     vars.livesplitGameName = vars.gamename;
     vars.runNum = 0;
+    vars.maxLag = 50L;
+    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     long memoryOffset = 0;
     if (game.ProcessName.ToLower() == "retroarch") {
@@ -96,8 +98,9 @@ reset {
 
 split {
     var smw = vars.smw;
+    var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-    // Settings
+    // Settings: TODO Move to a lib
     var isRecording = settings["recording"];
     var isWorlds = settings["worlds"];
     var isLevelExits = settings["levelExits"];
@@ -106,28 +109,24 @@ split {
     var isLevelFinishes = settings["levelFinishes"];
     var isFirstTapes = settings["firstTapes"];
     var isRooms = settings["rooms"];
-
     var other = false;
 
-    smw.Update(vars.watchers);
+    smw.Update(isRecording, vars.watchers);
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
         case "Bunbun World 2": // TODO: Retest
-            smw.Tape = smw.Tape
-                && smw.Prev(smw.io) != 61 // KLDC Dolphins
-                && smw.prevIO != 48 // Mirror Temple
+            other = smw.s.mem.Prev(smw.s.mem.io) != 61 // KLDC Dolphins
+                && smw.s.prevIO != 48 // Mirror Temple
                 ;
-            smw.Room = smw.Room && smw.Prev(smw.io) != 65; // Using yoshiCoins
-            smw.CoinFlag = smw.Stepped(smw.yoshiCoin) && smw.Prev(smw.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
-        break;
-        case "Climb The Tower": // TODO: Retest
+            smw.s.mem.Room = smw.s.mem.Room && smw.s.mem.Prev(smw.s.mem.io) != 65; // Using yoshiCoins
+            smw.s.mem.CoinFlag = smw.s.Stepped(smw.s.mem.yoshiCoin) && smw.s.mem.Prev(smw.s.mem.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
         break;
         case "Cute Kaizo World": // TODO: Retest
             smw.Tape = smw.Tape && smw.Prev(smw.io) != 55;  // Using doors
             smw.Credits = smw.ShiftTo(smw.io, 21);
         break;
-        case "Love Yourself": // TODO: Retest
+        case "Love Yourself":
             other =
                 (smw.s.Shift(smw.s.mem.roomNum, 39, 40) && smw.s.mem.Curr(smw.s.mem.levelNum) == 74) ||
                 (smw.s.Shift(smw.s.mem.roomNum, 40, 42) && smw.s.mem.Curr(smw.s.mem.levelNum) == 74) ||
@@ -140,8 +139,6 @@ split {
                 && smw.Prev(smw.io) != 49  // Cancel for Soft and Wet
                 && smw.Prev(smw.io) != 63  // Cancel for Summit of Salvation
                 ;
-        break;
-        case "Quickie World": // TODO: Retest
         break;
         case "Quickie World 2": // TODO: Retest
             smw.Tape = smw.Tape && smw.Prev(smw.io) != 65;  // Yoshi's Lair 1 Tape
@@ -159,15 +156,6 @@ split {
         || other
         );
 
-
-    // TEMPORARY DEBUG INFO
-
-    if (splitStatus) smw.Dbg("SPLIT: "+smw.SplitReasons());
-
-    //smw.Monitor(smw.playerAnimation);
-    //smw.Monitor(smw.gameMode);
-    //smw.Monitor(smw.roomCounter);
-
     smw.Track(smw.LevelExit, "Exit");
     smw.Track(smw.Intro, "Intro");
     smw.Track(smw.LevelStart, "Start");
@@ -180,33 +168,30 @@ split {
     smw.Track(smw.Room, "Room");
     smw.Track(smw.Portal, "Portal");
     smw.Track(smw.Submap, "Map");
-    //if (smw.died) smw.Dbg("Died");
-    //if (smw.DiedNow) smw.Dbg("DiedNow");
-    //smw.Track(smw.gmPrepareLevel, "Prep");
-    //smw.Monitor(smw.overworldExitEvent);
-    //smw.Monitor(smw.io);
-    //smw.Monitor(smw.weirdLevVal);
-    //smw.Monitor(smw.eventsTriggered);
-    smw.Monitor(smw.s.mem.roomNum);
-    smw.Monitor(smw.s.mem.levelNum);
-    smw.Monitor(smw.s.mem.cp1up);
-    smw.Monitor(smw.s.mem.exitMode);
 
-
-    //if (shifted(playerAnimation) && playerAnimation.Current != 0 && playerAnimation.Current != 6 && playerAnimation.Current != 9) dbg(playerAnimation.Name + ": " + playerAnimation.Old + "->" + playerAnimation.Current);
-    //if (shifted(roomNum)) dbg("NEW ROOM | "+place);
-    //if (stepped(eventsTriggered)) dbg("EXIT");
-
+    // TODO: Separate timing to a lib
+    var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+    var lag = newEndMs - vars.endMs;
     if (smw.debugInfo.Count > 0) print(string.Join("\n", smw.debugInfo));
+    vars.endMs = newEndMs;
     vars.smw = smw;
-    return splitStatus;
+    if (splitStatus && lag > vars.maxLag) {
+        vars.smw.Skip(timer);
+        print("LAG: "+lag);
+        return false;
+    } else {
+        return splitStatus;
+    }
 }
 
 onStart {
+    print("START");
     vars.runNum = vars.runNum + 1;
+    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // This first endMs doesn't really make sense..
 }
 
 onReset {
+    print("RESET");
     if (settings["recording"]) {
         vars.smw.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
     }

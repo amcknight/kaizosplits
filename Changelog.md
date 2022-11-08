@@ -6,6 +6,7 @@
 - Writing out initial runs and routes
 - Functionality for Undo and Skip exit but are unused
 - Found a better Exit detector using exit modes
+- Skip instead of split if final split call is 50ms later than the last one
 
 ### v1
 - Got basically everything working somewhat ok

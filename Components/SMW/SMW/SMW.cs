@@ -15,7 +15,10 @@ namespace SMW {
         public bool roomStep;
         public ushort prevIO;
 
+        public List<string> debugInfo;
+        public List<Event> events = new List<Event>();
         public State s;
+        private bool recording;
 
         public SMW() {
             Init();
@@ -38,10 +41,9 @@ namespace SMW {
             new TimerModel { CurrentState = timer }.UndoSplit();
         }
 
-        public List<string> debugInfo;
-
-        public void Update(MemoryWatcherList watchers) {
-            debugInfo = new List<string>();
+        public void Update(bool recording, MemoryWatcherList watchers) {
+            this.debugInfo = new List<string>();
+            this.recording = recording;
 
             s.Update(watchers);
 
@@ -82,9 +84,8 @@ namespace SMW {
             }
         }
 
-        public List<Event> events = new List<Event>();
         public void Track(bool condition, string name) {
-            if (condition) {
+            if (recording && condition) {
                 events.Add(s.BuildEvent(name));
             }
         }
