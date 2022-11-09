@@ -26,8 +26,8 @@ startup {
     // Load libs
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
-    vars.smw = Activator.CreateInstance(asm.GetType("SMW.SMW"));
-    vars.ws = Activator.CreateInstance(asm.GetType("SMW.MarioWatchers"));
+    vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
+    vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
 }
 
 init {
@@ -55,7 +55,7 @@ init {
                 memoryOffset = (long)outOffset;
             }
         }
-    } else if (vars.smw.States.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
+    } else if (vars.ws.states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
       if (memory.ProcessName.ToLower().Contains("snes9x"))
           memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
 
@@ -94,7 +94,8 @@ reset {
 }
 
 split {
-    var smw = vars.smw;
+    var r = vars.rec;
+    var w = vars.ws;
     var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     // Settings: TODO Move to a lib
@@ -108,72 +109,76 @@ split {
     var isRooms = settings["rooms"];
     var other = false;
 
-    smw.Update(isRecording, vars.ws);
+    r.Update(isRecording, w);
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
         case "Bunbun World 2": // TODO: Retest
-            other = smw.s.Prev(smw.s.io) != 61 // KLDC Dolphins
-                && smw.s.prevIO != 48 // Mirror Temple
+            other = w.Prev(w.io) != 61 // KLDC Dolphins
+                && w.prevIO != 48 // Mirror Temple
                 ;
-            smw.s.Room = smw.s.Room && smw.s.Prev(smw.s.io) != 65; // Using yoshiCoins
-            smw.s.CoinFlag = smw.s.Stepped(smw.s.yoshiCoin) && smw.s.Prev(smw.s.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
+            w.Room = w.Room && w.Prev(w.io) != 65; // Using yoshiCoins
+            w.CoinFlag = w.Stepped(w.yoshiCoin) && w.Prev(w.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
         break;
         case "Cute Kaizo World": // TODO: Retest
-            smw.Tape = smw.Tape && smw.Prev(smw.io) != 55;  // Using doors
-            smw.Credits = smw.ShiftTo(smw.io, 21);
+            w.Tape = w.Tape && w.Prev(w.io) != 55;  // Using doors
+            w.Credits = w.ShiftTo(w.io, 21);
         break;
         case "Love Yourself":
             other =
-                (smw.s.Shift(smw.s.roomNum, 39, 40) && smw.s.Curr(smw.s.levelNum) == 74) ||
-                (smw.s.Shift(smw.s.roomNum, 40, 42) && smw.s.Curr(smw.s.levelNum) == 74) ||
-                (smw.s.Stepped(smw.s.roomNum) && smw.s.Curr(smw.s.roomNum) > 50 && smw.s.Curr(smw.s.levelNum) == 85)
+                (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) ||
+                (w.Shift(w.roomNum, 40, 42) && w.Curr(w.levelNum) == 74) ||
+                (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.levelNum) == 85)
                 ;
         break;
         case "Purgatory": // TODO: Retest
-            smw.Tape = smw.Tape
-                && smw.Prev(smw.io) != 56  // Cancel for Sea Moon
-                && smw.Prev(smw.io) != 49  // Cancel for Soft and Wet
-                && smw.Prev(smw.io) != 63  // Cancel for Summit of Salvation
+            w.Tape = w.Tape
+                && w.Prev(w.io) != 56  // Cancel for Sea Moon
+                && w.Prev(w.io) != 49  // Cancel for Soft and Wet
+                && w.Prev(w.io) != 63  // Cancel for Summit of Salvation
                 ;
         break;
         case "Quickie World 2": // TODO: Retest
-            smw.Tape = smw.Tape && smw.Prev(smw.io) != 65;  // Yoshi's Lair 1 Tape
+            w.Tape = w.Tape && w.Prev(w.io) != 65;  // Yoshi's Lair 1 Tape
         break;
     }
 
-    var splitStatus = !isRecording && (smw.RunDone
-        || (isWorlds && smw.Overworld)
-        || (isLevelExits && smw.LevelExit)
-        || (isIntroExits && smw.Intro)
-        || (isLevelStarts && smw.LevelStart)
-        || (isLevelFinishes && smw.LevelFinish)
-        || (isFirstTapes && smw.Tape)
-        || (isRooms && smw.Room)
+    var splitStatus = !isRecording && (w.RunDone
+        || (isWorlds && w.Overworld)
+        || (isLevelExits && w.LevelExit)
+        || (isIntroExits && w.Intro)
+        || (isLevelStarts && w.LevelStart)
+        || (isLevelFinishes && w.LevelFinish)
+        || (isFirstTapes && w.Tape)
+        || (isRooms && w.Room)
         || other
         );
 
-    smw.Track(smw.LevelExit, "Exit");
-    smw.Track(smw.Intro, "Intro");
-    smw.Track(smw.LevelStart, "Start");
-    smw.Track(smw.Goal, "Goal");
-    smw.Track(smw.Key, "Key");
-    smw.Track(smw.Orb, "Orb");
-    smw.Track(smw.Palace, "Palace");
-    smw.Track(smw.Boss, "Boss");
-    smw.Track(smw.Tape, "Tape");
-    smw.Track(smw.Room, "Room");
-    smw.Track(smw.Portal, "Portal");
-    smw.Track(smw.Submap, "Map");
+    r.Track(w.LevelExit, "Exit", w);
+    r.Track(w.Intro, "Intro", w);
+    r.Track(w.LevelStart, "Start", w);
+    r.Track(w.Goal, "Goal", w);
+    r.Track(w.Key, "Key", w);
+    r.Track(w.Orb, "Orb", w);
+    r.Track(w.Palace, "Palace", w);
+    r.Track(w.Boss, "Boss", w);
+    r.Track(w.Tape, "Tape", w);
+    r.Track(w.Room, "Room", w);
+    r.Track(w.Portal, "Portal", w);
+    r.Track(w.Submap, "Map", w);
 
     // TODO: Separate timing to a lib
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
-    if (smw.debugInfo.Count > 0) print(string.Join("\n", smw.debugInfo));
+    if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
     vars.endMs = newEndMs;
-    vars.smw = smw;
+
+    // Are these necessary?
+    vars.rec = r;
+    vars.ws = w;
+
     if (splitStatus && lag > vars.maxLag) {
-        vars.smw.Skip(timer);
+        new TimerModel { CurrentState = timer }.SkipSplit();
         print("LAG: "+lag);
         return false;
     } else {
@@ -190,7 +195,7 @@ onStart {
 onReset {
     print("RESET");
     if (settings["recording"]) {
-        vars.smw.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
+        vars.rec.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
     }
-    vars.smw.Reset();
+    vars.rec.Reset();
 }

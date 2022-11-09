@@ -1,26 +1,15 @@
 ﻿using LiveSplit.ComponentUtil;
-using LiveSplit.Model;
 using System.Collections.Generic;
 using System.IO;
 
 namespace SMW {
-    public class SMW {
-        // TODO: These 3 probably don't need to be here
-        public Dictionary<int, long> States => Locator.offsets;
-        public Dictionary<int, string> ByteMemoryMap => Memory.byteMap;
-        public Dictionary<int, string> ShortMemoryMap => Memory.shortMap;
-
-        // Stateful Vars
-        public bool died;
-        public bool roomStep;
-        public ushort prevIO;
+    public class Recorder {
 
         public List<string> debugInfo;
         public List<Event> events = new List<Event>();
-        public MarioWatchers s;
         private bool recording;
 
-        public SMW() {
+        public Recorder() {
             Init();
         }
 
@@ -32,79 +21,50 @@ namespace SMW {
             events = new List<Event>();
         }
 
-        public void Skip(LiveSplitState timer) {
-            new TimerModel { CurrentState = timer }.SkipSplit();
+        public void Update(bool r, Watchers ws) {
+            debugInfo = new List<string>();
+            recording = r;
+
+            Track(ws.Spawn, "Spawn", ws);
         }
-
-        public void Undo(LiveSplitState timer) {
-            new TimerModel { CurrentState = timer }.UndoSplit();
-        }
-
-        public void Update(bool recording, MarioWatchers ws) {
-            this.debugInfo = new List<string>();
-            this.recording = recording;
-            this.s = ws;
-
-            Track(s.Spawn, "Spawn");
-        }
-
-        // Split Conditions
-        public bool Intro => s.IntroExit;
-        public bool LevelExit => s.ToExit;
-        public bool Goal => s.ToFanfare && s.BossUndead && !s.GotOrb;
-        public bool Key => s.ToKey;
-        public bool Orb => s.ToOrb && s.BossUndead;
-        public bool Palace => s.ToYellowSwitch || s.ToGreenSwitch || s.ToBlueSwitch || s.ToRedSwitch;
-        public bool Boss => s.ToFanfare && !s.BossUndead;
-        public bool LevelStart => s.ToLevelStart;
-        public bool PeachRelease => s.ToPeachRelease;
-        public bool Tape => s.ToCheckpointTape && !s.GotOrb && !s.GotGoal && !s.GotKey && !s.GotFadeout;
-        public bool Room => s.roomStep;
-        public bool CoinFlag => false;
-        public bool Credits => false;
-        public bool Submap => s.SubmapShift;
-        public bool Portal => s.ToOverworldPortal;
-
-        // Construct high level split conditions
-        // TODO: Only split on these if in or out of the overworld
-        public bool LevelFinish => Goal || Key || Orb || Palace || Boss;
-        public bool Flag => CoinFlag;
-        public bool RunDone => PeachRelease || Credits;
-        public bool Overworld => s.ToOverworldPortal || s.SubmapShift;
 
         public void Dbg(string msg) {
             debugInfo.Add(msg);
         }
 
-        public void Monitor(MemoryWatcher w) {
-            if (s.Shifted(w)) {
-                Dbg(w.Name + ": " + s.Prev(w) + "->" + s.Curr(w));
+        public void Monitor(MemoryWatcher w, Watchers ws) {
+            if (ws.Shifted(w)) {
+                Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
             }
         }
 
-        public void Track(bool condition, string name) {
+        public void Track(bool condition, string name, Watchers ws) {
             if (recording && condition) {
-                events.Add(s.BuildEvent(name));
+                events.Add(BuildEvent(name, ws));
             }
+        }
+
+        public Event BuildEvent(string name, Watchers ws) {
+            return new Event(name, new Place(ws.Curr(ws.submap), ws.Curr(ws.levelNum), ws.Curr(ws.roomNum), ws.Curr(ws.playerX), ws.Curr(ws.playerY)));
         }
 
         // TODO: Move all splitting functionality to a separate file
-        public string SplitReasons() {
+        public string SplitReasons(Watchers ws) {
             string reasons = "";
-            reasons += Intro ? " Intro" : "";
-            reasons += LevelStart ? " Start" : "";
-            reasons += Goal ? " Goal" : "";
-            reasons += Key ? " Key" : "";
-            reasons += Orb ? " Orb" : "";
-            reasons += Palace ? " Palace" : "";
-            reasons += Boss ? " Boss" : "";
-            reasons += Tape ? " Tape" : "";
-            reasons += Room ? " Room" : "";
-            reasons += CoinFlag ? " CoinFlag" : "";
-            reasons += PeachRelease ? " PeachRelease" : "";
-            reasons += Credits ? " Credits" : "";
-            reasons += Submap ? " Submap" : "";
-            reasons += Portal ? " Portal" : "";
+            reasons += ws.Intro ? " Intro" : "";
+            reasons += ws.LevelStart ? " Start" : "";
+            reasons += ws.Goal ? " Goal" : "";
+            reasons += ws.Key ? " Key" : "";
+            reasons += ws.Orb ? " Orb" : "";
+            reasons += ws.Palace ? " Palace" : "";
+            reasons += ws.Boss ? " Boss" : "";
+            reasons += ws.Tape ? " Tape" : "";
+            reasons += ws.Room ? " Room" : "";
+            reasons += ws.CoinFlag ? " CoinFlag" : "";
+            reasons += ws.PeachRelease ? " PeachRelease" : "";
+            reasons += ws.Credits ? " Credits" : "";
+            reasons += ws.Submap ? " Submap" : "";
+            reasons += ws.Portal ? " Portal" : "";
             return reasons;
         }
 

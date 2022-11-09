@@ -3,12 +3,14 @@ using System;
 using System.Collections.Generic;
 
 namespace SMW {
-    public class MarioWatchers : MemoryWatcherList {
+    public class Watchers : MemoryWatcherList {
+
+        public Dictionary<int, long> states = Locator.offsets;  // TODO: This doesn't belong here and should be statically brought in directly
         public bool died;
         public bool roomStep;
         public ushort prevIO;
 
-        public MarioWatchers() {
+        public Watchers() {
             died = false;
             roomStep = false;
             prevIO = 256; // junk default value
@@ -88,8 +90,31 @@ namespace SMW {
         public bool ToPeachRelease => StepTo(peach, 1);
         public bool ToCheckpointTape => StepTo(checkpointTape, 1);
 
-        public void UpdateState() {
+        // Composite Conditions
+        public bool Intro => IntroExit;
+        public bool LevelExit => ToExit;
+        public bool Goal => ToFanfare && BossUndead && !GotOrb;
+        public bool Key => ToKey;
+        public bool Orb => ToOrb && BossUndead;
+        public bool Palace => ToYellowSwitch || ToGreenSwitch || ToBlueSwitch || ToRedSwitch;
+        public bool Boss => ToFanfare && !BossUndead;
+        public bool LevelStart => ToLevelStart;
+        public bool PeachRelease => ToPeachRelease;
+        public bool Tape => ToCheckpointTape && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
+        public bool Room => roomStep;
+        public bool CoinFlag => false;
+        public bool Credits => false;
+        public bool Submap => SubmapShift;
+        public bool Portal => ToOverworldPortal;
 
+        // Highest level conditions
+        // TODO: Only count if they are in or out of overworld
+        public bool LevelFinish => Goal || Key || Orb || Palace || Boss;
+        public bool Flag => CoinFlag;
+        public bool RunDone => PeachRelease || Credits;
+        public bool Overworld => ToOverworldPortal || SubmapShift;
+
+        public void UpdateState() {
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
             died = died || DiedNow;
             roomStep = false;
@@ -133,10 +158,6 @@ namespace SMW {
 
         public bool Stepped(MemoryWatcher w) {
             return Prev(w) + 1 == Curr(w);
-        }
-
-        public Event BuildEvent(string name) {
-            return new Event(name, new Place(Curr(submap), Curr(levelNum), Curr(roomNum), Curr(playerX), Curr(playerY)));
         }
     }
 }
