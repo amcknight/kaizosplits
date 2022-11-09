@@ -23,7 +23,7 @@ public class Event {
         }
     }
 
-    // AUto-generated
+    // Auto-generated
     public override int GetHashCode() {
         int hashCode = -561972526;
         hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(name);

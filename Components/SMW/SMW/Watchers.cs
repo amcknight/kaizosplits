@@ -15,8 +15,9 @@ namespace SMW {
             roomStep = false;
             prevIO = 256; // junk default value
         }
-
+        
         public void SetMemoryOffset(long memoryOffset) {
+            // TODO: Could have properties flagged for a run and only load those
             foreach (KeyValuePair<int, string> entry in Memory.shortMap) {
                 Add(new MemoryWatcher<short>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
             }
@@ -51,33 +52,35 @@ namespace SMW {
         public MemoryWatcher exitMode => this["exitMode"];
         public MemoryWatcher playerX => this["playerX"];
         public MemoryWatcher playerY => this["playerY"];
+        public MemoryWatcher player => this["player"];
 
         // Temporary Test Watchers
         public MemoryWatcher gameMode => this["gameMode"];
         public MemoryWatcher levelMode => this["levelMode"];
-        public MemoryWatcher player => this["player"];
-        public MemoryWatcher cp1up => this["cp1up"];
 
-        public bool ToOrb => ShiftTo(io, 3);
-        public bool ToGoal => ShiftTo(io, 4);
-        public bool ToKey => ShiftTo(io, 7);
+        // Ongoing state
         public bool GotOrb => Curr(io) == 3;
         public bool GotGoal => Curr(io) == 4;
         public bool GotKey => Curr(io) == 7;
         public bool GotFadeout => Curr(io) == 8;
         public bool BossUndead => Curr(bossDefeat) == 0;
+        public bool InLevel => Curr(levelStart) == 1;
+        public bool IsMario => Curr(player) == 0;
+        public bool IsLuigi => Curr(player) == 1;
+
+        // Changed state
+        public bool ToOrb => ShiftTo(io, 3);
+        public bool ToGoal => ShiftTo(io, 4);
+        public bool ToKey => ShiftTo(io, 7);
         public bool GmFadeToLevel => ShiftTo(gameMode, 15);
         public bool GmFadeToLevelBlack => ShiftTo(gameMode, 16);
         public bool GmLoadLevel => ShiftTo(gameMode, 17);
         public bool GmPrepareLevel => ShiftTo(gameMode, 18);
         public bool GmLevelFadeIn => ShiftTo(gameMode, 19);
         public bool GmLevel => ShiftTo(gameMode, 20);
-        public bool DiedNow => ShiftTo(playerAnimation, 9);
         public bool NewEvent => Stepped(eventsTriggered);
         public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
         public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
-        public bool Put => GmPrepareLevel && !died;
-        public bool Spawn => GmPrepareLevel && died;
         public bool ToOverworldPortal => Shift(overworldPortal, 1, 0);
         public bool SubmapShift => Shifted(submap);
         public bool ToFanfare => StepTo(fanfare, 1);
@@ -89,30 +92,35 @@ namespace SMW {
         public bool ToLevelStart => StepTo(levelStart, 1);
         public bool ToPeachRelease => StepTo(peach, 1);
         public bool ToCheckpointTape => StepTo(checkpointTape, 1);
+        public bool DiedNow => ShiftTo(playerAnimation, 9);
+        public bool LosingPowerup => ShiftTo(playerAnimation, 1);
+        public bool GotMushroom => ShiftTo(playerAnimation, 2);
+        public bool GotFeather => ShiftTo(playerAnimation, 3);
+        public bool GotFlower => ShiftTo(playerAnimation, 4);
+        public bool EnterDoor => Shift(playerAnimation, 0, 13);
+        public bool ExitDoor => Shift(playerAnimation, 13, 0);
 
         // Composite Conditions
+        public bool Put => GmPrepareLevel && !died;
+        public bool Spawn => GmPrepareLevel && died;
         public bool Intro => IntroExit;
         public bool LevelExit => ToExit;
         public bool Goal => ToFanfare && BossUndead && !GotOrb;
         public bool Key => ToKey;
         public bool Orb => ToOrb && BossUndead;
         public bool Palace => ToYellowSwitch || ToGreenSwitch || ToBlueSwitch || ToRedSwitch;
+        public bool GotPowerup => GotMushroom || GotFeather || GotFlower;
         public bool Boss => ToFanfare && !BossUndead;
         public bool LevelStart => ToLevelStart;
         public bool PeachRelease => ToPeachRelease;
         public bool Tape => ToCheckpointTape && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
         public bool Room => roomStep;
-        public bool CoinFlag => false;
-        public bool Credits => false;
         public bool Submap => SubmapShift;
         public bool Portal => ToOverworldPortal;
 
         // Highest level conditions
-        // TODO: Only count if they are in or out of overworld
-        public bool LevelFinish => Goal || Key || Orb || Palace || Boss;
-        public bool Flag => CoinFlag;
-        public bool RunDone => PeachRelease || Credits;
-        public bool Overworld => ToOverworldPortal || SubmapShift;
+        public bool LevelFinish => InLevel && (Goal || Key || Orb || Palace || Boss);
+        public bool Overworld => !InLevel && (ToOverworldPortal || SubmapShift);
 
         public void UpdateState() {
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.

@@ -36,6 +36,7 @@ init {
     vars.runNum = 0;
     vars.maxLag = 50L;
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+    vars.prevIn = false;
 
     long memoryOffset = 0;
     if (game.ProcessName.ToLower() == "retroarch") {
@@ -73,10 +74,7 @@ init {
 }
 
 update {
-    // Currently need to call this in two steps due to troubles importing Process from System.Diagnostics.Process
     vars.ws.UpdateAll(game);
-    vars.ws.UpdateState();
-
     if (vars.livesplitGameName != timer.Run.GameName) {
         vars.gamename = timer.Run.GameName;
         vars.reInitialise();
@@ -109,7 +107,10 @@ split {
     var isRooms = settings["rooms"];
     var other = false;
 
+    // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
+    // The order here matters for Spawn recording
     r.Update(isRecording, w);
+    w.UpdateState();
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
@@ -126,9 +127,10 @@ split {
         break;
         case "Love Yourself":
             other =
-                (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) ||
-                (w.Shift(w.roomNum, 40, 42) && w.Curr(w.levelNum) == 74) ||
-                (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.levelNum) == 85)
+                (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) || // 3rd Castle room
+                (w.Shift(w.roomNum, 40, 42) && w.Curr(w.levelNum) == 74) || // 4th castle room
+                (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) || // All room other than credits door
+                (w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85) // Credits door
                 ;
         break;
         case "Purgatory": // TODO: Retest
@@ -154,28 +156,25 @@ split {
         || other
         );
 
-    r.Track(w.LevelExit, "Exit", w);
-    r.Track(w.Intro, "Intro", w);
-    r.Track(w.LevelStart, "Start", w);
-    r.Track(w.Goal, "Goal", w);
-    r.Track(w.Key, "Key", w);
-    r.Track(w.Orb, "Orb", w);
-    r.Track(w.Palace, "Palace", w);
-    r.Track(w.Boss, "Boss", w);
-    r.Track(w.Tape, "Tape", w);
-    r.Track(w.Room, "Room", w);
-    r.Track(w.Portal, "Portal", w);
-    r.Track(w.Submap, "Map", w);
+    // r.Track(w.LevelExit, "Exit", w);
+    // r.Track(w.Intro, "Intro", w);
+    // r.Track(w.LevelStart, "Start", w);
+    // r.Track(w.Goal, "Goal", w);
+    // r.Track(w.Key, "Key", w);
+    // r.Track(w.Orb, "Orb", w);
+    // r.Track(w.Palace, "Palace", w);
+    // r.Track(w.Boss, "Boss", w);
+    // r.Track(w.Tape, "Tape", w);
+    // r.Track(w.Room, "Room", w);
+    // r.Track(w.Portal, "Portal", w);
+    // r.Track(w.Submap, "Map", w);
+    //r.Monitor(w.gameMode, w);
 
     // TODO: Separate timing to a lib
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
     if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
     vars.endMs = newEndMs;
-
-    // Are these necessary?
-    vars.rec = r;
-    vars.ws = w;
 
     if (splitStatus && lag > vars.maxLag) {
         new TimerModel { CurrentState = timer }.SkipSplit();
@@ -195,7 +194,7 @@ onStart {
 onReset {
     print("RESET");
     if (settings["recording"]) {
-        vars.rec.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum);
+        vars.rec.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum); // TODO: Remove hardcoded location
     }
     vars.rec.Reset();
 }

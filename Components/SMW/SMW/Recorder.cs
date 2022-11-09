@@ -24,7 +24,6 @@ namespace SMW {
         public void Update(bool r, Watchers ws) {
             debugInfo = new List<string>();
             recording = r;
-
             Track(ws.Spawn, "Spawn", ws);
         }
 
@@ -48,7 +47,6 @@ namespace SMW {
             return new Event(name, new Place(ws.Curr(ws.submap), ws.Curr(ws.levelNum), ws.Curr(ws.roomNum), ws.Curr(ws.playerX), ws.Curr(ws.playerY)));
         }
 
-        // TODO: Move all splitting functionality to a separate file
         public string SplitReasons(Watchers ws) {
             string reasons = "";
             reasons += ws.Intro ? " Intro" : "";
@@ -60,9 +58,7 @@ namespace SMW {
             reasons += ws.Boss ? " Boss" : "";
             reasons += ws.Tape ? " Tape" : "";
             reasons += ws.Room ? " Room" : "";
-            reasons += ws.CoinFlag ? " CoinFlag" : "";
             reasons += ws.PeachRelease ? " PeachRelease" : "";
-            reasons += ws.Credits ? " Credits" : "";
             reasons += ws.Submap ? " Submap" : "";
             reasons += ws.Portal ? " Portal" : "";
             return reasons;
