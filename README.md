@@ -15,6 +15,7 @@ However, there's also an ambitious v2 split manager that will robustly handles f
 - Get a clear signal of whether a room change is a CP, if possible
 
 ### v2
+- Never autoskip on final split even if delayed split
 - Need a well defined run representation file that contains all info for representing autosplit preferences, splits, skips, undos, merges
 - Monitor a run to create a file that represents that run
 - Allow for easy mod of the representation to the user's preference

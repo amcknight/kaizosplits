@@ -1,4 +1,6 @@
-﻿public class Event {
+﻿using System.Collections.Generic;
+
+public class Event {
 
     public readonly string name;
     public readonly Place place;
@@ -19,5 +21,13 @@
             Event e = (Event)obj;
             return name.Equals(e.name) && place.Equals(e.place);
         }
+    }
+
+    // AUto-generated
+    public override int GetHashCode() {
+        int hashCode = -561972526;
+        hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(name);
+        hashCode = hashCode * -1521134295 + EqualityComparer<Place>.Default.GetHashCode(place);
+        return hashCode;
     }
 }

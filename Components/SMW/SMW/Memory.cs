@@ -1,10 +1,8 @@
-﻿using LiveSplit.ComponentUtil;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace SMW {
     public class Memory {
-        
+
         public static Dictionary<int, string> shortMap = new Dictionary<int, string> {
           {0x00D1, "playerX"},
           {0x00D3, "playerY"},
@@ -34,13 +32,13 @@ namespace SMW {
           {0x1B9C, "overworldPortal"},
           {0x0100, "gameMode"},
           {0x1DEA, "overworldExitEvent"},
+          {0x0DD5, "exitMode"},
           // STILL TESTING
           {0x0DB3, "player"},
           {0x1925, "levelMode"},
           {0x1935, "levelStart"},
           {0x1421, "cp1up"},
-          {0x0DD5, "exitMode"},
-          
+
           // OTHER THINGS TO TEST
             // Screen Width 005E
             // Screen height 005F
@@ -68,81 +66,5 @@ namespace SMW {
             // 9AC5 Level names (460 bytes)
             // A0FC How to put level names together (186 bytes, 16 bytes at a time)
         };
-
-        public MemoryWatcher<byte> fileSelect;
-        public MemoryWatcher<byte> submap;
-        public MemoryWatcher<byte> fanfare;
-        public MemoryWatcher<byte> victory;
-        public MemoryWatcher<byte> bossDefeat;
-        public MemoryWatcher<byte> io;
-        public MemoryWatcher<byte> yellowSwitch;
-        public MemoryWatcher<byte> greenSwitch;
-        public MemoryWatcher<byte> blueSwitch;
-        public MemoryWatcher<byte> redSwitch;
-        public MemoryWatcher<byte> roomCounter;
-        public MemoryWatcher<byte> peach;
-        public MemoryWatcher<byte> checkpointTape;
-        public MemoryWatcher<byte> pipe;
-        public MemoryWatcher<byte> playerAnimation;
-        public MemoryWatcher<byte> yoshiCoin;
-        public MemoryWatcher<byte> levelStart;
-        public MemoryWatcher<byte> weirdLevVal;
-        public MemoryWatcher<byte> eventsTriggered;
-        public MemoryWatcher<byte> overworldPortal;
-        public MemoryWatcher<byte> levelNum;
-        public MemoryWatcher<byte> roomNum;
-        public MemoryWatcher<byte> overworldExitEvent;
-        public MemoryWatcher<byte> exitMode;
-        public MemoryWatcher<short> playerX;
-        public MemoryWatcher<short> playerY;
-
-        // Temporary Test Watchers
-        public MemoryWatcher<byte> gameMode;
-        public MemoryWatcher<byte> levelMode;
-        public MemoryWatcher<byte> player;
-        public MemoryWatcher<byte> cp1up;
-
-        public void Update(MemoryWatcherList watchers) {
-            fileSelect = (MemoryWatcher<byte>)watchers["fileSelect"];
-            submap = (MemoryWatcher<byte>)watchers["submap"];
-            fanfare = (MemoryWatcher<byte>)watchers["fanfare"];
-            victory = (MemoryWatcher<byte>)watchers["victory"];
-            bossDefeat = (MemoryWatcher<byte>)watchers["bossDefeat"];
-            io = (MemoryWatcher<byte>)watchers["io"];
-            yellowSwitch = (MemoryWatcher<byte>)watchers["yellowSwitch"];
-            greenSwitch = (MemoryWatcher<byte>)watchers["greenSwitch"];
-            blueSwitch = (MemoryWatcher<byte>)watchers["blueSwitch"];
-            redSwitch = (MemoryWatcher<byte>)watchers["redSwitch"];
-            roomCounter = (MemoryWatcher<byte>)watchers["roomCounter"];
-            peach = (MemoryWatcher<byte>)watchers["peach"];
-            checkpointTape = (MemoryWatcher<byte>)watchers["checkpointTape"];
-            pipe = (MemoryWatcher<byte>)watchers["pipe"];
-            playerAnimation = (MemoryWatcher<byte>)watchers["playerAnimation"];
-            yoshiCoin = (MemoryWatcher<byte>)watchers["yoshiCoin"];
-            levelStart = (MemoryWatcher<byte>)watchers["levelStart"];
-            weirdLevVal = (MemoryWatcher<byte>)watchers["weirdLevVal"];
-            eventsTriggered = (MemoryWatcher<byte>)watchers["eventsTriggered"];
-            overworldPortal = (MemoryWatcher<byte>)watchers["overworldPortal"];
-            levelNum = (MemoryWatcher<byte>)watchers["levelNum"];
-            roomNum = (MemoryWatcher<byte>)watchers["roomNum"];
-            overworldExitEvent = (MemoryWatcher<byte>)watchers["overworldExitEvent"];
-            exitMode = (MemoryWatcher<byte>)watchers["exitMode"];
-            playerX = (MemoryWatcher<short>)watchers["playerX"];
-            playerY = (MemoryWatcher<short>)watchers["playerY"];
-
-            // Temporary Test properties
-            gameMode = (MemoryWatcher<byte>)watchers["gameMode"];
-            levelMode = (MemoryWatcher<byte>)watchers["levelMode"];
-            player = (MemoryWatcher<byte>)watchers["player"];
-            cp1up = (MemoryWatcher<byte>)watchers["cp1up"];
-        }
-
-        public ushort Prev(MemoryWatcher w) {
-            return Convert.ToUInt16(w.Old);
-        }
-
-        public ushort Curr(MemoryWatcher w) {
-            return Convert.ToUInt16(w.Current);
-        }
     }
 }

@@ -17,7 +17,7 @@ namespace SMW {
 
         public List<string> debugInfo;
         public List<Event> events = new List<Event>();
-        public State s;
+        public MarioWatchers s;
         private bool recording;
 
         public SMW() {
@@ -29,7 +29,6 @@ namespace SMW {
         }
 
         public void Init() {
-            s = new State();
             events = new List<Event>();
         }
 
@@ -41,11 +40,10 @@ namespace SMW {
             new TimerModel { CurrentState = timer }.UndoSplit();
         }
 
-        public void Update(bool recording, MemoryWatcherList watchers) {
+        public void Update(bool recording, MarioWatchers ws) {
             this.debugInfo = new List<string>();
             this.recording = recording;
-
-            s.Update(watchers);
+            this.s = ws;
 
             Track(s.Spawn, "Spawn");
         }
@@ -79,8 +77,8 @@ namespace SMW {
         }
 
         public void Monitor(MemoryWatcher w) {
-            if (s.mem.Prev(w) != s.mem.Curr(w)) {
-                Dbg(w.Name + ": " + s.mem.Prev(w) + "->" + s.mem.Curr(w));
+            if (s.Shifted(w)) {
+                Dbg(w.Name + ": " + s.Prev(w) + "->" + s.Curr(w));
             }
         }
 

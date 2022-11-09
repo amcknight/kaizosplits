@@ -23,11 +23,11 @@ startup {
     settings.Add("rooms", false, "All Room Changes");
     settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
 
-    // Load SMW lib
+    // Load libs
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
-    Type type = asm.GetType("SMW.SMW");
-    vars.smw = Activator.CreateInstance(type);
+    vars.smw = Activator.CreateInstance(asm.GetType("SMW.SMW"));
+    vars.ws = Activator.CreateInstance(asm.GetType("SMW.MarioWatchers"));
 }
 
 init {
@@ -61,13 +61,7 @@ init {
 
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
 
-    vars.watchers = new MemoryWatcherList();
-    foreach (KeyValuePair<int, string> entry in vars.smw.ShortMemoryMap) {
-        vars.watchers.Add(new MemoryWatcher<short>((IntPtr)memoryOffset + entry.Key)  { Name = entry.Value });
-    }
-    foreach (KeyValuePair<int, string> entry  in vars.smw.ByteMemoryMap) {
-        vars.watchers.Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key)  { Name = entry.Value });
-    }
+    vars.ws.SetMemoryOffset(memoryOffset);
 
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
@@ -79,7 +73,10 @@ init {
 }
 
 update {
-    vars.watchers.UpdateAll(game);
+    // Currently need to call this in two steps due to troubles importing Process from System.Diagnostics.Process
+    vars.ws.UpdateAll(game);
+    vars.ws.UpdateState();
+
     if (vars.livesplitGameName != timer.Run.GameName) {
         vars.gamename = timer.Run.GameName;
         vars.reInitialise();
@@ -87,12 +84,12 @@ update {
 }
 
 start {
-    var fileSelect = vars.watchers["fileSelect"];
+    var fileSelect = vars.ws["fileSelect"];
     return fileSelect.Old == 0 && fileSelect.Current != 0;
 }
 
 reset {
-    var fileSelect = vars.watchers["fileSelect"];
+    var fileSelect = vars.ws["fileSelect"];
     return fileSelect.Old != 0 && fileSelect.Current == 0;
 }
 
@@ -111,16 +108,16 @@ split {
     var isRooms = settings["rooms"];
     var other = false;
 
-    smw.Update(isRecording, vars.watchers);
+    smw.Update(isRecording, vars.ws);
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
         case "Bunbun World 2": // TODO: Retest
-            other = smw.s.mem.Prev(smw.s.mem.io) != 61 // KLDC Dolphins
+            other = smw.s.Prev(smw.s.io) != 61 // KLDC Dolphins
                 && smw.s.prevIO != 48 // Mirror Temple
                 ;
-            smw.s.mem.Room = smw.s.mem.Room && smw.s.mem.Prev(smw.s.mem.io) != 65; // Using yoshiCoins
-            smw.s.mem.CoinFlag = smw.s.Stepped(smw.s.mem.yoshiCoin) && smw.s.mem.Prev(smw.s.mem.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
+            smw.s.Room = smw.s.Room && smw.s.Prev(smw.s.io) != 65; // Using yoshiCoins
+            smw.s.CoinFlag = smw.s.Stepped(smw.s.yoshiCoin) && smw.s.Prev(smw.s.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
         break;
         case "Cute Kaizo World": // TODO: Retest
             smw.Tape = smw.Tape && smw.Prev(smw.io) != 55;  // Using doors
@@ -128,9 +125,9 @@ split {
         break;
         case "Love Yourself":
             other =
-                (smw.s.Shift(smw.s.mem.roomNum, 39, 40) && smw.s.mem.Curr(smw.s.mem.levelNum) == 74) ||
-                (smw.s.Shift(smw.s.mem.roomNum, 40, 42) && smw.s.mem.Curr(smw.s.mem.levelNum) == 74) ||
-                (smw.s.Stepped(smw.s.mem.roomNum) && smw.s.mem.Curr(smw.s.mem.roomNum) > 50 && smw.s.mem.Curr(smw.s.mem.levelNum) == 85)
+                (smw.s.Shift(smw.s.roomNum, 39, 40) && smw.s.Curr(smw.s.levelNum) == 74) ||
+                (smw.s.Shift(smw.s.roomNum, 40, 42) && smw.s.Curr(smw.s.levelNum) == 74) ||
+                (smw.s.Stepped(smw.s.roomNum) && smw.s.Curr(smw.s.roomNum) > 50 && smw.s.Curr(smw.s.levelNum) == 85)
                 ;
         break;
         case "Purgatory": // TODO: Retest
