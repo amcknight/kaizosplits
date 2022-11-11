@@ -25,13 +25,28 @@ namespace SMW {
             debugInfo = new List<string>();
             recording = r;
             Track(ws.Spawn, "Spawn", ws);
+            foreach (MemoryWatcher<byte> w in ws.xs) {
+                Monitor(w, ws);
+            }
         }
 
         public void Dbg(string msg) {
             debugInfo.Add(msg);
         }
 
-        public void Monitor(MemoryWatcher w, Watchers ws) {
+        public void Monitor(MemoryWatcher<byte> w, Watchers ws) {
+            if (ws.Shifted(w)) {
+                Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
+            }
+        }
+
+        public void Monitor(MemoryWatcher<ushort> w, Watchers ws) {
+            if (ws.Shifted(w)) {
+                Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
+            }
+        }
+
+        public void Monitor(MemoryWatcher<uint> w, Watchers ws) {
             if (ws.Shifted(w)) {
                 Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
             }

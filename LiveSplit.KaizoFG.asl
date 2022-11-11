@@ -62,7 +62,7 @@ init {
 
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
 
-    vars.ws.SetMemoryOffset(memoryOffset);
+    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x1B87, 0x1B87},});
 
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
@@ -106,6 +106,7 @@ split {
     var isFirstTapes = settings["firstTapes"];
     var isRooms = settings["rooms"];
     var other = false;
+    var credits = false;
 
     // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
     // The order here matters for Spawn recording
@@ -129,9 +130,9 @@ split {
             other =
                 (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) || // 3rd Castle room
                 (w.Shift(w.roomNum, 40, 42) && w.Curr(w.levelNum) == 74) || // 4th castle room
-                (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) || // All room other than credits door
-                (w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85) // Credits door
+                (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) // All room other than credits door
                 ;
+            credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Purgatory": // TODO: Retest
             w.Tape = w.Tape
@@ -145,15 +146,16 @@ split {
         break;
     }
 
-    var splitStatus = !isRecording && (w.RunDone
-        || (isWorlds && w.Overworld)
-        || (isLevelExits && w.LevelExit)
-        || (isIntroExits && w.Intro)
-        || (isLevelStarts && w.LevelStart)
-        || (isLevelFinishes && w.LevelFinish)
-        || (isFirstTapes && w.Tape)
-        || (isRooms && w.Room)
-        || other
+    var splitStatus = !isRecording && (
+        (isWorlds && w.Overworld) ||
+        (isLevelExits && w.LevelExit) ||
+        (isIntroExits && w.Intro) ||
+        (isLevelStarts && w.LevelStart) ||
+        (isLevelFinishes && w.LevelFinish) ||
+        (isFirstTapes && w.Tape) ||
+        (isRooms && w.Room) ||
+        other ||
+        credits
         );
 
     // r.Track(w.LevelExit, "Exit", w);
@@ -168,7 +170,7 @@ split {
     // r.Track(w.Room, "Room", w);
     // r.Track(w.Portal, "Portal", w);
     // r.Track(w.Submap, "Map", w);
-    //r.Monitor(w.gameMode, w);
+    // r.Monitor(w.layer1Pointer, w);
 
     // TODO: Separate timing to a lib
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -176,7 +178,9 @@ split {
     if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
     vars.endMs = newEndMs;
 
-    if (splitStatus && lag > vars.maxLag) {
+    if (credits) {
+        return true;
+    } else if (splitStatus && lag > vars.maxLag) {
         new TimerModel { CurrentState = timer }.SkipSplit();
         print("LAG: "+lag);
         return false;

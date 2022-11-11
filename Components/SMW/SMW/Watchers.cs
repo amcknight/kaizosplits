@@ -9,54 +9,65 @@ namespace SMW {
         public bool died;
         public bool roomStep;
         public ushort prevIO;
+        public List<MemoryWatcher<byte>> xs = new List<MemoryWatcher<byte>>();
 
         public Watchers() {
             died = false;
             roomStep = false;
             prevIO = 256; // junk default value
         }
-        
-        public void SetMemoryOffset(long memoryOffset) {
-            // TODO: Could have properties flagged for a run and only load those
+
+        public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
+            foreach (KeyValuePair<int, string> entry in Memory.intMap) {
+                Add(new MemoryWatcher<uint>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+            }
             foreach (KeyValuePair<int, string> entry in Memory.shortMap) {
-                Add(new MemoryWatcher<short>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                Add(new MemoryWatcher<ushort>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
             }
             foreach (KeyValuePair<int, string> entry in Memory.byteMap) {
                 Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
             }
+            foreach (KeyValuePair<int, int> entry in ranges) {
+                for (int i = entry.Key; i < entry.Value; i++) {
+                    MemoryWatcher<byte> x = new MemoryWatcher<byte>((IntPtr)memoryOffset + i) { Name = "i" + i.ToString("X4") };
+                    xs.Add(x);
+                    Add(x);
+                }
+            }
         }
 
-        public MemoryWatcher fileSelect => this["fileSelect"];
-        public MemoryWatcher submap => this["submap"];
-        public MemoryWatcher fanfare => this["fanfare"];
-        public MemoryWatcher victory => this["victory"];
-        public MemoryWatcher bossDefeat => this["bossDefeat"];
-        public MemoryWatcher io => this["io"];
-        public MemoryWatcher yellowSwitch => this["yellowSwitch"];
-        public MemoryWatcher greenSwitch => this["greenSwitch"];
-        public MemoryWatcher blueSwitch => this["blueSwitch"];
-        public MemoryWatcher redSwitch => this["redSwitch"];
-        public MemoryWatcher roomCounter => this["roomCounter"];
-        public MemoryWatcher peach => this["peach"];
-        public MemoryWatcher checkpointTape => this["checkpointTape"];
-        public MemoryWatcher pipe => this["pipe"];
-        public MemoryWatcher playerAnimation => this["playerAnimation"];
-        public MemoryWatcher yoshiCoin => this["yoshiCoin"];
-        public MemoryWatcher levelStart => this["levelStart"];
-        public MemoryWatcher weirdLevVal => this["weirdLevVal"];
-        public MemoryWatcher eventsTriggered => this["eventsTriggered"];
-        public MemoryWatcher overworldPortal => this["overworldPortal"];
-        public MemoryWatcher levelNum => this["levelNum"];
-        public MemoryWatcher roomNum => this["roomNum"];
-        public MemoryWatcher overworldExitEvent => this["overworldExitEvent"];
-        public MemoryWatcher exitMode => this["exitMode"];
-        public MemoryWatcher playerX => this["playerX"];
-        public MemoryWatcher playerY => this["playerY"];
-        public MemoryWatcher player => this["player"];
+        public MemoryWatcher<byte> fileSelect => (MemoryWatcher<byte>)this["fileSelect"];
+        public MemoryWatcher<byte> submap => (MemoryWatcher<byte>)this["submap"];
+        public MemoryWatcher<byte> fanfare => (MemoryWatcher<byte>)this["fanfare"];
+        public MemoryWatcher<byte> victory => (MemoryWatcher<byte>)this["victory"];
+        public MemoryWatcher<byte> bossDefeat => (MemoryWatcher<byte>)this["bossDefeat"];
+        public MemoryWatcher<byte> io => (MemoryWatcher<byte>)this["io"];
+        public MemoryWatcher<byte> yellowSwitch => (MemoryWatcher<byte>)this["yellowSwitch"];
+        public MemoryWatcher<byte> greenSwitch => (MemoryWatcher<byte>)this["greenSwitch"];
+        public MemoryWatcher<byte> blueSwitch => (MemoryWatcher<byte>)this["blueSwitch"];
+        public MemoryWatcher<byte> redSwitch => (MemoryWatcher<byte>)this["redSwitch"];
+        public MemoryWatcher<byte> roomCounter => (MemoryWatcher<byte>)this["roomCounter"];
+        public MemoryWatcher<byte> peach => (MemoryWatcher<byte>)this["peach"];
+        public MemoryWatcher<byte> checkpointTape => (MemoryWatcher<byte>)this["checkpointTape"];
+        public MemoryWatcher<byte> pipe => (MemoryWatcher<byte>)this["pipe"];
+        public MemoryWatcher<byte> playerAnimation => (MemoryWatcher<byte>)this["playerAnimation"];
+        public MemoryWatcher<byte> yoshiCoin => (MemoryWatcher<byte>)this["yoshiCoin"];
+        public MemoryWatcher<byte> levelStart => (MemoryWatcher<byte>)this["levelStart"];
+        public MemoryWatcher<byte> weirdLevVal => (MemoryWatcher<byte>)this["weirdLevVal"];
+        public MemoryWatcher<byte> eventsTriggered => (MemoryWatcher<byte>)this["eventsTriggered"];
+        public MemoryWatcher<byte> overworldPortal => (MemoryWatcher<byte>)this["overworldPortal"];
+        public MemoryWatcher<byte> levelNum => (MemoryWatcher<byte>)this["levelNum"];
+        public MemoryWatcher<byte> roomNum => (MemoryWatcher<byte>)this["roomNum"];
+        public MemoryWatcher<byte> overworldExitEvent => (MemoryWatcher<byte>)this["overworldExitEvent"];
+        public MemoryWatcher<byte> exitMode => (MemoryWatcher<byte>)this["exitMode"];
+        public MemoryWatcher<byte> player => (MemoryWatcher<byte>)this["player"];
+        public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
+        public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
 
         // Temporary Test Watchers
-        public MemoryWatcher gameMode => this["gameMode"];
-        public MemoryWatcher levelMode => this["levelMode"];
+        public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
+        public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
+        public MemoryWatcher<uint> layer1Pointer => (MemoryWatcher<uint>)this["layer1Pointer"];
 
         // Ongoing state
         public bool GotOrb => Curr(io) == 3;
@@ -137,34 +148,87 @@ namespace SMW {
             if (Spawn) died = false;
         }
 
-        public ushort Prev(MemoryWatcher w) {
+        public ushort Prev(MemoryWatcher<byte> w) {
             return Convert.ToUInt16(w.Old);
         }
 
-        public ushort Curr(MemoryWatcher w) {
+        public ushort Prev(MemoryWatcher<ushort> w) {
+            return Convert.ToUInt16(w.Old);
+        }
+
+        public uint Prev(MemoryWatcher<uint> w) {
+            return Convert.ToUInt32(w.Old);
+        }
+
+        public ushort Curr(MemoryWatcher<byte> w) {
             return Convert.ToUInt16(w.Current);
         }
-        public bool Shift(MemoryWatcher w, ushort o, ushort c) {
+
+        public ushort Curr(MemoryWatcher<ushort> w) {
+            return Convert.ToUInt16(w.Current);
+        }
+
+        public uint Curr(MemoryWatcher<uint> w) {
+            return Convert.ToUInt32(w.Current);
+        }
+
+        public bool Shift(MemoryWatcher<byte> w, ushort o, ushort c) {
+            return Prev(w) == o && Curr(w) == c;
+        }
+        public bool Shift(MemoryWatcher<ushort> w, ushort o, ushort c) {
+            return Prev(w) == o && Curr(w) == c;
+        }
+        public bool Shift(MemoryWatcher<uint> w, ushort o, ushort c) {
             return Prev(w) == o && Curr(w) == c;
         }
 
-        public bool ShiftTo(MemoryWatcher w, ushort c) {
+        public bool ShiftTo(MemoryWatcher<byte> w, ushort c) {
+            return Prev(w) != c && Curr(w) == c;
+        }
+        public bool ShiftTo(MemoryWatcher<ushort> w, ushort c) {
+            return Prev(w) != c && Curr(w) == c;
+        }
+        public bool ShiftTo(MemoryWatcher<uint> w, ushort c) {
             return Prev(w) != c && Curr(w) == c;
         }
 
-        public bool ShiftFrom(MemoryWatcher w, ushort o) {
+        public bool ShiftFrom(MemoryWatcher<byte> w, ushort o) {
+            return Prev(w) == o && Curr(w) != o;
+        }
+        public bool ShiftFrom(MemoryWatcher<ushort> w, ushort o) {
+            return Prev(w) == o && Curr(w) != o;
+        }
+        public bool ShiftFrom(MemoryWatcher<uint> w, ushort o) {
             return Prev(w) == o && Curr(w) != o;
         }
 
-        public bool Shifted(MemoryWatcher w) {
+        public bool Shifted(MemoryWatcher<byte> w) {
+            return Prev(w) != Curr(w);
+        }
+        public bool Shifted(MemoryWatcher<ushort> w) {
+            return Prev(w) != Curr(w);
+        }
+        public bool Shifted(MemoryWatcher<uint> w) {
             return Prev(w) != Curr(w);
         }
 
-        public bool StepTo(MemoryWatcher w, ushort c) {
+        public bool StepTo(MemoryWatcher<byte> w, ushort c) {
+            return Curr(w) == c && Prev(w) + 1 == Curr(w);
+        }
+        public bool StepTo(MemoryWatcher<ushort> w, ushort c) {
+            return Curr(w) == c && Prev(w) + 1 == Curr(w);
+        }
+        public bool StepTo(MemoryWatcher<uint> w, ushort c) {
             return Curr(w) == c && Prev(w) + 1 == Curr(w);
         }
 
-        public bool Stepped(MemoryWatcher w) {
+        public bool Stepped(MemoryWatcher<byte> w) {
+            return Prev(w) + 1 == Curr(w);
+        }
+        public bool Stepped(MemoryWatcher<ushort> w) {
+            return Prev(w) + 1 == Curr(w);
+        }
+        public bool Stepped(MemoryWatcher<uint> w) {
             return Prev(w) + 1 == Curr(w);
         }
     }
