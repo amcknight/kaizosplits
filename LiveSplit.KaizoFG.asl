@@ -172,7 +172,6 @@ split {
     // r.Track(w.Submap, "Map", w);
     // r.Monitor(w.layer1Pointer, w);
 
-    // TODO: Separate timing to a lib
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
     if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));

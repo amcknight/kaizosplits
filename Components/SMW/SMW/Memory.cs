@@ -52,7 +52,6 @@ namespace SMW {
             // Level height in Screens  005F
             // In Water 0075
             // 13C1 Overworld tile number
-            // 141C Goal flag type
             // 1B96 Side exits enabled
             // 0D9B Battle mode
             // 13FB Freeze player (yoshi grow, keyhole, yoshi eat berry, some bosses, etc)

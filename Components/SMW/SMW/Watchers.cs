@@ -231,5 +231,15 @@ namespace SMW {
         public bool Stepped(MemoryWatcher<uint> w) {
             return Prev(w) + 1 == Curr(w);
         }
+
+        public bool Crossed(MemoryWatcher<byte> w, ushort c) {
+            return Prev(w) < c && Curr(w) >= c;
+        }
+        public bool Crossed(MemoryWatcher<ushort> w, ushort c) {
+            return Prev(w) < c && Curr(w) >= c;
+        }
+        public bool Crossed(MemoryWatcher<uint> w, ushort c) {
+            return Prev(w) < c && Curr(w) >= c;
+        }
     }
 }
