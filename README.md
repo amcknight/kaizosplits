@@ -10,12 +10,11 @@ However, there's also an ambitious v2 split manager that will robustly handles f
 
 ### v1.1
 - Use the SMW class in v1
-- Switch Exits from using different finish types to the simle exit mode
+- Switch Exits from using different finish types to the simple exit mode
 - Fix examples where CPs aren't triggering after 1st (Multiple Midway Points Tool makes this complicated)
 - Get a clear signal of whether a room change is a CP, if possible
 
 ### v2
-- Never autoskip on final split even if delayed split
 - Need a well defined run representation file that contains all info for representing autosplit preferences, splits, skips, undos, merges
 - Monitor a run to create a file that represents that run
 - Allow for easy mod of the representation to the user's preference
@@ -23,7 +22,7 @@ However, there's also an ambitious v2 split manager that will robustly handles f
 - An autosplitter config that is based on your run representation
 - Pull names of the levels from the ROM values
 - Use overworld directions to add flags to the titles (e.g. secrets as "*" or turn back as "<--" or H vs P vs D vs R for cp Tape vs pipe vs door vs room splits)
-- Auto-skip and auto-undo splits
+- Auto-skip splits
 - Make generic placement splits (every door, pipe, room, etc, even in same room#)
 - Add idempotent split mechanisms
 - Add more possibilities for custom fine-grained splits

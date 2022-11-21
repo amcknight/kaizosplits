@@ -34,9 +34,10 @@ init {
     vars.gamename = timer.Run.GameName;
     vars.livesplitGameName = vars.gamename;
     vars.runNum = 0;
-    vars.maxLag = 50L;
+    vars.maxLag = 80L;
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     vars.prevIn = false;
+    vars.prevFinished = false;
 
     long memoryOffset = 0;
     if (game.ProcessName.ToLower() == "retroarch") {
@@ -177,9 +178,23 @@ split {
     if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
     vars.endMs = newEndMs;
 
+    // Undo split if die after finish
+    if (isLevelFinishes && w.LevelFinish) {
+        vars.prevFinished = true;
+    }
+    if (w.LevelExit) {
+        vars.prevFinished = false;
+    }
+    if (w.DiedNow && vars.prevFinished) {
+        vars.prevFinished = false;
+        new TimerModel { CurrentState = timer }.UndoSplit();
+    }
+
     if (credits) {
         return true;
-    } else if (splitStatus && lag > vars.maxLag) {
+    }
+
+    if (splitStatus && lag > vars.maxLag) {
         new TimerModel { CurrentState = timer }.SkipSplit();
         print("LAG: "+lag);
         return false;
