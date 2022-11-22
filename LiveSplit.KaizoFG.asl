@@ -6,8 +6,11 @@ state("emuhawk") {}
 state("retroarch") {}
 
 startup {
+    print("STARTUP");
     settings.Add("recording", false, "Record Events");
     settings.SetToolTip("recording", "Record events for Split Synthesis");
+    settings.Add("autoskipOnLag", false, "Autoskip laggy splits");
+    settings.SetToolTip("autoskipOnLag", "Autoskip splits that might have had more than 100ms of lag");
     settings.Add("worlds", true, "Overworlds");
     settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
     settings.Add("levelExits", true, "Level Exits");
@@ -22,19 +25,23 @@ startup {
     settings.SetToolTip("firstTapes", "Split when getting the first checkpoint tape in the level");
     settings.Add("rooms", false, "All Room Changes");
     settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
+    vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "rooms"};
+    vars.settingsDict = new Dictionary<string, bool>();
 
-    // Load libs
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
+    vars.settings = Activator.CreateInstance(asm.GetType("SMW.Settings"));
+
 }
 
 init {
+    print("INIT");
     vars.gamename = timer.Run.GameName;
     vars.livesplitGameName = vars.gamename;
     vars.runNum = 0;
-    vars.maxLag = 80L;
+    vars.maxLag = 100L;
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     vars.prevIn = false;
     vars.prevFinished = false;
@@ -63,8 +70,7 @@ init {
 
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
 
-    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x1B87, 0x1B87},});
-
+    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {});
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
         vars.livesplitGameName = vars.gamename;
@@ -95,29 +101,22 @@ reset {
 split {
     var r = vars.rec;
     var w = vars.ws;
+    var s = vars.settings;
     var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
-    // Settings: TODO Move to a lib
-    var isRecording = settings["recording"];
-    var isWorlds = settings["worlds"];
-    var isLevelExits = settings["levelExits"];
-    var isIntroExits = settings["introExits"];
-    var isLevelStarts = settings["levelStarts"];
-    var isLevelFinishes = settings["levelFinishes"];
-    var isFirstTapes = settings["firstTapes"];
-    var isRooms = settings["rooms"];
-    var other = false;
-    var credits = false;
 
     // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
     // The order here matters for Spawn recording
-    r.Update(isRecording, w);
+    foreach (string sn in vars.settingNames) {
+        vars.settingsDict[sn] = settings[sn];
+    }
+    s.Update(vars.settingsDict, w);
+    r.Update(s.recording, w);
     w.UpdateState();
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
         case "Bunbun World 2": // TODO: Retest
-            other = w.Prev(w.io) != 61 // KLDC Dolphins
+            s.other = w.Prev(w.io) != 61 // KLDC Dolphins
                 && w.prevIO != 48 // Mirror Temple
                 ;
             w.Room = w.Room && w.Prev(w.io) != 65; // Using yoshiCoins
@@ -125,15 +124,15 @@ split {
         break;
         case "Cute Kaizo World": // TODO: Retest
             w.Tape = w.Tape && w.Prev(w.io) != 55;  // Using doors
-            w.Credits = w.ShiftTo(w.io, 21);
+            s.credits = w.ShiftTo(w.io, 21);
         break;
         case "Love Yourself":
-            other =
+            s.other =
                 (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) || // 3rd Castle room
                 (w.Shift(w.roomNum, 40, 42) && w.Curr(w.levelNum) == 74) || // 4th castle room
                 (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) // All room other than credits door
                 ;
-            credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
+            s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Purgatory": // TODO: Retest
             w.Tape = w.Tape
@@ -147,59 +146,21 @@ split {
         break;
     }
 
-    var splitStatus = !isRecording && (
-        (isWorlds && w.Overworld) ||
-        (isLevelExits && w.LevelExit) ||
-        (isIntroExits && w.Intro) ||
-        (isLevelStarts && w.LevelStart) ||
-        (isLevelFinishes && w.LevelFinish) ||
-        (isFirstTapes && w.Tape) ||
-        (isRooms && w.Room) ||
-        other ||
-        credits
-        );
-
-    // r.Track(w.LevelExit, "Exit", w);
-    // r.Track(w.Intro, "Intro", w);
-    // r.Track(w.LevelStart, "Start", w);
-    // r.Track(w.Goal, "Goal", w);
-    // r.Track(w.Key, "Key", w);
-    // r.Track(w.Orb, "Orb", w);
-    // r.Track(w.Palace, "Palace", w);
-    // r.Track(w.Boss, "Boss", w);
-    // r.Track(w.Tape, "Tape", w);
-    // r.Track(w.Room, "Room", w);
-    // r.Track(w.Portal, "Portal", w);
-    // r.Track(w.Submap, "Map", w);
-    // r.Monitor(w.layer1Pointer, w);
-
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
     if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
     vars.endMs = newEndMs;
 
-    // Undo split if die after finish
-    if (isLevelFinishes && w.LevelFinish) {
-        vars.prevFinished = true;
-    }
-    if (w.LevelExit) {
-        vars.prevFinished = false;
-    }
-    if (w.DiedNow && vars.prevFinished) {
-        vars.prevFinished = false;
-        new TimerModel { CurrentState = timer }.UndoSplit();
-    }
+    if (s.UndoStatus()) new TimerModel { CurrentState = timer }.UndoSplit();
 
-    if (credits) {
-        return true;
-    }
+    if (s.credits) return true;
 
-    if (splitStatus && lag > vars.maxLag) {
+    if (s.SplitStatus() && s.autoskipOnLag && lag > vars.maxLag) {
         new TimerModel { CurrentState = timer }.SkipSplit();
         print("LAG: "+lag);
         return false;
     } else {
-        return splitStatus;
+        return s.SplitStatus();
     }
 }
 
