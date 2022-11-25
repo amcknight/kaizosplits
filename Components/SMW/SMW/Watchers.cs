@@ -90,8 +90,6 @@ namespace SMW {
         public bool GmLevelFadeIn => ShiftTo(gameMode, 19);
         public bool GmLevel => ShiftTo(gameMode, 20);
         public bool NewEvent => Stepped(eventsTriggered);
-        public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
-        public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool ToOverworldPortal => Shift(overworldPortal, 1, 0);
         public bool SubmapShift => Shifted(submap);
         public bool ToFanfare => StepTo(fanfare, 1);
@@ -112,6 +110,8 @@ namespace SMW {
         public bool ExitDoor => Shift(playerAnimation, 13, 0);
 
         // Composite Conditions
+        public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
+        public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;
         public bool Spawn => GmPrepareLevel && died;
         public bool Intro => IntroExit;
@@ -131,7 +131,7 @@ namespace SMW {
 
         // Highest level conditions
         public bool LevelFinish => InLevel && (Goal || Key || Orb || Palace || Boss);
-        public bool Overworld => !InLevel && (ToOverworldPortal || SubmapShift);
+        public bool Overworld => !InLevel && (Portal || Submap);
 
         public void UpdateState() {
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.

@@ -70,7 +70,7 @@ init {
 
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
 
-    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {});
+    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E1427, 0x7E1427},{0x7E190D, 0x7E190D},{0x7E1DF9, 0x7E1DFC},});
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
         vars.livesplitGameName = vars.gamename;
@@ -115,8 +115,25 @@ split {
 
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
+        case "Bunbun World":
+            s.other =
+                (w.Shifted(w.roomNum) && w.Curr(w.roomNum) > 211 && w.Curr(w.levelNum) == 80) || // Six-Screen Suites
+                (w.Shift(w.roomNum, 9, 11) && w.Curr(w.levelNum) == 45) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead. figure that out
+                (w.Shift(w.roomNum, 9, 10) && w.Curr(w.levelNum) == 45) || // Mt. Ninji Ending
+                (w.Shift(w.roomNum, 12, 254) && w.Curr(w.levelNum) == 48) || // Slippery Spirits to Boss
+                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 37) || // Cotton Candy Castle
+                (w.Shift(w.roomNum, 42, 74) && w.Curr(w.levelNum) == 78) || // Dizzy Drifting Secret pipe
+                (w.Shift(w.roomNum, 15, 198) && w.Curr(w.levelNum) == 51) ||
+                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 68) || // Breathtaking
+                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 61) || // Night Sky Scamper
+                (w.Shift(w.roomNum, 16, 225) && w.Curr(w.levelNum) == 52) || // Bunbun Bastion
+                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 62) || // Culmination Castle
+                (w.Shift(w.roomNum, 17, 198) && w.Curr(w.levelNum) == 53) // Bowser's Tower
+                ;
+            s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late)
+        break;
         case "Bunbun World 2": // TODO: Retest
-            s.other = w.Prev(w.io) != 61 // KLDC Dolphins
+            s.Tape = w.Prev(w.io) != 61 // KLDC Dolphins
                 && w.prevIO != 48 // Mirror Temple
                 ;
             w.Room = w.Room && w.Prev(w.io) != 65; // Using yoshiCoins
@@ -145,6 +162,22 @@ split {
             w.Tape = w.Tape && w.Prev(w.io) != 65;  // Yoshi's Lair 1 Tape
         break;
     }
+
+    List<string> reasons = new List<string>();
+    if (s.SplitStatus()) {
+        if (w.Palace) reasons.Add("Palace");
+        if (w.Tape) reasons.Add("Tape");
+        if (w.Submap) reasons.Add("Submap");
+        if (w.Portal) reasons.Add("Portal");
+        if (w.Boss) reasons.Add("Boss");
+        if (w.Orb) reasons.Add("Orb");
+        if (w.Key) reasons.Add("Key");
+        if (w.Goal) reasons.Add("Goal");
+        r.Dbg("Split: " + string.Join(" ", reasons));
+    }
+    r.Monitor(w.roomNum, w);
+    r.Monitor(w.levelNum, w);
+    r.Monitor(w.submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
