@@ -133,6 +133,14 @@ namespace SMW {
         public bool LevelFinish => InLevel && (Goal || Key || Orb || Palace || Boss);
         public bool Overworld => !InLevel && (Portal || Submap);
 
+        public bool RoomShiftInLevel(ushort level, ushort fromRoom, ushort toRoom) {
+            return Shift(roomNum, fromRoom, toRoom) && Curr(levelNum) == level;
+        }
+
+        public bool RoomShiftsInLevel(ushort level, ushort firstRoom) {
+            return Shifted(roomNum) && Curr(roomNum) != firstRoom && Curr(levelNum) == level;
+        }
+
         public void UpdateState() {
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
             died = died || DiedNow;

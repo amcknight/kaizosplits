@@ -117,18 +117,18 @@ split {
     switch ((string) vars.gamename) {
         case "Bunbun World":
             s.other =
-                (w.Shifted(w.roomNum) && w.Curr(w.roomNum) > 211 && w.Curr(w.levelNum) == 80) || // Six-Screen Suites
-                (w.Shift(w.roomNum, 9, 11) && w.Curr(w.levelNum) == 45) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead. figure that out
-                (w.Shift(w.roomNum, 9, 10) && w.Curr(w.levelNum) == 45) || // Mt. Ninji Ending
-                (w.Shift(w.roomNum, 12, 254) && w.Curr(w.levelNum) == 48) || // Slippery Spirits to Boss
-                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 37) || // Cotton Candy Castle
-                (w.Shift(w.roomNum, 42, 74) && w.Curr(w.levelNum) == 78) || // Dizzy Drifting Secret pipe
-                (w.Shift(w.roomNum, 15, 198) && w.Curr(w.levelNum) == 51) ||
-                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 68) || // Breathtaking
-                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 61) || // Night Sky Scamper
-                (w.Shift(w.roomNum, 16, 225) && w.Curr(w.levelNum) == 52) || // Bunbun Bastion
-                (w.Shifted(w.roomNum) && w.Curr(w.levelNum) == 62) || // Culmination Castle
-                (w.Shift(w.roomNum, 17, 198) && w.Curr(w.levelNum) == 53) // Bowser's Tower
+                w.RoomShiftsInLevel(80, 40) || // Six-Screen Suites
+                w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead. figure that out
+                w.RoomShiftInLevel(45, 9, 10) || // Mt. Ninji Ending
+                w.RoomShiftInLevel(48, 12, 254) || // Slippery Spirits to Boss
+                w.RoomShiftsInLevel(37, 1) || // Cotton Candy Castle
+                w.RoomShiftInLevel(78, 42, 74) || // Dizzy Drifting Secret pipe
+                w.RoomShiftInLevel(51, 15, 198) ||
+                w.RoomShiftsInLevel(68, 32) || // Breathtaking
+                w.RoomShiftsInLevel(61, 25) || // Night Sky Scamper
+                w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
+                w.RoomShiftsInLevel(62, 26) || // Culmination Castle
+                w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late)
         break;
