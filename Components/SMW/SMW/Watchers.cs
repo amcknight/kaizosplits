@@ -137,8 +137,8 @@ namespace SMW {
             return Shift(roomNum, fromRoom, toRoom) && Curr(levelNum) == level;
         }
 
-        public bool RoomShiftsInLevel(ushort level, ushort firstRoom) {
-            return Shifted(roomNum) && Curr(roomNum) != firstRoom && Curr(levelNum) == level;
+        public bool RoomShiftsInLevel(ushort level) {
+            return Shifted(roomNum) && Curr(roomCounter) > 0 && Curr(levelNum) == level;
         }
 
         public void UpdateState() {

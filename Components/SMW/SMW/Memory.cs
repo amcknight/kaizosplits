@@ -43,11 +43,9 @@ namespace SMW {
             {0x0DD5, "exitMode"},
             {0x0DB3, "player"},
             {0x13C5, "moonCounter"},
-            // STILL TESTING
-            {0x1925, "levelMode"},
             {0x1935, "levelStart"},
 
-          // OTHER THINGS TO TEST
+          // THINGS TO TEST
             // Level width in Screens 005E
             // Level height in Screens  005F
             // In Water 0075

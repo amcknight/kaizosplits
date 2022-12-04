@@ -116,18 +116,19 @@ split {
     // Override Default split variables for individual games
     switch ((string) vars.gamename) {
         case "Bunbun World":
+            // TODO: Put a split on rooms function that uses levelNum and first roomNum
             s.other =
-                w.RoomShiftsInLevel(80, 40) || // Six-Screen Suites
+                w.RoomShiftsInLevel(80) || // Six-Screen Suites
                 w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead. figure that out
                 w.RoomShiftInLevel(45, 9, 10) || // Mt. Ninji Ending
                 w.RoomShiftInLevel(48, 12, 254) || // Slippery Spirits to Boss
-                w.RoomShiftsInLevel(37, 1) || // Cotton Candy Castle
+                w.RoomShiftsInLevel(37) || // w.RoomShiftInLevel(37, 231, 1) || // Cotton Candy Castle
                 w.RoomShiftInLevel(78, 42, 74) || // Dizzy Drifting Secret pipe
-                w.RoomShiftInLevel(51, 15, 198) ||
-                w.RoomShiftsInLevel(68, 32) || // Breathtaking
-                w.RoomShiftsInLevel(61, 25) || // Night Sky Scamper
+                w.RoomShiftInLevel(51, 15, 198) || // Dolphin Dreams
+                w.RoomShiftsInLevel(68) || // Breathtaking
+                w.RoomShiftsInLevel(61) || // Night Sky Scamper
                 w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
-                w.RoomShiftsInLevel(62, 26) || // Culmination Castle
+                w.RoomShiftsInLevel(62) || // Culmination Castle
                 w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late)
@@ -177,7 +178,6 @@ split {
     }
     r.Monitor(w.roomNum, w);
     r.Monitor(w.levelNum, w);
-    r.Monitor(w.submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
