@@ -119,15 +119,16 @@ split {
             // TODO: Put a split on rooms function that uses levelNum and first roomNum
             s.other =
                 w.RoomShiftsInLevel(80) || // Six-Screen Suites
-                w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead. figure that out
+                w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
                 w.RoomShiftInLevel(45, 9, 10) || // Mt. Ninji Ending
                 w.RoomShiftInLevel(48, 12, 254) || // Slippery Spirits to Boss
-                w.RoomShiftsInLevel(37) || // w.RoomShiftInLevel(37, 231, 1) || // Cotton Candy Castle
+                w.RoomShiftsInLevel(37) || // Cotton Candy Castle
                 w.RoomShiftInLevel(78, 42, 74) || // Dizzy Drifting Secret pipe
                 w.RoomShiftInLevel(51, 15, 198) || // Dolphin Dreams
                 w.RoomShiftsInLevel(68) || // Breathtaking
                 w.RoomShiftsInLevel(61) || // Night Sky Scamper
-                w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
+                w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion. TODO: Boss split should be canceled for fadeout split to conform to bad ending any% rule
+                w.Shift(w.io, 3, 20) || // Bunbun Bastion any%
                 w.RoomShiftsInLevel(62) || // Culmination Castle
                 w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
@@ -176,8 +177,8 @@ split {
         if (w.Goal) reasons.Add("Goal");
         r.Dbg("Split: " + string.Join(" ", reasons));
     }
+    r.Monitor(w.io, w);
     r.Monitor(w.roomNum, w);
-    r.Monitor(w.levelNum, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
