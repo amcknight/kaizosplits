@@ -148,7 +148,7 @@ split {
             s.credits = w.ShiftTo(w.io, 21);
         break;
         case "Janked Up Mario Party":
-            s.other = w.totalYoshiCoinsStepped && w.totalYoshiCoins % 15 == 0;
+            // s.other = w.totalYoshiCoinsStepped && w.totalYoshiCoins % 15 == 0;
             s.credits = false; // TODO: Split on fadeout of 125th level exit
         break;
         case "Love Yourself":
