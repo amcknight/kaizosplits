@@ -1,6 +1,7 @@
 ﻿using LiveSplit.ComponentUtil;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SMW {
     public class Watchers : MemoryWatcherList {
@@ -9,6 +10,9 @@ namespace SMW {
         public bool died;
         public bool roomStep;
         public ushort prevIO;
+        public Dictionary<int, int> yoshiCoinsPerLevel = new Dictionary<int, int>();
+        public int totalYoshiCoins = 0;
+        public bool totalYoshiCoinsStepped = false;
         public List<MemoryWatcher<byte>> xs = new List<MemoryWatcher<byte>>();
 
         public Watchers() {
@@ -66,6 +70,7 @@ namespace SMW {
 
         // Temporary Test Watchers
         public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
+        public MemoryWatcher<byte> fadeOut => (MemoryWatcher<byte>)this["fadeOut"];
         public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
         public MemoryWatcher<uint> layer1Pointer => (MemoryWatcher<uint>)this["layer1Pointer"];
 
@@ -144,6 +149,7 @@ namespace SMW {
         public void UpdateState() {
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
             died = died || DiedNow;
+
             roomStep = false;
             if (Stepped(roomCounter)) {
                 roomStep = Curr(roomCounter) != 1 || !died;
@@ -151,6 +157,19 @@ namespace SMW {
             // PrevIO is basically Current IO except when a P-Switch or Star shifts the io to 0
             if (Curr(io) != 0) {
                 prevIO = Curr(io);
+            }
+            // Yoshi Coin Maximum watching
+            var levNum = Curr(levelNum);
+            if (Stepped(yoshiCoin) && levNum != 0) {
+                if (!yoshiCoinsPerLevel.ContainsKey(levNum))
+                    yoshiCoinsPerLevel.Add(levNum, 0);
+                if (Curr(yoshiCoin) > yoshiCoinsPerLevel[levNum]) {
+                    yoshiCoinsPerLevel[levNum] = Curr(yoshiCoin);
+                    totalYoshiCoinsStepped = true;
+                }
+                totalYoshiCoins = yoshiCoinsPerLevel.Sum(x => x.Value);
+            } else {
+                totalYoshiCoinsStepped = false;
             }
 
             if (Spawn) died = false;

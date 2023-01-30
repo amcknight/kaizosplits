@@ -45,6 +45,8 @@ init {
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     vars.prevIn = false;
     vars.prevFinished = false;
+    vars.ycs = 0;
+    vars.yc1 = false;
 
     long memoryOffset = 0;
     if (game.ProcessName.ToLower() == "retroarch") {
@@ -70,11 +72,11 @@ init {
 
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
 
-    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E1427, 0x7E1427},{0x7E190D, 0x7E190D},{0x7E1DF9, 0x7E1DFC},});
+    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},});
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
         vars.livesplitGameName = vars.gamename;
-        print("Game: "+vars.gamename+", Splits: "+vars.livesplitGameName);
+        print("Game:   '"+vars.gamename+"'\nSplits: '"+vars.livesplitGameName+"'");
     });
 
     vars.reInitialise();
@@ -127,8 +129,8 @@ split {
                 w.RoomShiftInLevel(51, 15, 198) || // Dolphin Dreams
                 w.RoomShiftsInLevel(68) || // Breathtaking
                 w.RoomShiftsInLevel(61) || // Night Sky Scamper
-                w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion. TODO: Boss split should be canceled for fadeout split to conform to bad ending any% rule
-                w.Shift(w.io, 3, 20) || // Bunbun Bastion any%
+                w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
+                (w.Shift(w.io, 3, 20) && w.Curr(w.levelNum) == 52) || // Bunbun Bastion any%
                 w.RoomShiftsInLevel(62) || // Culmination Castle
                 w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
@@ -145,6 +147,10 @@ split {
             w.Tape = w.Tape && w.Prev(w.io) != 55;  // Using doors
             s.credits = w.ShiftTo(w.io, 21);
         break;
+        case "Janked Up Mario Party":
+            s.other = w.totalYoshiCoinsStepped && w.totalYoshiCoins % 15 == 0;
+            s.credits = false; // TODO: Split on fadeout of 125th level exit
+        break;
         case "Love Yourself":
             s.other =
                 (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) || // 3rd Castle room
@@ -160,8 +166,37 @@ split {
                 && w.Prev(w.io) != 63  // Cancel for Summit of Salvation
                 ;
         break;
-        case "Quickie World 2": // TODO: Retest
-            w.Tape = w.Tape && w.Prev(w.io) != 65;  // Yoshi's Lair 1 Tape
+        case "Quickie World 2":
+          s.other =
+            w.RoomShiftInLevel(10, 10, 41) ||
+            w.RoomShiftInLevel(2, 2, 48) ||
+            w.RoomShiftInLevel(9, 9, 36) ||
+            w.RoomShiftInLevel(17, 17, 23) || // CP shifting to Secret room
+            w.RoomShiftInLevel(17, 23, 42) ||
+            w.RoomShiftInLevel(4, 4, 44) ||
+            w.RoomShiftInLevel(6, 6, 33) ||
+            w.RoomShiftInLevel(6, 6, 207) || // CP shifting to Boss room
+            w.RoomShiftInLevel(5, 5, 49) ||
+            w.RoomShiftInLevel(20, 20, 34) ||
+            w.RoomShiftInLevel(3, 3, 32) ||
+            w.RoomShiftInLevel(14, 14, 15) || // CP Shifting to Secret room
+            w.RoomShiftInLevel(14, 15, 47) ||
+            w.RoomShiftInLevel(24, 24, 30) ||
+            w.RoomShiftInLevel(19, 19, 28) ||
+            w.RoomShiftInLevel(21, 21, 29) ||
+            w.RoomShiftInLevel(12, 12, 35) ||
+            w.RoomShiftInLevel(7, 7, 40) ||
+            w.RoomShiftInLevel(1, 1, 43) ||
+            w.RoomShiftInLevel(11, 11, 38) ||
+            w.RoomShiftInLevel(18, 18, 27) ||
+            w.RoomShiftInLevel(18, 18, 25) || // Castle Door instead of Tape
+            w.RoomShiftInLevel(8, 8, 46) ||
+            w.RoomShiftInLevel(16, 16, 26) ||
+            w.RoomShiftInLevel(22, 22, 37) ||
+            w.RoomShiftInLevel(13, 13, 31) ||
+            w.RoomShiftInLevel(13, 13, 45) ||
+            w.RoomShiftInLevel(13, 13, 235) // Yoshi pipe
+            ;
         break;
     }
 
@@ -177,8 +212,9 @@ split {
         if (w.Goal) reasons.Add("Goal");
         r.Dbg("Split: " + string.Join(" ", reasons));
     }
-    r.Monitor(w.io, w);
+    r.Monitor(w.levelNum, w);
     r.Monitor(w.roomNum, w);
+    //r.Monitor(w.Submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
