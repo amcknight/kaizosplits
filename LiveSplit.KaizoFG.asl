@@ -13,18 +13,28 @@ startup {
     settings.SetToolTip("autoskipOnLag", "Autoskip splits that might have had more than 100ms of lag");
     settings.Add("worlds", true, "Overworlds");
     settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
-    settings.Add("levelExits", true, "Level Exits");
-    settings.SetToolTip("levelExits", "Split when leaving a level without start/select");
-    settings.Add("introExits", true, "Intro Exits");
-    settings.SetToolTip("introExits", "Split and end of the intro");
+    settings.Add("uworlds", true, "Unique Overworlds");
+    settings.SetToolTip("uworlds", "Split when switching overworlds (use with subsplits)");
     settings.Add("levelStarts", false, "Level Starts");
     settings.SetToolTip("levelStarts", "Split at the start of each level");
+    settings.Add("ulevelStarts", false, "Unique Level Starts");
+    settings.SetToolTip("ulevelStarts", "Split at the start of each level");
+    settings.Add("levelExits", true, "Level Exits");
+    settings.SetToolTip("levelExits", "Split when leaving a level without start/select");
+    settings.Add("ulevelExits", true, "Unique Level Exits");
+    settings.SetToolTip("ulevelExits", "Split when leaving a level without start/select");
     settings.Add("levelFinishes", false, "Goals, Orbs, Keys, and Bosses");
     settings.SetToolTip("levelFinishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
-    settings.Add("firstTapes", true, "First checkpoint tape");
-    settings.SetToolTip("firstTapes", "Split when getting the first checkpoint tape in the level");
+    settings.Add("ulevelFinishes", false, "Unique Goals, Orbs, Keys, and Bosses");
+    settings.SetToolTip("ulevelFinishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
     settings.Add("rooms", false, "All Room Changes");
     settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
+    settings.Add("urooms", false, "Unique Room Changes");
+    settings.SetToolTip("urooms", "Split when on room transitions even with CPs");
+    settings.Add("introExits", true, "Intro Exits");
+    settings.SetToolTip("introExits", "Split and end of the intro");
+    settings.Add("firstTapes", true, "First checkpoint tape");
+    settings.SetToolTip("firstTapes", "Split when getting the first checkpoint tape in the level");
     vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "rooms"};
     vars.settingsDict = new Dictionary<string, bool>();
 
@@ -33,7 +43,6 @@ startup {
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.settings = Activator.CreateInstance(asm.GetType("SMW.Settings"));
-
 }
 
 init {
