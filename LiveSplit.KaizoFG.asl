@@ -147,9 +147,29 @@ split {
             w.Tape = w.Tape && w.Prev(w.io) != 55;  // Using doors
             s.credits = w.ShiftTo(w.io, 21);
         break;
+        case "Dancer to a Discordant System":
+            s.other =
+                w.RoomShiftInLevel(5, 6, 7) ||
+                w.RoomShiftInLevel(51, 14, 13) ||
+                w.RoomShiftInLevel(11, 10, 21) ||
+                w.RoomShiftInLevel(11, 21, 22) ||
+                w.RoomShiftInLevel(11, 22, 12) ||
+                w.RoomShiftInLevel(11, 12, 23) ||
+              false;
+        break;
         case "Janked Up Mario Party":
-            // s.other = w.totalYoshiCoinsStepped && w.totalYoshiCoins % 15 == 0;
-            s.credits = false; // TODO: Split on fadeout of 125th level exit
+            // s.other =
+                // w.RoomShiftsInLevel(38) || // Mushroom Ledge
+                // w.RoomShiftsInLevel(37) || // Bastion Blue
+                // w.RoomShiftsInLevel(93) || // Tides, Ok?
+                // w.RoomShiftsInLevel(84) || // Roy
+                // w.RoomShiftsInLevel(19) || // Peek a Boo
+                // w.RoomShiftsInLevel(31) || // Glacier Soup
+                // w.RoomShiftsInLevel(62) || // Yellow
+                // w.RoomShiftsInLevel(36) || // Warehouse
+               // w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
+              //  false;
+            s.credits = false;
         break;
         case "Love Yourself":
             s.other =
@@ -198,6 +218,8 @@ split {
             w.RoomShiftInLevel(13, 13, 235) // Yoshi pipe
             ;
         break;
+        case "Truc Bidule":
+        break;
     }
 
     List<string> reasons = new List<string>();
@@ -212,9 +234,10 @@ split {
         if (w.Goal) reasons.Add("Goal");
         r.Dbg("Split: " + string.Join(" ", reasons));
     }
+
     r.Monitor(w.levelNum, w);
     r.Monitor(w.roomNum, w);
-    //r.Monitor(w.Submap, w);
+    r.Monitor(w.Submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
