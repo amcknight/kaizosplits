@@ -2,9 +2,9 @@
 
 A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a couple years ago.
 
-Their's a v1 decent autosplitter that works as well as possible by default. This is the simple file you probably want to use in many cases, especially if you don't care about splitting after every event that you "should" split on. If you just want level splits, this is the one.
+Their's a v1 decent autosplitter that works as well as possible by default. This is the simple file you probably want to use in many cases. If you just want level splits, this is the one.
 
-However, there's also an ambitious v2 split manager that will robustly handles fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress!
+However, there's also an ambitious v2 split manager that will robustly handle fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress!
 
 ## Roadmap
 
