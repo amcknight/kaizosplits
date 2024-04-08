@@ -1,10 +1,41 @@
-# Kaizosplits
+## Kaizosplits
 
-A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a couple years ago.
+A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a 2021.
 
-Their's a v1 decent autosplitter that works as well as possible by default. This is the simple file you probably want to use in many cases. If you just want level splits, this is the one.
+Their's a v1 decent autosplitter that's supposed to work as well as possible by default but it's a all kind of a mess right now. This is the file you probably want to use. If you just want level splits, this is the one.
 
-However, there's also an ambitious v2 split manager that will robustly handle fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress!
+However, there's also an ambitious v2 split manager that will robustly handle fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress and will likely be forked into it's own project!
+
+### Development Setup Log
+
+This is how I got it working last time. Next time re-setting up, improve these instructions.
+
+1) Install Visual Studio 2022 (can try latest but I used this one)
+
+2) Build LiveSplit for its components
+```
+git clone https://github.com/LiveSplit/LiveSplit.git
+git submodule update --init --recursive
+```
+Open the solution in VS2022 and build it
+- needs .net 4.6.1
+- needs netstandard2.0 (I think)
+- Try to do this through Visual Studio, but if can't, download carefully... sorry, improve these instructions next time.
+- This is for LiveSplit.Core. Could possibly get it built alone.
+
+3) Build kaizosplits SMW dll
+```
+git clone https://github.com/amcknight/kaizosplits.git
+```
+Open the solution in VS2022 and build it
+
+4) Reinstall SMW dll every time it builds:
+- Copy "kaizosplits\Components\SMW\SMW\bin\Debug\netstandard2.0\SMW.dll" to  "LiveSplit/Components/" 
+- Don't need to recopy it if only changed the .asl file
+
+### Installation
+
+You're gonna need to build it like the above, for now, sorry.
 
 ## Roadmap
 
