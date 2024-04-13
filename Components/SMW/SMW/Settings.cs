@@ -10,6 +10,7 @@ namespace SMW {
         public bool levelStarts;
         public bool levelFinishes;
         public bool firstTapes;
+        public bool cpEntrances;
         public bool rooms;
         public bool other;
         public bool credits;
@@ -27,6 +28,7 @@ namespace SMW {
             levelStarts = settings["levelStarts"];
             levelFinishes = settings["levelFinishes"];
             firstTapes = settings["firstTapes"];
+            cpEntrances = settings["cpEntrances"];
             rooms = settings["rooms"];
             w = ws;
         }
@@ -39,6 +41,7 @@ namespace SMW {
                 (levelStarts && w.LevelStart) ||
                 (levelFinishes && w.LevelFinish) ||
                 (firstTapes && w.Tape) ||
+                (cpEntrances && w.CPEntranceInLevel) ||
                 (rooms && w.Room) ||
                 other ||
                 credits

@@ -54,6 +54,7 @@ namespace SMW {
         public MemoryWatcher<byte> roomCounter => (MemoryWatcher<byte>)this["roomCounter"];
         public MemoryWatcher<byte> peach => (MemoryWatcher<byte>)this["peach"];
         public MemoryWatcher<byte> checkpointTape => (MemoryWatcher<byte>)this["checkpointTape"];
+        public MemoryWatcher<byte> cpEntrance => (MemoryWatcher<byte>)this["cpEntrance"];
         public MemoryWatcher<byte> pipe => (MemoryWatcher<byte>)this["pipe"];
         public MemoryWatcher<byte> playerAnimation => (MemoryWatcher<byte>)this["playerAnimation"];
         public MemoryWatcher<byte> yoshiCoin => (MemoryWatcher<byte>)this["yoshiCoin"];
@@ -131,6 +132,7 @@ namespace SMW {
         public bool LevelStart => ToLevelStart;
         public bool PeachRelease => ToPeachRelease;
         public bool Tape => ToCheckpointTape && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
+        public bool CPEntranceInLevel => Shifted(cpEntrance) && !Shifted(levelNum);
         public bool Room => roomStep;
         public bool Submap => SubmapShift;
         public bool Portal => ToOverworldPortal;

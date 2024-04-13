@@ -30,8 +30,11 @@ git clone https://github.com/amcknight/kaizosplits.git
 Open the solution in VS2022 and build it
 
 4) Reinstall SMW dll every time it builds:
+- Exit LiveSplit
 - Copy "kaizosplits\Components\SMW\SMW\bin\Debug\netstandard2.0\SMW.dll" to  "LiveSplit/Components/" 
+- I simplify this by creating a symlink by running PowerShell in Administrator mode and using `cmd /c mklink 'C:\PATH\TO\LIVESPLIT\Components\SMW.dll' 'C:\PATH\TO\KAIZOSPLITS\Components\SMW\SMW\bin\Debug\netstandard2.0\SMW.dll'`
 - Don't need to recopy it if only changed the .asl file
+- Start LiveSplit
 
 5) DebugView is useful for seeing print statements
 

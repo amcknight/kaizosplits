@@ -25,9 +25,11 @@ startup {
     settings.SetToolTip("levelFinishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
     settings.Add("firstTapes", true, "First checkpoint tape");
     settings.SetToolTip("firstTapes", "Split when getting the first checkpoint tape in the level");
+    settings.Add("cpEntrances", true, "Checkpoint Entrance Changes");
+    settings.SetToolTip("cpEntrances", "Split when entrance to appear at on death changes, excluding when entering a level");
     settings.Add("rooms", false, "All Room Changes");
     settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
-    vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "rooms"};
+    vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "cpEntrances", "rooms"};
     vars.settingsDict = new Dictionary<string, bool>();
 
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
@@ -243,8 +245,10 @@ split {
 
     List<string> reasons = new List<string>();
     if (s.SplitStatus()) {
-        if (w.Palace) reasons.Add("Palace");
+        if (w.LevelExit) reasons.Add("Exit");
         if (w.Tape) reasons.Add("Tape");
+        if (w.CPEntranceInLevel) reasons.Add("CP");
+        if (w.Palace) reasons.Add("Palace");
         if (w.Submap) reasons.Add("Submap");
         if (w.Portal) reasons.Add("Portal");
         if (w.Boss) reasons.Add("Boss");
@@ -256,6 +260,7 @@ split {
 
     r.Monitor(w.levelNum, w);
     r.Monitor(w.roomNum, w);
+    r.Monitor(w.cpEntrance, w);
     //r.Monitor(w.Submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
