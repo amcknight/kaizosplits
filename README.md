@@ -33,32 +33,24 @@ Open the solution in VS2022 and build it
 - Copy "kaizosplits\Components\SMW\SMW\bin\Debug\netstandard2.0\SMW.dll" to  "LiveSplit/Components/" 
 - Don't need to recopy it if only changed the .asl file
 
+5) DebugView is useful for seeing print statements
+
 ### Installation
 
 You're gonna need to build it like the above, for now, sorry.
 
-## Roadmap
+### Adding new Emulators
 
-### v1.1
-- Use the SMW class in v1
-- Switch Exits from using different finish types to the simple exit mode
-- Fix examples where CPs aren't triggering after 1st (Multiple Midway Points Tool makes this complicated)
-- Get a clear signal of whether a room change is a CP, if possible
-
-### v2
-- Need a well defined run representation file that contains all info for representing autosplit preferences, splits, skips, undos, merges
-- Monitor a run to create a file that represents that run
-- Allow for easy mod of the representation to the user's preference
-- A split generator that uses run representations to generate empty split files
-- An autosplitter config that is based on your run representation
-- Pull names of the levels from the ROM values
-- Use overworld directions to add flags to the titles (e.g. secrets as "*" or turn back as "<--" or H vs P vs D vs R for cp Tape vs pipe vs door vs room splits)
-- Auto-skip splits
-- Make generic placement splits (every door, pipe, room, etc, even in same room#)
-- Add idempotent split mechanisms
-- Add more possibilities for custom fine-grained splits
-- Add mergable split-points
-- Specific split options that only apply to specific levels. (e.g. yoshi coins, grabbed key, etc, but only in the final castle, say)
-
-### Beyond
-- Use TAS tech and save states to create unit test runs to ensure changes are mostly backwards compatible
+- Install Cheat Engine and Debug View
+- Change init to write out "modSize" `modules.First().ModuleMemorySize`
+- Run DbgView, livesplit, and the new emulator
+- DbgView should show the modSize and errors
+- Add a line to `memoryOffsets` like `{ modSize you found, ??? } // emulator name`
+- Run a hack with a value you know how to change. I use roomNum `r.Monitor(w.roomNum, w);` to the split function.
+- Use Cheat Engine to isolate the roomNum memory address
+- Close the emulator and do it again so you have two memory addresses
+- Do a pointer scan, comparing the two addresses
+- Double click the first Base Address to add it as variable
+- Back in Cheat ENgine main screen, double click the new variable's address
+- Copy the `"emu.exe"+00blah` section into comment and the address after the arrow into the value for the modSize key
+- Save and should see the room number changing in DbgView without errors

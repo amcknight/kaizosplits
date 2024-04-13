@@ -3,7 +3,9 @@ state("snes9x-x64") {}
 state("bsnes") {}
 state("higan") {}
 state("emuhawk") {}
-state("retroarch") {}
+state("retroarch") {
+    long offset : "snes9x_libretro.dll", 0x380660;  // 1.17.0 snes9x-1.62.3 (x64)
+}
 
 startup {
     print("STARTUP");
@@ -48,37 +50,49 @@ init {
     vars.ycs = 0;
     vars.yc1 = false;
 
-    long memoryOffset = 0;
-    if (game.ProcessName.ToLower() == "retroarch") {
-        var snes9xModules = modules.Where(m => m.ModuleName == "snes9x_libretro.dll");
-        if (snes9xModules.Any()) {
-            ProcessModuleWow64Safe libretromodule = snes9xModules.First();
-            IntPtr baseAddress = libretromodule.BaseAddress;
-            if (game.Is64Bit()) {
-                IntPtr result = IntPtr.Zero;
-                SigScanTarget target = new SigScanTarget(13, "83 F9 01 74 10 83 F9 02 75 2C 48 8B 05 ?? ?? ?? ?? 48 8B 40 ??");
-                SignatureScanner scanner = new SignatureScanner(game, baseAddress, (int)libretromodule.ModuleMemorySize);
-                IntPtr codeOffset = scanner.Scan(target);
-                int memoryReference = (int)((long)memory.ReadValue<int>(codeOffset) + (long)codeOffset + 0x04 + -(long)libretromodule.BaseAddress);
-                byte memoryReferenceoffset = memory.ReadValue<byte>(codeOffset + 7);
-                IntPtr outOffset;
-                new DeepPointer("snes9x_libretro.dll", memoryReference, memoryReferenceoffset, 0x0).DerefOffsets(game, out outOffset);
-                memoryOffset = (long)outOffset;
-            }
-        }
-    } else if (vars.ws.states.TryGetValue(modules.First().ModuleMemorySize, out memoryOffset))
-      if (memory.ProcessName.ToLower().Contains("snes9x"))
-          memoryOffset = memory.ReadValue<int>((IntPtr)memoryOffset);
-
+    // Branching on module size
+    var memoryOffsets = new Dictionary<int, long>
+    {
+        {   9646080, 0x97EE04 },      // Snes9x-rr 1.60
+        {  13565952, 0x140925118 },   // Snes9x-rr 1.60 (x64)
+        {   9027584, 0x94DB54 },      // Snes9x 1.60
+        {  12836864, 0x1408D8BE8 },   // Snes9x 1.60 (x64)
+        {  12955648, 0x59A1430 },     // Snes9x 1.61 (x64)    "snes9x-x64.exe"+0x00883158
+        {  10399744, 0x987494 },      // Snes9x 1.62.3        "snes9x.exe"+0x00012698
+        {  15474688, 0x140A32314 },   // Snes9x 1.62.3 (x64)  "snes9x-x64.exe"+0xA62390
+        {  16019456, 0x94D144 },      // higan v106
+        {  15360000, 0x8AB144 },      // higan v106.112
+		{  22388736, 0xB0ECC8 },      // higan v107
+		{  23142400, 0xBC7CC8 },      // higan v108
+		{  23166976, 0xBCECC8 },      // higan v109
+		{  23224320, 0xBDBCC8 },      // higan v110
+        {  10096640, 0x72BECC },      // bsnes v107
+        {  10338304, 0x762F2C },      // bsnes v107.1
+        {  47230976, 0x765F2C },      // bsnes v107.2/107.3
+        { 131543040, 0xA9BD5C },      // bsnes v110
+        {  51924992, 0xA9DD5C },      // bsnes v111
+        {  52056064, 0xAAED7C },      // bsnes v112
+		{  52477952, 0xB16D7C },      // bsnes v115
+        {   7061504, 0x36F11500240 }, // BizHawk 2.3
+        {   7249920, 0x36F11500240 }, // BizHawk 2.3.1
+        {   6938624, 0x36F11500240 }, // BizHawk 2.3.2
+    };
+    
+    long memoryOffset = 0; 
+    try {
+        memoryOffset = current.offset;
+    } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
+        int modSize = modules.First().ModuleMemorySize;
+        memoryOffsets.TryGetValue(modSize, out memoryOffset);
+    }
+    
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
-
     vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},});
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
         vars.livesplitGameName = vars.gamename;
         print("Game:   '"+vars.gamename+"'\nSplits: '"+vars.livesplitGameName+"'");
     });
-
     vars.reInitialise();
 }
 
@@ -92,12 +106,14 @@ update {
 
 start {
     var fileSelect = vars.ws["fileSelect"];
-    return fileSelect.Old == 0 && fileSelect.Current != 0;
+    var marioLives = vars.ws["marioLives"];
+    return fileSelect.Old == 0 && fileSelect.Current != 0 || marioLives.Old == 0 && marioLives.Current != 0;
 }
 
 reset {
     var fileSelect = vars.ws["fileSelect"];
-    return fileSelect.Old != 0 && fileSelect.Current == 0;
+    var marioLives = vars.ws["marioLives"];
+    return fileSelect.Old != 0 && fileSelect.Current == 0 || marioLives.Old == 0 && marioLives.Current != 0;
 }
 
 split {
@@ -179,6 +195,9 @@ split {
                 ;
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
+        case "Nonsense":
+            s.credits = false; // Peach release doesn't work here
+        break;
         case "Purgatory": // TODO: Retest
             w.Tape = w.Tape
                 && w.Prev(w.io) != 56  // Cancel for Sea Moon
@@ -237,7 +256,7 @@ split {
 
     r.Monitor(w.levelNum, w);
     r.Monitor(w.roomNum, w);
-    r.Monitor(w.Submap, w);
+    //r.Monitor(w.Submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
