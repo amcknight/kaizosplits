@@ -10,6 +10,7 @@ namespace SMW {
         public bool died;
         public bool roomStep;
         public ushort prevIO;
+        public ushort firstRoom;
         public Dictionary<int, int> yoshiCoinsPerLevel = new Dictionary<int, int>();
         public int totalYoshiCoins = 0;
         public bool totalYoshiCoinsStepped = false;
@@ -19,6 +20,7 @@ namespace SMW {
             died = false;
             roomStep = false;
             prevIO = 256; // junk default value
+            firstRoom = 0; // junk default value
         }
 
         public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
@@ -132,7 +134,8 @@ namespace SMW {
         public bool LevelStart => ToLevelStart;
         public bool PeachRelease => ToPeachRelease;
         public bool Tape => ToCheckpointTape && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
-        public bool CPEntranceInLevel => Shifted(cpEntrance) && !Shifted(levelNum);
+        public bool CPEntranceInLevel => Shifted(cpEntrance) && !ShiftTo(cpEntrance, firstRoom);
+        public bool CP => Tape || CPEntranceInLevel;
         public bool Room => roomStep;
         public bool Submap => SubmapShift;
         public bool Portal => ToOverworldPortal;
@@ -173,6 +176,12 @@ namespace SMW {
                 totalYoshiCoins = yoshiCoinsPerLevel.Sum(x => x.Value);
             } else {
                 totalYoshiCoinsStepped = false;
+            }
+            // Recording first roomNum when entering level for ignoring first cpEntrance.
+            if (Shifted(levelNum)) {
+                firstRoom = Curr(roomNum);
+            } else if (CP) {
+                firstRoom = 0;
             }
 
             if (Spawn) died = false;

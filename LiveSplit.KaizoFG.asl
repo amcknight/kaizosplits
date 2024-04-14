@@ -198,7 +198,7 @@ split {
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Nonsense":
-            s.credits = false; // Peach release doesn't work here
+            s.credits = w.Curr(w.levelNum) == 94 && w.Shift(w.io, 255, 37); // Normal peach release doesn't work here
         break;
         case "Purgatory": // TODO: Retest
             w.Tape = w.Tape
@@ -243,24 +243,16 @@ split {
         break;
     }
 
-    List<string> reasons = new List<string>();
-    if (s.SplitStatus()) {
-        if (w.LevelExit) reasons.Add("Exit");
-        if (w.Tape) reasons.Add("Tape");
-        if (w.CPEntranceInLevel) reasons.Add("CP");
-        if (w.Palace) reasons.Add("Palace");
-        if (w.Submap) reasons.Add("Submap");
-        if (w.Portal) reasons.Add("Portal");
-        if (w.Boss) reasons.Add("Boss");
-        if (w.Orb) reasons.Add("Orb");
-        if (w.Key) reasons.Add("Key");
-        if (w.Goal) reasons.Add("Goal");
-        r.Dbg("Split: " + string.Join(" ", reasons));
-    }
+    if (s.SplitStatus()) r.Dbg("Split: " + s.SplitReasons());
 
     r.Monitor(w.levelNum, w);
     r.Monitor(w.roomNum, w);
     r.Monitor(w.cpEntrance, w);
+    r.Monitor(w.io, w);
+    r.Monitor(w.fanfare, w);
+    r.Monitor(w.victory, w);
+    r.Monitor(w.bossDefeat, w);
+    r.Monitor(w.peach, w);
     //r.Monitor(w.Submap, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();

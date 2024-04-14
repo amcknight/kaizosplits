@@ -61,5 +61,25 @@ namespace SMW {
             }
             return false;
         }
+
+        public string SplitReasons() {
+            List<string> reasons = new List<string>();
+            if (w.Intro) reasons.Add("Intro");
+            if (w.LevelExit) reasons.Add("Exit");
+            if (w.LevelStart) reasons.Add("Start");
+            if (w.Tape) reasons.Add("Tape");
+            if (w.CPEntranceInLevel) reasons.Add("CPEntrance");
+            if (w.Palace) reasons.Add("Palace");
+            if (w.Submap) reasons.Add("Submap");
+            if (w.Portal) reasons.Add("Portal");
+            if (w.Boss) reasons.Add("Boss");
+            if (w.Orb) reasons.Add("Orb");
+            if (w.Key) reasons.Add("Key");
+            if (w.Goal) reasons.Add("Goal");
+            if (w.Room) reasons.Add("Room");
+            if (other) reasons.Add("Other");
+            if (credits) reasons.Add("Credits");
+            return string.Join(" ", reasons);
+        }
     }
 }
