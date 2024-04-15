@@ -135,12 +135,6 @@ init {
     if (memoryOffset == 0) throw new Exception("NO MEMORY OFFSET: "+noMemMsg);
 
     vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},});
-    vars.reInitialise = (Action)(() => {
-        vars.gamename = timer.Run.GameName;
-        vars.livesplitGameName = vars.gamename;
-        print("Game:   '"+vars.gamename+"'\nSplits: '"+vars.livesplitGameName+"'");
-    });
-    vars.reInitialise();
 }
 
 exit {
@@ -149,20 +143,30 @@ exit {
 
 update {
     vars.ws.UpdateAll(game);
-    if (vars.livesplitGameName != timer.Run.GameName) {
-        vars.gamename = timer.Run.GameName;
-        vars.reInitialise();
-    }
 }
 
 start {
-    var fileSelect = vars.ws["fileSelect"];
-    var marioLives = vars.ws["marioLives"];
-    return fileSelect.Old == 0 && fileSelect.Current != 0 || marioLives.Old == 0 && marioLives.Current != 0;
+    var w = vars.ws;
+    // Can't seem to get settings or rec from vars so doing it manually here
+    bool start = w.FileSelected || w.ToMarioLives;
+    if (start) {
+        List<string> reasons = new List<string>();
+        if (w.FileSelected) reasons.Add("FileSelected");
+        if (w.ToMarioLives) reasons.Add("MarioLivesSet");
+        print("Start: " + string.Join(" ", reasons));
+        return true;
+    }
 }
 
 reset {
-    return false;
+    var w = vars.ws;
+    // Can't seem to get settings or rec from vars so doing it manually here
+    bool reset = false;
+    if (reset) {
+        List<string> reasons = new List<string>();
+        print("Reset: " + string.Join(" ", reasons));
+        return true;
+    }
 }
 
 split {
@@ -181,7 +185,7 @@ split {
     w.UpdateState();
 
     // Override Default split variables for individual games
-    switch ((string) vars.gamename) {
+    switch ((string) timer.Run.GameName) {
         case "Bunbun World":
             // TODO: Put a split on rooms function that uses levelNum and first roomNum
             s.other =
@@ -294,13 +298,8 @@ split {
 
     r.Monitor(w.levelNum, w);
     r.Monitor(w.roomNum, w);
-    r.Monitor(w.cpEntrance, w);
-    r.Monitor(w.io, w);
-    r.Monitor(w.fanfare, w);
-    r.Monitor(w.victory, w);
-    r.Monitor(w.bossDefeat, w);
-    r.Monitor(w.peach, w);
-    //r.Monitor(w.Submap, w);
+    r.Monitor(w.fileSelect, w);
+    r.Monitor(w.marioLives, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;

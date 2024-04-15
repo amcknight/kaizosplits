@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\LiveSplit\LiveSplit\LiveSplit.Core\LiveSplit.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\LiveSplit\src\LiveSplit.Core\LiveSplit.Core.csproj" />
   </ItemGroup>
 
 </Project>

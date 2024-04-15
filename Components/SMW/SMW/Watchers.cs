@@ -89,6 +89,8 @@ namespace SMW {
         public bool IsLuigi => Curr(player) == 1;
 
         // Changed state
+        public bool FileSelected => ShiftFrom(fileSelect, 0);
+        public bool ToMarioLives => ShiftFrom(marioLives, 0);
         public bool ToOrb => ShiftTo(io, 3);
         public bool ToGoal => ShiftTo(io, 4);
         public bool ToKey => ShiftTo(io, 7);
