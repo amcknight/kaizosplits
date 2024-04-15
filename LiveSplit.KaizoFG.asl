@@ -4,7 +4,7 @@ state("bsnes") {}
 state("higan") {}
 state("emuhawk") {}
 state("retroarch") {
-    long offset : "snes9x_libretro.dll", 0x380660;  // 1.17.0 snes9x-1.62.3 (x64)
+    string1024 core_path :  "retroarch.exe", 0xEEB59a;
 }
 
 startup {
@@ -53,8 +53,7 @@ init {
     vars.yc1 = false;
 
     // Branching on module size
-    var memoryOffsets = new Dictionary<int, long>
-    {
+    var memoryOffsets = new Dictionary<int, long> {
         {   9646080, 0x97EE04 },      // Snes9x-rr 1.60
         {  13565952, 0x140925118 },   // Snes9x-rr 1.60 (x64)
         {   9027584, 0x94DB54 },      // Snes9x 1.60
@@ -80,12 +79,28 @@ init {
         {   6938624, 0x36F11500240 }, // BizHawk 2.3.2
     };
     
-    long memoryOffset = 0; 
+    var retroarchOffsets = new Dictionary<string, int> {
+        { "snes9x_libretro.dll", 0x3BA164 }, // 1.17.0 snes9x-1.62.3 (x64) How does 0x380660 + 0x39B04 change with other combos?
+    };
+    
+    
+    long memoryOffset = 0;
     try {
         memoryOffset = current.offset;
     } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
         int modSize = modules.First().ModuleMemorySize;
         memoryOffsets.TryGetValue(modSize, out memoryOffset);
+	    if ( game.ProcessName.ToLower() == "retroarch" ) {
+            string core = Path.GetFileName(current.core_path);
+            print("CORE: "+core);
+            int coreOffset = 0;
+            retroarchOffsets.TryGetValue(core, out coreOffset);
+            if (coreOffset != 0) {
+                IntPtr offset;
+                new DeepPointer( core, coreOffset ).DerefOffsets(game, out offset);
+                memoryOffset = (long) offset;
+            }
+        }
     }
     
     if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
