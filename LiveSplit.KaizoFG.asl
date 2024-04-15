@@ -6,6 +6,7 @@ state("emuhawk") {}
 state("retroarch") {
     string1024 core_path :  "retroarch.exe", 0xEEB59A; // 1.17.0 (D6A900 1.9.4)
     string32 core_version : "retroarch.exe", 0xEFD5A9; // 1.17.0 (D67600 1.9.4)
+    string1024 smc_path :   "retroarch.exe", 0xEFF8A9; // 1.17.0
 }
 
 startup {
@@ -38,13 +39,16 @@ startup {
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.settings = Activator.CreateInstance(asm.GetType("SMW.Settings"));
+}
 
+shutdown {
+    print("SHUTDOWN");
 }
 
 init {
     print("INIT");
-    vars.gamename = timer.Run.GameName;
-    vars.livesplitGameName = vars.gamename;
+    string emuName = game.ProcessName.ToLower();
+    
     vars.runNum = 0;
     vars.maxLag = 100L;
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -91,29 +95,45 @@ init {
     
     
     long memoryOffset = 0;
+    string noMemMsg = "";
     try {
         memoryOffset = current.offset;
     } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
+        noMemMsg = "No offset found in state";
         int modSize = modules.First().ModuleMemorySize;
-        print("MOD SIZE: "+modSize); //
         memoryOffsets.TryGetValue(modSize, out memoryOffset);
-	    if ( game.ProcessName.ToLower() == "retroarch" ) {
+        if (memoryOffset == 0) {
+            noMemMsg = "No offset found by modSize";
+        }
+	    if ( emuName == "retroarch" ) {
             string core = Path.GetFileName(current.core_path);
+            string smc = Path.GetFileName(current.smc_path);
             string version = current.core_version;
-            string core_key = core+" "+version;
-            print("CORE: "+core_key);
-            int coreOffset = 0;
-            retroarchOffsets.TryGetValue(core_key, out coreOffset);
-            print("CORE OFFSET: "+coreOffset);
-            if (coreOffset != 0) {
-                IntPtr offset;
-                new DeepPointer( core, coreOffset ).DerefOffsets(game, out offset);
-                memoryOffset = (long) offset;
+            if (string.IsNullOrWhiteSpace(core)) {
+                noMemMsg = "No Retroarch Core";
+            } else if (string.IsNullOrWhiteSpace(version)) {
+                noMemMsg = "No Retroarch Core Version";
+            } else if (string.IsNullOrWhiteSpace(smc)) {
+                noMemMsg = "No Retroarch Game";
+            } else {
+                string core_key = core+" "+version;
+                print("CORE: "+core_key);
+                print("RETROARCH SMC: "+smc);
+                int coreOffset = 0;
+                retroarchOffsets.TryGetValue(core_key, out coreOffset);
+                if (coreOffset == 0) {
+                    noMemMsg = "No core offset found for '"+core_key+"'";
+                } else {
+                    IntPtr offset;
+                    new DeepPointer( core, coreOffset ).DerefOffsets(game, out offset);
+                    memoryOffset = (long) offset;
+                }
             }
         }
     }
     
-    if (memoryOffset == 0) throw new Exception("Memory not yet initialized.");
+    if (memoryOffset == 0) throw new Exception("NO MEMORY OFFSET: "+noMemMsg);
+
     vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},});
     vars.reInitialise = (Action)(() => {
         vars.gamename = timer.Run.GameName;
@@ -121,6 +141,10 @@ init {
         print("Game:   '"+vars.gamename+"'\nSplits: '"+vars.livesplitGameName+"'");
     });
     vars.reInitialise();
+}
+
+exit {
+    print("EXIT");
 }
 
 update {
@@ -138,9 +162,7 @@ start {
 }
 
 reset {
-    var fileSelect = vars.ws["fileSelect"];
-    var marioLives = vars.ws["marioLives"];
-    return fileSelect.Old != 0 && fileSelect.Current == 0 || marioLives.Old == 0 && marioLives.Current != 0;
+    return false;
 }
 
 split {
