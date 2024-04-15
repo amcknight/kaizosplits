@@ -4,7 +4,8 @@ state("bsnes") {}
 state("higan") {}
 state("emuhawk") {}
 state("retroarch") {
-    string1024 core_path :  "retroarch.exe", 0xEEB59a;
+    string1024 core_path :  "retroarch.exe", 0xEEB59A; // 1.17.0 (D6A900 1.9.4)
+    string32 core_version : "retroarch.exe", 0xEFD5A9; // 1.17.0 (D67600 1.9.4)
 }
 
 startup {
@@ -52,7 +53,7 @@ init {
     vars.ycs = 0;
     vars.yc1 = false;
 
-    // Branching on module size
+    // Offset by module size
     var memoryOffsets = new Dictionary<int, long> {
         {   9646080, 0x97EE04 },      // Snes9x-rr 1.60
         {  13565952, 0x140925118 },   // Snes9x-rr 1.60 (x64)
@@ -79,8 +80,13 @@ init {
         {   6938624, 0x36F11500240 }, // BizHawk 2.3.2
     };
     
+    // 1.9.4
+    
+
+    // 1.17.0
     var retroarchOffsets = new Dictionary<string, int> {
-        { "snes9x_libretro.dll", 0x3BA164 }, // 1.17.0 snes9x-1.62.3 (x64) How does 0x380660 + 0x39B04 change with other combos?
+        { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
+        { "bsnes_libretro.dll 115",             0x7D39DC },
     };
     
     
@@ -89,12 +95,16 @@ init {
         memoryOffset = current.offset;
     } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
         int modSize = modules.First().ModuleMemorySize;
+        print("MOD SIZE: "+modSize); //
         memoryOffsets.TryGetValue(modSize, out memoryOffset);
 	    if ( game.ProcessName.ToLower() == "retroarch" ) {
             string core = Path.GetFileName(current.core_path);
-            print("CORE: "+core);
+            string version = current.core_version;
+            string core_key = core+" "+version;
+            print("CORE: "+core_key);
             int coreOffset = 0;
-            retroarchOffsets.TryGetValue(core, out coreOffset);
+            retroarchOffsets.TryGetValue(core_key, out coreOffset);
+            print("CORE OFFSET: "+coreOffset);
             if (coreOffset != 0) {
                 IntPtr offset;
                 new DeepPointer( core, coreOffset ).DerefOffsets(game, out offset);
