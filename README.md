@@ -15,6 +15,7 @@ This is how I got it working last time. Next time re-setting up, improve these i
 2) Build LiveSplit for its components
 ```
 git clone https://github.com/LiveSplit/LiveSplit.git
+cd LiveSplit
 git submodule update --init --recursive
 ```
 Open the solution in VS2022 and build it
