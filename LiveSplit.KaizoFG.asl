@@ -249,6 +249,7 @@ split {
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Nonsense":
+            s.other = false;
             s.credits = w.Curr(w.levelNum) == 94 && w.Shift(w.io, 255, 37); // Normal peach release doesn't work here
         break;
         case "Purgatory": // TODO: Retest
