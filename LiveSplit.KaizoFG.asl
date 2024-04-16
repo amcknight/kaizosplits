@@ -101,7 +101,6 @@ init {
     } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
         noMemMsg = "No offset found in state";
         int modSize = modules.First().ModuleMemorySize;
-        print("MODSIZE: "+modSize);
         memoryOffsets.TryGetValue(modSize, out memoryOffset);
         if (memoryOffset == 0) {
             noMemMsg = "No offset found by modSize";
@@ -130,7 +129,7 @@ init {
             } else {
                 string core_key = string.Join(" ", core, coreVersion);
                 print("CORE: "+core_key);
-                print("RETROARCH SMC: "+smc);
+                print("RETROARCH Game: "+smc);
                 int coreOffset = 0;
                 retroarchOffsets.TryGetValue(core_key, out coreOffset);
                 if (coreOffset == 0) {
@@ -159,12 +158,12 @@ update {
 
 start {
     var w = vars.ws;
-    // Can't seem to get settings or rec from vars so doing it manually here
-    bool start = w.ToFileSelect || (settings["livesSet"] && w.ToMarioLives);
+    bool start = w.ToFileSelect || (settings["livesSet"] && w.FromOneLuigiLife);
     if (start) {
+        // Can't seem to get rec from vars so printing manually
         List<string> reasons = new List<string>();
         if (w.ToFileSelect) reasons.Add("FileSelect");
-        if (w.ToMarioLives) reasons.Add("MarioLivesSet");
+        if (w.FromOneLuigiLife) reasons.Add("OneLife");
         print("Start: " + string.Join(" ", reasons));
         return true;
     }
@@ -172,11 +171,12 @@ start {
 
 reset {
     var w = vars.ws;
-    // Can't seem to get settings or rec from vars so doing it manually here
-    bool reset = w.FromFileSelect;
+    bool reset = w.FromFileSelect || (settings["livesSet"] && w.ToOneLuigiLife);
     if (reset) {
+        // Can't seem to get rec from vars so printing manually
         List<string> reasons = new List<string>();
         if (w.FromFileSelect) reasons.Add("FileUnselected");
+        if (w.ToOneLuigiLife) reasons.Add("OneLife");
         print("Reset: " + string.Join(" ", reasons));
         return true;
     }
@@ -314,6 +314,7 @@ split {
     r.Monitor(w.roomNum, w);
     r.Monitor(w.fileSelect, w);
     r.Monitor(w.marioLives, w);
+    r.Monitor(w.luigiLives, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;

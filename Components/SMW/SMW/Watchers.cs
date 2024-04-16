@@ -44,6 +44,7 @@ namespace SMW {
 
         public MemoryWatcher<byte> fileSelect => (MemoryWatcher<byte>)this["fileSelect"];
         public MemoryWatcher<byte> marioLives => (MemoryWatcher<byte>)this["marioLives"];
+        public MemoryWatcher<byte> luigiLives => (MemoryWatcher<byte>)this["luigiLives"];
         public MemoryWatcher<byte> submap => (MemoryWatcher<byte>)this["submap"];
         public MemoryWatcher<byte> fanfare => (MemoryWatcher<byte>)this["fanfare"];
         public MemoryWatcher<byte> victory => (MemoryWatcher<byte>)this["victory"];
@@ -90,6 +91,8 @@ namespace SMW {
 
         // Changed state
         public bool FromFileSelect => ShiftTo(fileSelect, 0);
+        public bool ToOneMarioLife => ShiftTo(marioLives, 0);
+        public bool ToOneLuigiLife => ShiftTo(luigiLives, 0);
         public bool ToOrb => ShiftTo(io, 3);
         public bool ToGoal => ShiftTo(io, 4);
         public bool ToKey => ShiftTo(io, 7);
@@ -121,7 +124,8 @@ namespace SMW {
 
         // Composite Conditions
         public bool ToFileSelect => ShiftFrom(fileSelect, 0) && !ShiftTo(fileSelect, 85) && !ShiftTo(fileSelect, 170) && !ShiftTo(fileSelect, 255); // 85 and 170 are 010101010 and 255 are 11111111 patterns caused by retroarch starting the game
-        public bool ToMarioLives => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85) && !ShiftTo(marioLives, 170) && !ShiftTo(fileSelect, 255);
+        public bool FromOneMarioLife => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85) && !ShiftTo(marioLives, 170) && !ShiftTo(fileSelect, 255);
+        public bool FromOneLuigiLife => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85) && !ShiftTo(marioLives, 170) && !ShiftTo(fileSelect, 255);
         public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
         public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;

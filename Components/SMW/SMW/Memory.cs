@@ -18,6 +18,7 @@ namespace SMW {
 
         public static Dictionary<int, string> byteMap = new Dictionary<int, string> {
             {0x0DB4, "marioLives"},
+            {0x0DB5, "luigiLives"},
             {0x0906, "fanfare"},
             {0x1ED2, "fileSelect"},
             {0x1B99, "victory"},
