@@ -3,11 +3,7 @@ state("snes9x-x64") {}
 state("bsnes") {}
 state("higan") {}
 state("emuhawk") {}
-state("retroarch") {
-    string1024 core_path :  "retroarch.exe", 0xEEB59A; // 1.17.0 (D6A900 1.9.4)
-    string32 core_version : "retroarch.exe", 0xEFD5A9; // 1.17.0 (D67600 1.9.4)
-    string1024 smc_path :   "retroarch.exe", 0xEFF8A9; // 1.17.0
-}
+state("retroarch") {}
 
 startup {
     print("STARTUP");
@@ -84,10 +80,12 @@ init {
         {   6938624, 0x36F11500240 }, // BizHawk 2.3.2
     };
     
-    // 1.9.4
-    
+    // Core path, core version, smc path Offsets by retroarch module size
+    var retroarchCoreInfoOffsets = new Dictionary<int, int[]> {
+        { 17264640, new int[3] {0xEEB59A, 0xEFD5A9, 0xEFF8A9} }, // 1.17.0 (x64)
+        { 15675392, new int[3] {0xD6A900, 0xD67600, 0xD69926} }, // 1.9.4 (x64)
+    };
 
-    // 1.17.0
     var retroarchOffsets = new Dictionary<string, int> {
         { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
         { "bsnes_libretro.dll 115",             0x7D39DC },
@@ -101,22 +99,34 @@ init {
     } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
         noMemMsg = "No offset found in state";
         int modSize = modules.First().ModuleMemorySize;
+        print("MODSIZE: "+modSize);
         memoryOffsets.TryGetValue(modSize, out memoryOffset);
         if (memoryOffset == 0) {
             noMemMsg = "No offset found by modSize";
         }
 	    if ( emuName == "retroarch" ) {
-            string core = Path.GetFileName(current.core_path);
-            string smc = Path.GetFileName(current.smc_path);
-            string version = current.core_version;
+            int[] coreInfo = new int[3] {0,0,0};
+            retroarchCoreInfoOffsets.TryGetValue(modSize, out coreInfo);
+            int corePathOffset = coreInfo[0];
+            int coreVersionOffset = coreInfo[1];
+            int smcPathOffset = coreInfo[2];
+            string corePath;
+            string coreVersion;
+            string smcPath;
+            new DeepPointer( "retroarch.exe", corePathOffset ).DerefString(game, 1024, out corePath);
+            new DeepPointer( "retroarch.exe", coreVersionOffset ).DerefString(game, 32, out coreVersion);
+            new DeepPointer( "retroarch.exe", smcPathOffset ).DerefString(game, 1024, out smcPath);
+            string core = Path.GetFileName(corePath);
+            string smc = Path.GetFileName(smcPath);
+
             if (string.IsNullOrWhiteSpace(core)) {
                 noMemMsg = "No Retroarch Core";
-            } else if (string.IsNullOrWhiteSpace(version)) {
+            } else if (string.IsNullOrWhiteSpace(coreVersion)) {
                 noMemMsg = "No Retroarch Core Version";
             } else if (string.IsNullOrWhiteSpace(smc)) {
                 noMemMsg = "No Retroarch Game";
             } else {
-                string core_key = core+" "+version;
+                string core_key = string.Join(" ", core, coreVersion);
                 print("CORE: "+core_key);
                 print("RETROARCH SMC: "+smc);
                 int coreOffset = 0;
@@ -148,10 +158,10 @@ update {
 start {
     var w = vars.ws;
     // Can't seem to get settings or rec from vars so doing it manually here
-    bool start = w.FileSelected || w.ToMarioLives;
+    bool start = w.ToFileSelect || w.ToMarioLives;
     if (start) {
         List<string> reasons = new List<string>();
-        if (w.FileSelected) reasons.Add("FileSelected");
+        if (w.ToFileSelect) reasons.Add("FileSelect");
         if (w.ToMarioLives) reasons.Add("MarioLivesSet");
         print("Start: " + string.Join(" ", reasons));
         return true;
@@ -161,9 +171,10 @@ start {
 reset {
     var w = vars.ws;
     // Can't seem to get settings or rec from vars so doing it manually here
-    bool reset = false;
+    bool reset = w.FromFileSelect;
     if (reset) {
         List<string> reasons = new List<string>();
+        if (w.FromFileSelect) reasons.Add("FileUnselected");
         print("Reset: " + string.Join(" ", reasons));
         return true;
     }
@@ -183,9 +194,9 @@ split {
     s.Update(vars.settingsDict, w);
     r.Update(s.recording, w);
     w.UpdateState();
-
+    string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
     // Override Default split variables for individual games
-    switch ((string) timer.Run.GameName) {
+    switch (runName) {
         case "Bunbun World":
             // TODO: Put a split on rooms function that uses levelNum and first roomNum
             s.other =
@@ -236,8 +247,8 @@ split {
                 // w.RoomShiftsInLevel(31) || // Glacier Soup
                 // w.RoomShiftsInLevel(62) || // Yellow
                 // w.RoomShiftsInLevel(36) || // Warehouse
-               // w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
-              //  false;
+                // w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
+                // false;
             s.credits = false;
         break;
         case "Love Yourself":
@@ -248,7 +259,7 @@ split {
                 ;
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
-        case "Nonsense":
+        case "Nonsense 24 Exit":
             s.other = false;
             s.credits = w.Curr(w.levelNum) == 94 && w.Shift(w.io, 255, 37); // Normal peach release doesn't work here
         break;

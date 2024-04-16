@@ -89,6 +89,7 @@ namespace SMW {
         public bool IsLuigi => Curr(player) == 1;
 
         // Changed state
+        public bool FromFileSelect => ShiftTo(fileSelect, 0);
         public bool ToOrb => ShiftTo(io, 3);
         public bool ToGoal => ShiftTo(io, 4);
         public bool ToKey => ShiftTo(io, 7);
@@ -119,8 +120,8 @@ namespace SMW {
         public bool ExitDoor => Shift(playerAnimation, 13, 0);
 
         // Composite Conditions
-        public bool FileSelected => ShiftFrom(fileSelect, 0) && !ShiftTo(fileSelect, 85);
-        public bool ToMarioLives => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85);
+        public bool ToFileSelect => ShiftFrom(fileSelect, 0) && !ShiftTo(fileSelect, 85) && !ShiftTo(fileSelect, 170) && !ShiftTo(fileSelect, 255); // 85 and 170 are 010101010 and 255 are 11111111 patterns caused by retroarch starting the game
+        public bool ToMarioLives => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85) && !ShiftTo(marioLives, 170) && !ShiftTo(fileSelect, 255);
         public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
         public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;

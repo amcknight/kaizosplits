@@ -17,8 +17,8 @@ namespace SMW {
         };
 
         public static Dictionary<int, string> byteMap = new Dictionary<int, string> {
-            {0xDB4, "marioLives"},
-            {0x906, "fanfare"},
+            {0x0DB4, "marioLives"},
+            {0x0906, "fanfare"},
             {0x1ED2, "fileSelect"},
             {0x1B99, "victory"},
             {0x1DFB, "io"}, // SPC700 I/0 Ports. Related to music
@@ -45,7 +45,7 @@ namespace SMW {
             {0x0DB3, "player"},
             {0x13C5, "moonCounter"},
             {0x1935, "levelStart"},
-            {0x1B403, "cpEntrance"},
+            {0x1B403,"cpEntrance"},
 
           // THINGS TO TEST
             // Level width in Screens 005E
