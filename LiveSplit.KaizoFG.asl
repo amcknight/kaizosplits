@@ -11,6 +11,8 @@ startup {
     settings.SetToolTip("recording", "Record events for Split Synthesis");
     settings.Add("autoskipOnLag", false, "Autoskip laggy splits");
     settings.SetToolTip("autoskipOnLag", "Autoskip splits that might have had more than 100ms of lag");
+    settings.Add("livesSet", false, "Start on Lives Sets");
+    settings.SetToolTip("livesSet", "Start when Mario Lives is set to something other than 1");
     settings.Add("worlds", true, "Overworlds");
     settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
     settings.Add("levelExits", true, "Level Exits");
@@ -27,7 +29,7 @@ startup {
     settings.SetToolTip("cpEntrances", "Split when entrance to appear at on death changes, excluding when entering a level");
     settings.Add("rooms", false, "All Room Changes");
     settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
-    vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "cpEntrances", "rooms"};
+    vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "livesSet", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "cpEntrances", "rooms"};
     vars.settingsDict = new Dictionary<string, bool>();
 
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
@@ -158,7 +160,7 @@ update {
 start {
     var w = vars.ws;
     // Can't seem to get settings or rec from vars so doing it manually here
-    bool start = w.ToFileSelect || w.ToMarioLives;
+    bool start = w.ToFileSelect || (settings["livesSet"] && w.ToMarioLives);
     if (start) {
         List<string> reasons = new List<string>();
         if (w.ToFileSelect) reasons.Add("FileSelect");
