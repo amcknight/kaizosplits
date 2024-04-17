@@ -71,7 +71,7 @@ namespace SMW {
             reasons += ws.Orb ? " Orb" : "";
             reasons += ws.Palace ? " Palace" : "";
             reasons += ws.Boss ? " Boss" : "";
-            reasons += ws.Tape ? " Tape" : "";
+            reasons += ws.Midway ? " Midway" : "";
             reasons += ws.Room ? " Room" : "";
             reasons += ws.PeachRelease ? " PeachRelease" : "";
             reasons += ws.Submap ? " Submap" : "";
@@ -125,7 +125,7 @@ namespace SMW {
                 case "Event":
                 case "Key":
                 case "Start":
-                case "Tape":
+                case "Midway":
                     if (candidates.Count != 0) {
                         splitNum++;
                         foreach (Event c in candidates) {

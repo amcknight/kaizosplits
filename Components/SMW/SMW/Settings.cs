@@ -55,8 +55,8 @@ namespace SMW {
                 (exits && w.LevelExit) ||
                 (introExit && w.Intro) ||
                 (worlds && w.Overworld) ||
-                (midways && w.Tape) ||
-                (cpEntrances && w.CPEntranceInLevel) ||
+                (midways && w.Midway) ||
+                (cpEntrances && w.CPEntrance) ||
                 (starts && w.LevelStart) ||
                 (goals && w.Goal) ||
                 (orbs && w.Orb) ||
@@ -94,8 +94,8 @@ namespace SMW {
             if (w.Intro) reasons.Add("Intro");
             if (w.LevelExit) reasons.Add("Exit");
             if (w.LevelStart) reasons.Add("Start");
-            if (w.Tape) reasons.Add("Tape");
-            if (w.CPEntranceInLevel) reasons.Add("CPEntrance");
+            if (w.Midway) reasons.Add("Midway");
+            if (w.CPEntrance) reasons.Add("CPEntrance");
             if (w.Submap) reasons.Add("Submap");
             if (w.Portal) reasons.Add("Portal");
             if (w.Goal) reasons.Add("Goal");

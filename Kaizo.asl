@@ -245,15 +245,15 @@ split {
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
         break;
-        case "Bunbun World 2": // TODO: Retest. TODO cancel tape on level. Also maybe use rooms instead of coins or just drop this.
-            s.Tape = w.Prev(w.io) != 61 // KLDC Dolphins
+        case "Bunbun World 2": // TODO: Retest. TODO cancel midway on level. Also maybe use rooms instead of coins or just drop this.
+            s.Midway = w.Prev(w.io) != 61 // KLDC Dolphins
                 && w.prevIO != 48 // Mirror Temple
                 ;
             w.Room = w.Room && w.Prev(w.io) != 65; // Using yoshiCoins
             w.CoinFlag = w.Stepped(w.yoshiCoin) && w.Prev(w.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
         break;
         case "Cute Kaizo World": // TODO: Retest. Can probably use cpEntrance out of the box but if not should cancel on level
-            w.Tape = w.Tape && w.Prev(w.io) != 55;  // Using doors
+            w.Midway = w.Midway && w.Prev(w.io) != 55;  // Using doors
             s.credits = w.ShiftTo(w.io, 21);
         break;
         case "Dancer to a Discordant System":
@@ -292,7 +292,7 @@ split {
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
         break;
         case "Purgatory": // TODO: Retest. Should cancel based on level
-            w.Tape = w.Tape
+            w.Midway = w.Midway
                 && w.Prev(w.io) != 56  // Cancel for Sea Moon
                 && w.Prev(w.io) != 49  // Cancel for Soft and Wet
                 && w.Prev(w.io) != 63  // Cancel for Summit of Salvation
@@ -321,7 +321,7 @@ split {
             w.RoomShiftInLevel(1, 1, 43) ||
             w.RoomShiftInLevel(11, 11, 38) ||
             w.RoomShiftInLevel(18, 18, 27) ||
-            w.RoomShiftInLevel(18, 18, 25) || // Castle Door instead of Tape
+            w.RoomShiftInLevel(18, 18, 25) || // Castle Door instead of Midway
             w.RoomShiftInLevel(8, 8, 46) ||
             w.RoomShiftInLevel(16, 16, 26) ||
             w.RoomShiftInLevel(22, 22, 37) ||

@@ -30,7 +30,7 @@ namespace SMW {
             {0x141A, "roomCounter"},
             {0x13C6, "bossDefeat"},
             {0x190D, "peach"},
-            {0x13CE, "checkpointTape"},
+            {0x13CE, "midway"},
             {0x0089, "pipe"},
             {0x0071, "playerAnimation"},
             {0x1420, "yoshiCoin"},
