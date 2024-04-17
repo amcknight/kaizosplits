@@ -239,7 +239,7 @@ split {
                 w.RoomShiftsInLevel(68) || // Breathtaking
                 w.RoomShiftsInLevel(61) || // Night Sky Scamper
                 w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
-                w.ShiftIn(w.levelNum, 52, w.io, 3, 20) || // (w.Shift(w.io, 3, 20) && w.Curr(w.levelNum) == 52) || // Bunbun Bastion any%
+                w.ShiftIn(w.levelNum, 52, w.io, 3, 20) || // Bunbun Bastion any%
                 w.RoomShiftsInLevel(62) || // Culmination Castle
                 w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
@@ -282,14 +282,14 @@ split {
         break;
         case "Love Yourself":
             s.other =
-                (w.RoomShiftInLevel(74, 39, 40) || // 3rd Castle room
-                (w.RoomShiftInLevel(74, 40, 42) || // 4th castle room
+                w.RoomShiftInLevel(74, 39, 40) || // 3rd Castle room
+                w.RoomShiftInLevel(74, 40, 42) || // 4th castle room
                 (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) // All room other than credits door
                 ;
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Nonsense 24 Exit":
-            s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37); //w.Curr(w.levelNum) == 94 && w.Shift(w.io, 255, 37); // Normal peach release doesn't work here
+            s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
         break;
         case "Purgatory": // TODO: Retest. Should cancel based on level
             w.Tape = w.Tape

@@ -159,11 +159,11 @@ namespace SMW {
             return Shifted(roomNum) && Curr(roomCounter) > 0 && Curr(levelNum) == level;
         }
 
-        public bool ShiftIn(MemoryWatcher<ushort> inW, ushort inVal, MemoryWatcher<ushort> shiftW, ushort from, ushort to) {
+        public bool ShiftIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from, byte to) {
             return Shift(shiftW, from, to) && Curr(inW) == inVal;
         }
 
-        public bool ShiftsIn(MemoryWatcher<ushort> inW, ushort inVal, MemoryWatcher<ushort> shiftW) {
+        public bool ShiftsIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW) {
             return Shifted(shiftW) && Curr(inW) == inVal;
         }
 

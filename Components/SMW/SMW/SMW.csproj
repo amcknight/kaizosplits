@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\LiveSplit\components\LiveSplit.ScriptableAutoSplit\src\LiveSplit.ScriptableAutoSplit\LiveSplit.ScriptableAutoSplit.csproj" />
     <ProjectReference Include="..\..\..\..\LiveSplit\src\LiveSplit.Core\LiveSplit.Core.csproj" />
   </ItemGroup>
 
