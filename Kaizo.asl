@@ -180,40 +180,10 @@ exit {
 }
 
 update {
-    vars.ws.UpdateAll(game);
-}
-
-start {
-    var w = vars.ws;
-    bool start = (settings["playersSelect"] && w.ToFileSelect) || (settings["livesSet"] && w.FromOneLuigiLife);
-    if (start) {
-        // Can't seem to get rec from vars so printing manually
-        List<string> reasons = new List<string>();
-        if (w.ToFileSelect) reasons.Add("FileSelect");
-        if (w.FromOneLuigiLife) reasons.Add("OneLife");
-        print("Start: " + string.Join(" ", reasons));
-        return true;
-    }
-}
-
-reset {
-    var w = vars.ws;
-    bool reset = (settings["playersUnselect"] && w.FromFileSelect) || (settings["livesUnset"] && w.ToOneLuigiLife);
-    if (reset) {
-        // Can't seem to get rec from vars so printing manually
-        List<string> reasons = new List<string>();
-        if (w.FromFileSelect) reasons.Add("FileUnselected");
-        if (w.ToOneLuigiLife) reasons.Add("OneLife");
-        print("Reset: " + string.Join(" ", reasons));
-        return true;
-    }
-}
-
-split {
     var r = vars.rec;
     var w = vars.ws;
     var s = vars.ss;
-    var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+    w.UpdateAll(game);
 
     // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
     // The order here matters for Spawn recording
@@ -223,6 +193,35 @@ split {
     s.Update(vars.settingsDict, w);
     r.Update(s.recording, w);
     w.UpdateState();
+}
+
+start {
+    var r = vars.rec;
+    var w = vars.ws;
+    var s = vars.ss;
+    if (s.StartStatus()) {
+        r.Dbg("Start: " + s.StartReasons());
+        if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
+        return true;
+    }
+}
+
+reset {
+    var r = vars.rec;
+    var w = vars.ws;
+    var s = vars.ss;
+    if (s.ResetStatus()) {
+        r.Dbg("Reset: " + s.ResetReasons());
+        if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
+        return true;
+    }
+}
+
+split {
+    var r = vars.rec;
+    var w = vars.ws;
+    var s = vars.ss;
+    var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
     // Override Default split variables for individual games
@@ -329,8 +328,6 @@ split {
             w.RoomShiftInLevel(13, 13, 45) ||
             w.RoomShiftInLevel(13, 13, 235) // Yoshi pipe
             ;
-        break;
-        case "Truc Bidule":
         break;
     }
 

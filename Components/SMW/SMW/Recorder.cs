@@ -62,23 +62,6 @@ namespace SMW {
             return new Event(name, new Place(ws.Curr(ws.submap), ws.Curr(ws.levelNum), ws.Curr(ws.roomNum), ws.Curr(ws.playerX), ws.Curr(ws.playerY)));
         }
 
-        public string SplitReasons(Watchers ws) {
-            string reasons = "";
-            reasons += ws.Intro ? " Intro" : "";
-            reasons += ws.LevelStart ? " Start" : "";
-            reasons += ws.Goal ? " Goal" : "";
-            reasons += ws.Key ? " Key" : "";
-            reasons += ws.Orb ? " Orb" : "";
-            reasons += ws.Palace ? " Palace" : "";
-            reasons += ws.Boss ? " Boss" : "";
-            reasons += ws.Midway ? " Midway" : "";
-            reasons += ws.Room ? " Room" : "";
-            reasons += ws.PeachRelease ? " PeachRelease" : "";
-            reasons += ws.Submap ? " Submap" : "";
-            reasons += ws.Portal ? " Portal" : "";
-            return reasons;
-        }
-
         public void WriteRun(string path, int num) {
             List<string> eventStrs = new List<string>();
             foreach (Event e in events) {

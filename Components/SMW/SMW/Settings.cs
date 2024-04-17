@@ -69,26 +69,6 @@ namespace SMW {
                 );
         }
 
-        public bool UndoStatus() {
-            // TODO: Does it make sense to check key or palace?
-            if ((goals && w.Goal) ||
-                (orbs && w.Orb) ||
-                (keys && w.Key) ||
-                (bosses && w.Boss) ||
-                (palaces && w.Palace)
-            ) {
-                prevFinished = true;
-            }
-            if (w.LevelExit) {
-                prevFinished = false;
-            }
-            if (w.DiedNow && prevFinished) {
-                prevFinished = false;
-                return true;
-            }
-            return false;
-        }
-
         public string SplitReasons() {
             List<string> reasons = new List<string>();
             if (w.Intro) reasons.Add("Intro");
@@ -107,6 +87,52 @@ namespace SMW {
             if (other) reasons.Add("Other");
             if (credits) reasons.Add("Credits");
             return string.Join(" ", reasons);
+        }
+
+        public bool StartStatus() {
+            return (playersSelect && w.ToFileSelect) ||
+                (livesSet && w.FromOneLuigiLife)
+                ;
+        }
+
+        public string StartReasons() {
+            List<string> reasons = new List<string>();
+            if (w.ToFileSelect) reasons.Add("FileSelect");
+            if (w.FromOneLuigiLife) reasons.Add("OneLife");
+            return string.Join(" ", reasons);
+        }
+
+        public bool ResetStatus() {
+            return (playersUnselect && w.FromFileSelect) ||
+                (livesUnset && w.ToOneLuigiLife)
+                ;
+        }
+
+        public string ResetReasons() {
+            List<string> reasons = new List<string>();
+            if (w.FromFileSelect) reasons.Add("FileUnselected");
+            if (w.ToOneLuigiLife) reasons.Add("OneLife");
+            return string.Join(" ", reasons);
+        }
+
+        public bool UndoStatus() {
+            // TODO: Does it make sense to check key or palace?
+            if ((goals && w.Goal) ||
+                (orbs && w.Orb) ||
+                (keys && w.Key) ||
+                (bosses && w.Boss) ||
+                (palaces && w.Palace)
+            ) {
+                prevFinished = true;
+            }
+            if (w.LevelExit) {
+                prevFinished = false;
+            }
+            if (w.DiedNow && prevFinished) {
+                prevFinished = false;
+                return true;
+            }
+            return false;
         }
     }
 }
