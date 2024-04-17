@@ -13,16 +13,12 @@ This is how I got it working last time. Next time re-setting up, improve these i
 1) Install Visual Studio 2022 (can try latest but I used this one)
 
 2) Build LiveSplit for its components
-```
-git clone https://github.com/LiveSplit/LiveSplit.git
-cd LiveSplit
-git submodule update --init --recursive
-```
-Open the solution in VS2022 and build it
-- needs .net 4.6.1
-- needs netstandard2.0 (I think)
-- Try to do this through Visual Studio, but if can't, download carefully... sorry, improve these instructions next time.
-- This is for LiveSplit.Core. Could possibly get it built alone.
+- `git clone --recursive https://github.com/LiveSplit/LiveSplit.git`
+- Open the solution in VS2022 as a Solution
+- CTRL+Shift+B to build it
+- Don't move on until this builds properly
+-- needs .net 4.6.1 and netstandard 2.0 (I think)
+-- This is for getting a reference to LiveSplit.Core and possibly other modules. Could possibly get these built alone but having the whole project allows for some stepthrough debugging in worst case scenarios.
 
 3) Build kaizosplits SMW dll
 ```
