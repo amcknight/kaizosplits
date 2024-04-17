@@ -132,12 +132,12 @@ namespace SMW {
         public bool Spawn => GmPrepareLevel && died;
         public bool Intro => IntroExit;
         public bool LevelExit => ToExit;
-        public bool Goal => ToFanfare && BossUndead && !GotOrb;
-        public bool Key => ToKey;
-        public bool Orb => ToOrb && BossUndead;
-        public bool Palace => ToYellowSwitch || ToGreenSwitch || ToBlueSwitch || ToRedSwitch;
+        public bool Goal => InLevel && ToFanfare && BossUndead && !GotOrb;
+        public bool Key => InLevel && ToKey;
+        public bool Orb => InLevel && ToOrb && BossUndead;
+        public bool Palace => InLevel && (ToYellowSwitch || ToGreenSwitch || ToBlueSwitch || ToRedSwitch);
+        public bool Boss => InLevel && ToFanfare && !BossUndead;
         public bool GotPowerup => GotMushroom || GotFeather || GotFlower;
-        public bool Boss => ToFanfare && !BossUndead;
         public bool LevelStart => ToLevelStart;
         public bool PeachRelease => ToPeachRelease;
         public bool Tape => ToCheckpointTape && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
@@ -148,7 +148,7 @@ namespace SMW {
         public bool Portal => ToOverworldPortal;
 
         // Highest level conditions
-        public bool LevelFinish => InLevel && (Goal || Key || Orb || Palace || Boss);
+        public bool LevelFinish => Goal || Key || Orb || Palace || Boss;
         public bool Overworld => !InLevel && (Portal || Submap);
 
         public bool RoomShiftInLevel(ushort level, ushort fromRoom, ushort toRoom) {

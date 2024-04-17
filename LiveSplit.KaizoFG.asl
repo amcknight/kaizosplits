@@ -7,36 +7,63 @@ state("retroarch") {}
 
 startup {
     print("STARTUP");
+    settings.Add("start", true, "Start when");
+        settings.Add("playersSelect", true, "# Players Selected", "start");
+        settings.SetToolTip("playersSelect", "Start when the number of players is selected");
+        settings.Add("livesSet", true, "Luigi >1 Life", "start");
+        settings.SetToolTip("livesSet", "Start when Luigi's lives is set to more than 1. Good for one player speedruns when Players Selected is broken");
+    settings.Add("reset", true, "Reset when");
+        settings.Add("playersUnselect", true, "# Players not Selected", "reset");
+        settings.SetToolTip("playersUnselect", "Reset when the number of players is not selected and so probably back in the menu");
+        settings.Add("livesUnset", true, "Luigi 1 Life", "reset");
+        settings.SetToolTip("livesUnset", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken");
+    settings.Add("split", true, "Split when");
+        settings.Add("exits", true, "Level Exit", "split");
+        settings.SetToolTip("exits", "Split when leaving a level by beating");
+        settings.Add("introExit", true, "Intro Exit", "split");
+        settings.SetToolTip("introExit", "Split at the end of the intro level");
+        settings.Add("worlds", true, "Overworlds", "split");
+        settings.SetToolTip("worlds", "Split when switching overworlds. Good to use with subsplits");
+        settings.Add("level", true, "Level Events", "split");
+            settings.Add("checkpoints", true, "Checkpoints", "level");
+                settings.Add("midways", true, "First midway tape", "checkpoints");
+                settings.SetToolTip("midways", "Split when getting the first checkpoint tape in the level");
+                settings.Add("cpEntrances", true, "Checkpoint Entrance Changes", "checkpoints");
+                settings.SetToolTip("cpEntrances", "Split when entrance to appear at on death changes, excluding when entering a level");
+            settings.Add("starts", false, "Starts", "level");
+            settings.SetToolTip("starts", "Split at the start of each level");
+            settings.Add("finishes", false, "Goals, Orbs, Keys, and Bosses", "level");
+            settings.SetToolTip("finishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
+                settings.Add("goals", true, "Goal Tape", "finishes");
+                settings.SetToolTip("goals", "Split on crossing goal tapes");
+                settings.Add("orbs", true, "Orbs", "finishes");
+                settings.SetToolTip("orbs", "Split when getting an orb");
+                settings.Add("keys", true, "Keys", "finishes");
+                settings.SetToolTip("keys", "Split when activating a keyhole");
+                settings.Add("bosses", true, "Bosses", "finishes");
+                settings.SetToolTip("bosses", "Split when defeating a boss");
+                settings.Add("palaces", true, "Palaces", "finishes");
+                settings.SetToolTip("palaces", "Split when hitting a switch palace");
+            settings.Add("rooms", false, "Room Changes", "level");
+            settings.SetToolTip("rooms", "Split whenever your room transitions");
     settings.Add("recording", false, "Record Events");
     settings.SetToolTip("recording", "Record events for Split Synthesis");
     settings.Add("autoskipOnLag", false, "Autoskip laggy splits");
     settings.SetToolTip("autoskipOnLag", "Autoskip splits that might have had more than 100ms of lag");
-    settings.Add("livesSet", false, "Start on Lives Sets");
-    settings.SetToolTip("livesSet", "Start when Mario Lives is set to something other than 1");
-    settings.Add("worlds", true, "Overworlds");
-    settings.SetToolTip("worlds", "Split when switching overworlds (use with subsplits)");
-    settings.Add("levelExits", true, "Level Exits");
-    settings.SetToolTip("levelExits", "Split when leaving a level without start/select");
-    settings.Add("introExits", true, "Intro Exits");
-    settings.SetToolTip("introExits", "Split and end of the intro");
-    settings.Add("levelStarts", false, "Level Starts");
-    settings.SetToolTip("levelStarts", "Split at the start of each level");
-    settings.Add("levelFinishes", false, "Goals, Orbs, Keys, and Bosses");
-    settings.SetToolTip("levelFinishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
-    settings.Add("firstTapes", true, "First checkpoint tape");
-    settings.SetToolTip("firstTapes", "Split when getting the first checkpoint tape in the level");
-    settings.Add("cpEntrances", true, "Checkpoint Entrance Changes");
-    settings.SetToolTip("cpEntrances", "Split when entrance to appear at on death changes, excluding when entering a level");
-    settings.Add("rooms", false, "All Room Changes");
-    settings.SetToolTip("rooms", "Split when on room transitions even with CPs");
-    vars.settingNames = new List<string>() {"recording", "autoskipOnLag", "livesSet", "worlds", "levelExits", "introExits", "levelStarts", "levelFinishes", "firstTapes", "cpEntrances", "rooms"};
+
+    vars.settingNames = new List<string>() {
+        "playersSelect", "livesSet",
+        "playersUnselect", "livesUnset",
+        "exits", "introExit", "worlds", "midways", "cpEntrances", "starts", "goals", "orbs", "keys", "bosses", "palaces", "rooms",
+        "recording", "autoskipOnLag"
+    };
     vars.settingsDict = new Dictionary<string, bool>();
 
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
-    vars.settings = Activator.CreateInstance(asm.GetType("SMW.Settings"));
+    vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
 }
 
 shutdown {
@@ -158,7 +185,7 @@ update {
 
 start {
     var w = vars.ws;
-    bool start = w.ToFileSelect || (settings["livesSet"] && w.FromOneLuigiLife);
+    bool start = (settings["playersSelect"] && w.ToFileSelect) || (settings["livesSet"] && w.FromOneLuigiLife);
     if (start) {
         // Can't seem to get rec from vars so printing manually
         List<string> reasons = new List<string>();
@@ -171,7 +198,7 @@ start {
 
 reset {
     var w = vars.ws;
-    bool reset = w.FromFileSelect || (settings["livesSet"] && w.ToOneLuigiLife);
+    bool reset = (settings["playersUnselect"] && w.FromFileSelect) || (settings["livesUnset"] && w.ToOneLuigiLife);
     if (reset) {
         // Can't seem to get rec from vars so printing manually
         List<string> reasons = new List<string>();
@@ -185,7 +212,7 @@ reset {
 split {
     var r = vars.rec;
     var w = vars.ws;
-    var s = vars.settings;
+    var s = vars.ss;
     var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
@@ -196,6 +223,7 @@ split {
     s.Update(vars.settingsDict, w);
     r.Update(s.recording, w);
     w.UpdateState();
+
     string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
     // Override Default split variables for individual games
     switch (runName) {

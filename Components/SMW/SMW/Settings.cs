@@ -2,46 +2,67 @@
 
 namespace SMW {
     public class Settings {
+        public bool playersSelect;
+        public bool livesSet;
+        public bool playersUnselect;
+        public bool livesUnset;
+        public bool exits;
+        public bool introExit;
+        public bool worlds;
+        public bool midways;
+        public bool cpEntrances;
+        public bool starts;
+        public bool goals;
+        public bool orbs;
+        public bool keys;
+        public bool bosses;
+        public bool palaces;
+        public bool rooms;
         public bool recording;
         public bool autoskipOnLag;
-        public bool worlds;
-        public bool levelExits;
-        public bool introExits;
-        public bool levelStarts;
-        public bool levelFinishes;
-        public bool firstTapes;
-        public bool cpEntrances;
-        public bool rooms;
         public bool other;
         public bool credits;
+
         private bool prevFinished = false;
         private Watchers w;
 
         public Settings() { }
 
         public void Update(Dictionary<string, bool> settings, Watchers ws) {
+            playersSelect = settings["playersSelect"];
+            livesSet = settings["livesSet"];
+            playersUnselect = settings["playersUnselect"];
+            livesUnset = settings["livesUnset"];
+            exits = settings["exits"];
+            introExit = settings["introExit"];
+            worlds = settings["worlds"];
+            midways = settings["midways"];
+            cpEntrances = settings["cpEntrances"];
+            starts = settings["starts"];
+            goals = settings["goals"];
+            orbs = settings["orbs"];
+            keys = settings["keys"];
+            bosses = settings["bosses"];
+            palaces = settings["palaces"];
+            rooms = settings["rooms"];
             recording = settings["recording"];
             autoskipOnLag = settings["autoskipOnLag"];
-            worlds = settings["worlds"];
-            levelExits = settings["levelExits"];
-            introExits = settings["introExits"];
-            levelStarts = settings["levelStarts"];
-            levelFinishes = settings["levelFinishes"];
-            firstTapes = settings["firstTapes"];
-            cpEntrances = settings["cpEntrances"];
-            rooms = settings["rooms"];
             w = ws;
         }
 
         public bool SplitStatus() {
             return !recording && (
+                (exits && w.LevelExit) ||
+                (introExit && w.Intro) ||
                 (worlds && w.Overworld) ||
-                (levelExits && w.LevelExit) ||
-                (introExits && w.Intro) ||
-                (levelStarts && w.LevelStart) ||
-                (levelFinishes && w.LevelFinish) ||
-                (firstTapes && w.Tape) ||
+                (midways && w.Tape) ||
                 (cpEntrances && w.CPEntranceInLevel) ||
+                (starts && w.LevelStart) ||
+                (goals && w.Goal) ||
+                (orbs && w.Orb) ||
+                (keys && w.Key) ||
+                (palaces && w.Palace) ||
+                (bosses && w.Boss) ||
                 (rooms && w.Room) ||
                 other ||
                 credits
@@ -49,7 +70,13 @@ namespace SMW {
         }
 
         public bool UndoStatus() {
-            if (levelFinishes && w.LevelFinish) {
+            // TODO: Does it make sense to check key or palace?
+            if ((goals && w.Goal) ||
+                (orbs && w.Orb) ||
+                (keys && w.Key) ||
+                (bosses && w.Boss) ||
+                (palaces && w.Palace)
+            ) {
                 prevFinished = true;
             }
             if (w.LevelExit) {
@@ -69,13 +96,13 @@ namespace SMW {
             if (w.LevelStart) reasons.Add("Start");
             if (w.Tape) reasons.Add("Tape");
             if (w.CPEntranceInLevel) reasons.Add("CPEntrance");
-            if (w.Palace) reasons.Add("Palace");
             if (w.Submap) reasons.Add("Submap");
             if (w.Portal) reasons.Add("Portal");
-            if (w.Boss) reasons.Add("Boss");
+            if (w.Goal) reasons.Add("Goal");
             if (w.Orb) reasons.Add("Orb");
             if (w.Key) reasons.Add("Key");
-            if (w.Goal) reasons.Add("Goal");
+            if (w.Boss) reasons.Add("Boss");
+            if (w.Palace) reasons.Add("Palace");
             if (w.Room) reasons.Add("Room");
             if (other) reasons.Add("Other");
             if (credits) reasons.Add("Credits");
