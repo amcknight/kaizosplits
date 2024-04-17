@@ -159,6 +159,14 @@ namespace SMW {
             return Shifted(roomNum) && Curr(roomCounter) > 0 && Curr(levelNum) == level;
         }
 
+        public bool ShiftIn(MemoryWatcher<ushort> inW, ushort inVal, MemoryWatcher<ushort> shiftW, ushort from, ushort to) {
+            return Shift(shiftW, from, to) && Curr(inW) == inVal;
+        }
+
+        public bool ShiftsIn(MemoryWatcher<ushort> inW, ushort inVal, MemoryWatcher<ushort> shiftW) {
+            return Shifted(shiftW) && Curr(inW) == inVal;
+        }
+
         public void UpdateState() {
             // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
             died = died || DiedNow;

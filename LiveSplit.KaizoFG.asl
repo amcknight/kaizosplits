@@ -228,7 +228,6 @@ split {
     // Override Default split variables for individual games
     switch (runName) {
         case "Bunbun World":
-            // TODO: Put a split on rooms function that uses levelNum and first roomNum
             s.other =
                 w.RoomShiftsInLevel(80) || // Six-Screen Suites
                 w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
@@ -240,20 +239,20 @@ split {
                 w.RoomShiftsInLevel(68) || // Breathtaking
                 w.RoomShiftsInLevel(61) || // Night Sky Scamper
                 w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
-                (w.Shift(w.io, 3, 20) && w.Curr(w.levelNum) == 52) || // Bunbun Bastion any%
+                w.ShiftIn(w.levelNum, 52, w.io, 3, 20) || // (w.Shift(w.io, 3, 20) && w.Curr(w.levelNum) == 52) || // Bunbun Bastion any%
                 w.RoomShiftsInLevel(62) || // Culmination Castle
                 w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
-            s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late)
+            s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
         break;
-        case "Bunbun World 2": // TODO: Retest
+        case "Bunbun World 2": // TODO: Retest. TODO cancel tape on level. Also maybe use rooms instead of coins or just drop this.
             s.Tape = w.Prev(w.io) != 61 // KLDC Dolphins
                 && w.prevIO != 48 // Mirror Temple
                 ;
             w.Room = w.Room && w.Prev(w.io) != 65; // Using yoshiCoins
             w.CoinFlag = w.Stepped(w.yoshiCoin) && w.Prev(w.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
         break;
-        case "Cute Kaizo World": // TODO: Retest
+        case "Cute Kaizo World": // TODO: Retest. Can probably use cpEntrance out of the box but if not should cancel on level
             w.Tape = w.Tape && w.Prev(w.io) != 55;  // Using doors
             s.credits = w.ShiftTo(w.io, 21);
         break;
@@ -283,17 +282,16 @@ split {
         break;
         case "Love Yourself":
             s.other =
-                (w.Shift(w.roomNum, 39, 40) && w.Curr(w.levelNum) == 74) || // 3rd Castle room
-                (w.Shift(w.roomNum, 40, 42) && w.Curr(w.levelNum) == 74) || // 4th castle room
+                (w.RoomShiftInLevel(74, 39, 40) || // 3rd Castle room
+                (w.RoomShiftInLevel(74, 40, 42) || // 4th castle room
                 (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) // All room other than credits door
                 ;
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Nonsense 24 Exit":
-            s.other = false;
-            s.credits = w.Curr(w.levelNum) == 94 && w.Shift(w.io, 255, 37); // Normal peach release doesn't work here
+            s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37); //w.Curr(w.levelNum) == 94 && w.Shift(w.io, 255, 37); // Normal peach release doesn't work here
         break;
-        case "Purgatory": // TODO: Retest
+        case "Purgatory": // TODO: Retest. Should cancel based on level
             w.Tape = w.Tape
                 && w.Prev(w.io) != 56  // Cancel for Sea Moon
                 && w.Prev(w.io) != 49  // Cancel for Soft and Wet
