@@ -77,10 +77,6 @@ init {
     vars.runNum = 0;
     vars.maxLag = 100L;
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-    vars.prevIn = false;
-    vars.prevFinished = false;
-    vars.ycs = 0;
-    vars.yc1 = false;
 
     // Offset by module size
     var memoryOffsets = new Dictionary<int, long> {
@@ -114,12 +110,11 @@ init {
         { 17264640, new int[3] {0xEEB59A, 0xEFD5A9, 0xEFF8A9} }, // 1.17.0 (x64)
         { 15675392, new int[3] {0xD6A900, 0xD67600, 0xD69926} }, // 1.9.4 (x64)
     };
-
+    // Core offset by core dll name and version
     var retroarchOffsets = new Dictionary<string, int> {
         { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
         { "bsnes_libretro.dll 115",             0x7D39DC },
     };
-    
     
     long memoryOffset = 0;
     string noMemMsg = "";
@@ -172,7 +167,8 @@ init {
     
     if (memoryOffset == 0) throw new Exception("NO MEMORY OFFSET: "+noMemMsg);
 
-    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},});
+    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
+    vars.initTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 }
 
 exit {
@@ -180,9 +176,7 @@ exit {
 }
 
 update {
-    var r = vars.rec;
-    var w = vars.ws;
-    var s = vars.ss;
+    var r = vars.rec; var w = vars.ws; var s = vars.ss;
     w.UpdateAll(game);
 
     // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
@@ -193,13 +187,15 @@ update {
     s.Update(vars.settingsDict, w);
     r.Update(s.recording, w);
     w.UpdateState();
+
+    // Hacky attempt to prevent early start from being true right when game starts up
+    return DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.initTime > 1000L;
 }
 
 start {
-    var r = vars.rec;
-    var w = vars.ws;
-    var s = vars.ss;
+    var r = vars.rec; var w = vars.ws; var s = vars.ss;
     if (s.StartStatus()) {
+        print("SINCE INIT: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.initTime));
         r.Dbg("Start: " + s.StartReasons());
         if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
         return true;
@@ -207,9 +203,7 @@ start {
 }
 
 reset {
-    var r = vars.rec;
-    var w = vars.ws;
-    var s = vars.ss;
+    var r = vars.rec; var w = vars.ws; var s = vars.ss;
     if (s.ResetStatus()) {
         r.Dbg("Reset: " + s.ResetReasons());
         if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
@@ -218,9 +212,7 @@ reset {
 }
 
 split {
-    var r = vars.rec;
-    var w = vars.ws;
-    var s = vars.ss;
+    var r = vars.rec; var w = vars.ws; var s = vars.ss;
     var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);

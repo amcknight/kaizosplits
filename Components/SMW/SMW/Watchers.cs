@@ -6,7 +6,6 @@ using System.Linq;
 namespace SMW {
     public class Watchers : MemoryWatcherList {
 
-        public Dictionary<int, long> states = Locator.offsets;  // TODO: This doesn't belong here and should be statically brought in directly
         public bool died;
         public bool roomStep;
         public ushort prevIO;
@@ -123,9 +122,9 @@ namespace SMW {
         public bool ExitDoor => Shift(playerAnimation, 13, 0);
 
         // Composite Conditions
-        public bool ToFileSelect => ShiftFrom(fileSelect, 0) && !ShiftTo(fileSelect, 85) && !ShiftTo(fileSelect, 170) && !ShiftTo(fileSelect, 255); // 85 and 170 are 010101010 and 255 are 11111111 patterns caused by retroarch starting the game
-        public bool FromOneMarioLife => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85) && !ShiftTo(marioLives, 170) && !ShiftTo(fileSelect, 255);
-        public bool FromOneLuigiLife => ShiftFrom(marioLives, 0) && !ShiftTo(marioLives, 85) && !ShiftTo(marioLives, 170) && !ShiftTo(fileSelect, 255);
+        public bool ToFileSelect => ShiftFrom(fileSelect, 0);
+        public bool FromOneMarioLife => ShiftFrom(marioLives, 0);
+        public bool FromOneLuigiLife => ShiftFrom(luigiLives, 0);
         public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
         public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;
