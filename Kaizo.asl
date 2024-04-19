@@ -1,55 +1,33 @@
-
-state("snes9x", "1.60")   { long offset : 0x94DB54; }
 state("snes9x", "1.62.3") {
     int smc_path_offset : "snes9x.exe", 0x5C14D4;
-    int offset : "snes9x.exe", 0x12698;
+    int offset :          "snes9x.exe", 0x12698;
 }
-
 state("snes9x-x64", "1.60") {
-    string512 smc_path : "snes9x-x64.exe", 0x8EAC39;  // "snes9x-x64.exe", 0xB14770 also works
-    long offset : "snes9x-x64.exe", 0x8D8BE8;
+    string512 smc_path : "snes9x-x64.exe", 0x8EAC39;
+    long offset :        "snes9x-x64.exe", 0x8D8BE8;
 }
 state("snes9x-x64", "1.61") {
-    string512 smc_path : "snes9x-x64.exe", 0x8951CF; // "snes9x-x64.exe", 0xB30246 also works
-    long offset : "snes9x-x64.exe", 0x883158;
+    string512 smc_path : "snes9x-x64.exe", 0x8951CF;
+    long offset :        "snes9x-x64.exe", 0x883158;
 }
 state("snes9x-x64", "1.62.3") {
     int smc_path_offset : "snes9x-x64.exe", 0xA74398;
-    long offset : "snes9x-x64.exe", 0xA62390;
+    long offset :         "snes9x-x64.exe", 0xA62390;
 }
-
-// Snes9x-rr 1.60, 0x97EE04
-// Snes9x-rr 1.60 (x64), 0x140925118
-state("bsnes", "107")   { long offset : 0x72BECC; } 
-state("bsnes", "107.1") { long offset : 0x762F2C; }
-state("bsnes", "107.2") { long offset : 0x765F2C; }
-state("bsnes", "107.3") { long offset : 0x765F2C; }
-state("bsnes", "110")   { long offset : 0xA9BD5C; }
-state("bsnes", "111")   { long offset : 0xA9DD5C; }
-state("bsnes", "112")   { long offset : 0xAAED7C; }
-state("bsnes", "115")   { long offset : 0xB16D7C; }
-
-state("higan", "106")     { long offset : 0x94D144; }
-state("higan", "106.112") { long offset : 0x8AB144; }
-state("higan", "107")     { long offset : 0xB0ECC8; }
-state("higan", "108")     { long offset : 0xBC7CC8; }
-state("higan", "109")     { long offset : 0xBCECC8; }
-state("higan", "110")     { long offset : 0xBDBCC8; }
-/* TODO: Base numbers are too big. Try refinding these with module name
-state("emuhawk", "2.3")   { long offset : 0x36F11500240; }
-state("emuhawk", "2.3.1") { long offset : 0x36F11500240; }
-state("emuhawk", "2.3.2") { long offset : 0x36F11500240; }
-*/
 state("retroarch", "1.17.0") {
-    string512 core_path :  0xEEB59A;
+    string512 core_path :   0xEEB59A;
     string32 core_version : 0xEFD5A9;
-    string512 smc_path :   0xEFF8A9;
+    string512 smc_path :    0xEFF8A9;
 }
 state("retroarch", "1.9.4") {
-    string512 core_path :  0xD6A900;
+    string512 core_path :   0xD6A900;
     string32 core_version : 0xD67600;
-    string512 smc_path :   0xD69926;
+    string512 smc_path :    0xD69926;
 }
+state("bsnes"){} 
+state("higan"){} 
+state("snes9x-rr"){} 
+state("emuhawk"){} 
 
 startup {
     print("STARTUP");
@@ -237,10 +215,14 @@ start {
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
         }
-   } else {
-        int smcOffset = current.smc_path_offset;
+    } else {
         string smcPath;
-        ExtensionMethods.ReadString(game, (IntPtr)smcOffset, 512, out smcPath);
+        try {
+            smcPath = current.smc_path;
+        } catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ex) {
+            int smcOffset = current.smc_path_offset;
+            ExtensionMethods.ReadString(game, (IntPtr)smcOffset, 512, out smcPath);
+        }
         string smc = Path.GetFileName(smcPath);
 
         if (string.IsNullOrWhiteSpace(smc)) {
@@ -258,7 +240,7 @@ start {
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
         }
-   }
+    }
 
     var r = vars.rec; var w = vars.ws; var s = vars.ss;
     if (s.StartStatus()) {
