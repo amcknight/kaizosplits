@@ -1,9 +1,55 @@
-state("snes9x") {}
-state("snes9x-x64") {}
-state("bsnes") {}
-state("higan") {}
-state("emuhawk") {}
-state("retroarch") {}
+
+state("snes9x", "1.60")   { long offset : 0x94DB54; }
+state("snes9x", "1.62.3") {
+    int smc_path_offset : "snes9x.exe", 0x5C14D4;
+    int offset : "snes9x.exe", 0x12698;
+}
+
+state("snes9x-x64", "1.60") {
+    string512 smc_path : "snes9x-x64.exe", 0x8EAC39;  // "snes9x-x64.exe", 0xB14770 also works
+    long offset : "snes9x-x64.exe", 0x8D8BE8;
+}
+state("snes9x-x64", "1.61") {
+    string512 smc_path : "snes9x-x64.exe", 0x8951CF; // "snes9x-x64.exe", 0xB30246 also works
+    long offset : "snes9x-x64.exe", 0x883158;
+}
+state("snes9x-x64", "1.62.3") {
+    int smc_path_offset : "snes9x-x64.exe", 0xA74398;
+    long offset : "snes9x-x64.exe", 0xA62390;
+}
+
+// Snes9x-rr 1.60, 0x97EE04
+// Snes9x-rr 1.60 (x64), 0x140925118
+state("bsnes", "107")   { long offset : 0x72BECC; } 
+state("bsnes", "107.1") { long offset : 0x762F2C; }
+state("bsnes", "107.2") { long offset : 0x765F2C; }
+state("bsnes", "107.3") { long offset : 0x765F2C; }
+state("bsnes", "110")   { long offset : 0xA9BD5C; }
+state("bsnes", "111")   { long offset : 0xA9DD5C; }
+state("bsnes", "112")   { long offset : 0xAAED7C; }
+state("bsnes", "115")   { long offset : 0xB16D7C; }
+
+state("higan", "106")     { long offset : 0x94D144; }
+state("higan", "106.112") { long offset : 0x8AB144; }
+state("higan", "107")     { long offset : 0xB0ECC8; }
+state("higan", "108")     { long offset : 0xBC7CC8; }
+state("higan", "109")     { long offset : 0xBCECC8; }
+state("higan", "110")     { long offset : 0xBDBCC8; }
+/* TODO: Base numbers are too big. Try refinding these with module name
+state("emuhawk", "2.3")   { long offset : 0x36F11500240; }
+state("emuhawk", "2.3.1") { long offset : 0x36F11500240; }
+state("emuhawk", "2.3.2") { long offset : 0x36F11500240; }
+*/
+state("retroarch", "1.17.0") {
+    string512 core_path :  0xEEB59A;
+    string32 core_version : 0xEFD5A9;
+    string512 smc_path :   0xEFF8A9;
+}
+state("retroarch", "1.9.4") {
+    string512 core_path :  0xD6A900;
+    string32 core_version : 0xD67600;
+    string512 smc_path :   0xD69926;
+}
 
 startup {
     print("STARTUP");
@@ -62,8 +108,12 @@ startup {
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
-    vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
-    vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
+    vars.ws =  Activator.CreateInstance(asm.GetType("SMW.Watchers"));
+    vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
+
+    vars.runNum = 0;
+    vars.maxLag = 100L;
+    vars.ready = false;
 }
 
 shutdown {
@@ -72,103 +122,48 @@ shutdown {
 
 init {
     print("INIT");
+
+    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // TODO: WHy this here?
+
+    var versions = new Dictionary<int, string> {
+        { 17264640, "1.17.0" }, // Retroarch
+        { 15675392, "1.9.4"  }, // Retroarch
+        {  9646080, "1.60"   }, // Snes9x-rr
+        { 13565952, "1.60"   }, // Snes9x-rr x64
+        {  9027584, "1.60"   }, // Snes9x
+        { 12836864, "1.60"   }, // Snes9x x64
+        { 12955648, "1.61"   }, // Snes9x x64
+        { 10399744, "1.62.3" }, // Snes9x
+        { 15474688, "1.62.3" }, // Snes9x x64
+        { 16019456, "106"    }, // higan
+        { 15360000, "106.112"}, // higan
+		{ 22388736, "107"    }, // higan
+		{ 23142400, "108"    }, // higan
+		{ 23166976, "109"    }, // higan
+		{ 23224320, "110"    }, // higan
+        { 10096640, "107"    }, // bsnes
+        { 10338304, "107.1"  }, // bsnes
+        { 47230976, "107.2"  }, // bsnes (also 107.3) // Use game hash to prevent collisions like this
+        {131543040, "110"    }, // bsnes
+        { 51924992, "111"    }, // bsnes 
+        { 52056064, "112"    }, // bsnes 
+		{ 52477952, "115"    }, // bsnes 
+        {  7061504, "2.3"    }, // BizHawk 
+        {  7249920, "2.3.1"  }, // BizHawk 
+        {  6938624, "2.3.2"  }, // BizHawk 
+    };
+    
     string emuName = game.ProcessName.ToLower();
-    
-    vars.runNum = 0;
-    vars.maxLag = 100L;
-    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+    int modSize = modules.First().ModuleMemorySize;
 
-    // Offset by module size
-    var memoryOffsets = new Dictionary<int, long> {
-        {   9646080, 0x97EE04 },      // Snes9x-rr 1.60
-        {  13565952, 0x140925118 },   // Snes9x-rr 1.60 (x64)
-        {   9027584, 0x94DB54 },      // Snes9x 1.60
-        {  12836864, 0x1408D8BE8 },   // Snes9x 1.60 (x64)
-        {  12955648, 0x59A1430 },     // Snes9x 1.61 (x64)    "snes9x-x64.exe"+0x00883158
-        {  10399744, 0x987494 },      // Snes9x 1.62.3        "snes9x.exe"+0x00012698
-        {  15474688, 0x140A32314 },   // Snes9x 1.62.3 (x64)  "snes9x-x64.exe"+0xA62390
-        {  16019456, 0x94D144 },      // higan v106
-        {  15360000, 0x8AB144 },      // higan v106.112
-		{  22388736, 0xB0ECC8 },      // higan v107
-		{  23142400, 0xBC7CC8 },      // higan v108
-		{  23166976, 0xBCECC8 },      // higan v109
-		{  23224320, 0xBDBCC8 },      // higan v110
-        {  10096640, 0x72BECC },      // bsnes v107
-        {  10338304, 0x762F2C },      // bsnes v107.1
-        {  47230976, 0x765F2C },      // bsnes v107.2/107.3
-        { 131543040, 0xA9BD5C },      // bsnes v110
-        {  51924992, 0xA9DD5C },      // bsnes v111
-        {  52056064, 0xAAED7C },      // bsnes v112
-		{  52477952, 0xB16D7C },      // bsnes v115
-        {   7061504, 0x36F11500240 }, // BizHawk 2.3
-        {   7249920, 0x36F11500240 }, // BizHawk 2.3.1
-        {   6938624, 0x36F11500240 }, // BizHawk 2.3.2
-    };
-    
-    // Core path, core version, smc path Offsets by retroarch module size
-    var retroarchCoreInfoOffsets = new Dictionary<int, int[]> {
-        { 17264640, new int[3] {0xEEB59A, 0xEFD5A9, 0xEFF8A9} }, // 1.17.0 (x64)
-        { 15675392, new int[3] {0xD6A900, 0xD67600, 0xD69926} }, // 1.9.4 (x64)
-    };
-    // Core offset by core dll name and version
-    var retroarchOffsets = new Dictionary<string, int> {
-        { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
-        { "bsnes_libretro.dll 115",             0x7D39DC },
-    };
-    
-    long memoryOffset = 0;
-    string noMemMsg = "";
-    try {
-        memoryOffset = current.offset;
-    } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
-        noMemMsg = "No offset found in state";
-        int modSize = modules.First().ModuleMemorySize;
-        memoryOffsets.TryGetValue(modSize, out memoryOffset);
-        if (memoryOffset == 0) {
-            noMemMsg = "No offset found by modSize";
-        }
-	    if ( emuName == "retroarch" ) {
-            int[] coreInfo = new int[3] {0,0,0};
-            retroarchCoreInfoOffsets.TryGetValue(modSize, out coreInfo);
-            int corePathOffset = coreInfo[0];
-            int coreVersionOffset = coreInfo[1];
-            int smcPathOffset = coreInfo[2];
-            string corePath;
-            string coreVersion;
-            string smcPath;
-            new DeepPointer( "retroarch.exe", corePathOffset ).DerefString(game, 1024, out corePath);
-            new DeepPointer( "retroarch.exe", coreVersionOffset ).DerefString(game, 32, out coreVersion);
-            new DeepPointer( "retroarch.exe", smcPathOffset ).DerefString(game, 1024, out smcPath);
-            string core = Path.GetFileName(corePath);
-            string smc = Path.GetFileName(smcPath);
-
-            if (string.IsNullOrWhiteSpace(core)) {
-                noMemMsg = "No Retroarch Core";
-            } else if (string.IsNullOrWhiteSpace(coreVersion)) {
-                noMemMsg = "No Retroarch Core Version";
-            } else if (string.IsNullOrWhiteSpace(smc)) {
-                noMemMsg = "No Retroarch Game";
-            } else {
-                string core_key = string.Join(" ", core, coreVersion);
-                print("CORE: "+core_key);
-                print("RETROARCH Game: "+smc);
-                int coreOffset = 0;
-                retroarchOffsets.TryGetValue(core_key, out coreOffset);
-                if (coreOffset == 0) {
-                    noMemMsg = "No core offset found for '"+core_key+"'";
-                } else {
-                    IntPtr offset;
-                    new DeepPointer( core, coreOffset ).DerefOffsets(game, out offset);
-                    memoryOffset = (long) offset;
-                }
-            }
-        }
+    string v = "";
+    versions.TryGetValue(modSize, out v);
+    if (!string.IsNullOrWhiteSpace(v)) {
+        print("EMU: "+emuName);
+        version = v;
+    } else {
+        throw new Exception("UNKNOWN "+emuName+" MODSIZE '"+modSize+"'");
     }
-    
-    if (memoryOffset == 0) throw new Exception("NO MEMORY OFFSET: "+noMemMsg);
-
-    vars.ws.SetMemoryOffset(memoryOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
-    vars.initTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 }
 
 exit {
@@ -176,26 +171,98 @@ exit {
 }
 
 update {
-    var r = vars.rec; var w = vars.ws; var s = vars.ss;
-    w.UpdateAll(game);
+    if (string.IsNullOrWhiteSpace(version)) return false; // Don't start until version
+    if (vars.ready) {
+        var r = vars.rec; var w = vars.ws; var s = vars.ss;
+        w.UpdateAll(game);
 
-    // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
-    // The order here matters for Spawn recording
-    foreach (string sn in vars.settingNames) {
-        vars.settingsDict[sn] = settings[sn];
+        // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
+        // The order here matters for Spawn recording
+        foreach (string sn in vars.settingNames) {
+            vars.settingsDict[sn] = settings[sn];
+        }
+        s.Update(vars.settingsDict, w);
+        r.Update(s.recording, w);
+        w.UpdateState();
+
+        // Hacky attempt to prevent early start from being true right when game starts up
+        return DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime > 1000L;
     }
-    s.Update(vars.settingsDict, w);
-    r.Update(s.recording, w);
-    w.UpdateState();
-
-    // Hacky attempt to prevent early start from being true right when game starts up
-    return DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.initTime > 1000L;
 }
 
 start {
+    string emuName = game.ProcessName.ToLower();
+    if (emuName == "retroarch") {
+
+        string core = Path.GetFileName(current.core_path);
+        string coreVersion = current.core_version;
+        string smc = Path.GetFileName(current.smc_path);
+
+        if (string.IsNullOrWhiteSpace(core)) {
+            print("NO START: No Retroarch Core");
+            vars.ready = false;
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(coreVersion)) {
+           print("NO START: No Retroarch Core Version");
+           vars.ready = false;
+           return false;
+        }
+        if (string.IsNullOrWhiteSpace(smc)) {
+            print("NO START: No Retroarch Game");
+            vars.ready = false;
+            return false;
+        }
+
+        if (!vars.ready) {
+            var coreOffsets = new Dictionary<string, int> {
+                { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
+                { "bsnes_libretro.dll 115",             0x7D39DC },
+            };
+
+            string coreKey = string.Join(" ", core, coreVersion);
+            int coreOffset = 0;
+            coreOffsets.TryGetValue(coreKey, out coreOffset);
+            if (coreOffset == 0) {
+                print("NOT START: No core offset found for '"+coreKey+"'");
+                return false;
+            }
+
+            IntPtr offset;
+            new DeepPointer(core, coreOffset).DerefOffsets(game, out offset);
+            long memOffset = (long) offset;
+
+            if (memOffset == 0) throw new Exception("NOT START: No memory offset found for '"+coreKey+"' at '"+coreOffset+"'");
+            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
+            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            vars.ready = true;
+        }
+   } else {
+        int smcOffset = current.smc_path_offset;
+        string smcPath;
+        ExtensionMethods.ReadString(game, (IntPtr)smcOffset, 512, out smcPath);
+        string smc = Path.GetFileName(smcPath);
+
+        if (string.IsNullOrWhiteSpace(smc)) {
+            print("NO START: No Game");
+            vars.ready = false;
+            return false;
+        }
+
+        if (!vars.ready) {
+            print("SMC: "+smc);
+            long memOffset = current.offset;
+            print("MEM: "+memOffset.ToString("X8"));
+
+            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
+            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            vars.ready = true;
+        }
+   }
+
     var r = vars.rec; var w = vars.ws; var s = vars.ss;
     if (s.StartStatus()) {
-        print("SINCE INIT: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.initTime));
+        print("SINCE INIT: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime));
         r.Dbg("Start: " + s.StartReasons());
         if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
         return true;
