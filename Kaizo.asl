@@ -193,6 +193,7 @@ start {
         }
 
         if (!vars.ready) {
+            print("SMC: "+smc);
             var coreOffsets = new Dictionary<string, int> {
                 { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
                 { "bsnes_libretro.dll 115",             0x7D39DC },
@@ -210,7 +211,7 @@ start {
             new DeepPointer(core, coreOffset).DerefOffsets(game, out offset);
             long memOffset = (long) offset;
 
-            if (memOffset == 0) throw new Exception("NOT START: No memory offset found for '"+coreKey+"' at '"+coreOffset+"'");
+            if (memOffset == 0) throw new Exception("NOT START: No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
             vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
@@ -234,8 +235,6 @@ start {
         if (!vars.ready) {
             print("SMC: "+smc);
             long memOffset = current.offset;
-            print("MEM: "+memOffset.ToString("X8"));
-
             vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
