@@ -154,11 +154,9 @@ exit {
 update {
     var t = vars.t;
     if (t.HasLines()) print(t.ClearLines());
-
-    if (string.IsNullOrWhiteSpace(version)) return false; // Don't start until emu version found
+    if (string.IsNullOrWhiteSpace(version)) return false;
     
     string emuName = game.ProcessName.ToLower();
-
     if (emuName == "retroarch") {
         vars.core = Path.GetFileName(current.core_path);
         vars.coreVersion = current.core_version;
