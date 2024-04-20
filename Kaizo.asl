@@ -92,9 +92,10 @@ startup {
 
     vars.runNum = 0;
     vars.maxLag = 100L;
+    vars.minMemToStartTime = 1000L;
     vars.ready = false;
-    vars.prevMsg = "junk value";
     vars.running = false;
+    vars.recPath = "C:\\Users\\thedo\\git\\kaizosplits\\runs"; // TODO: Remove hardcoded location (where does a relative path go?)
 }
 
 shutdown {
@@ -103,35 +104,34 @@ shutdown {
 
 init {
     print("INIT");
-
-    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // TODO: WHy this here?
+    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     var versions = new Dictionary<int, string> {
-        { 17264640, "1.17.0" }, // Retroarch
         { 15675392, "1.9.4"  }, // Retroarch
-        {  9646080, "1.60"   }, // Snes9x-rr
-        { 13565952, "1.60"   }, // Snes9x-rr x64
+        { 17264640, "1.17.0" }, // Retroarch
         {  9027584, "1.60"   }, // Snes9x
+        { 10399744, "1.62.3" }, // Snes9x
         { 12836864, "1.60"   }, // Snes9x x64
         { 12955648, "1.61"   }, // Snes9x x64
-        { 10399744, "1.62.3" }, // Snes9x
         { 15474688, "1.62.3" }, // Snes9x x64
+        {  9646080, "1.60"   }, // Snes9x-rr
+        { 13565952, "1.60"   }, // Snes9x-rr x64
+        { 10096640, "107"    }, // bsnes
+        { 10338304, "107.1"  }, // bsnes
+        { 47230976, "107.2"  }, // bsnes (also 107.3) // Use game hash to prevent collisions like this
+        {131543040, "110"    }, // bsnes
+        { 51924992, "111"    }, // bsnes 
+        { 52056064, "112"    }, // bsnes
+		{ 52477952, "115"    }, // bsnes
         { 16019456, "106"    }, // higan
         { 15360000, "106.112"}, // higan
 		{ 22388736, "107"    }, // higan
 		{ 23142400, "108"    }, // higan
 		{ 23166976, "109"    }, // higan
 		{ 23224320, "110"    }, // higan
-        { 10096640, "107"    }, // bsnes
-        { 10338304, "107.1"  }, // bsnes
-        { 47230976, "107.2"  }, // bsnes (also 107.3) // Use game hash to prevent collisions like this
-        {131543040, "110"    }, // bsnes
-        { 51924992, "111"    }, // bsnes 
-        { 52056064, "112"    }, // bsnes 
-		{ 52477952, "115"    }, // bsnes 
         {  7061504, "2.3"    }, // BizHawk 
         {  7249920, "2.3.1"  }, // BizHawk 
-        {  6938624, "2.3.2"  }, // BizHawk 
+        {  6938624, "2.3.2"  }, // BizHawk
     };
     
     string emuName = game.ProcessName.ToLower();
@@ -141,7 +141,7 @@ init {
     versions.TryGetValue(modSize, out v);
     if (!string.IsNullOrWhiteSpace(v)) {
         print("EMU: "+emuName);
-        version = v;
+        version = v; // This version var is special and lets the correct state be loaded
     } else {
         throw new Exception("UNKNOWN "+emuName+" MODSIZE '"+modSize+"'");
     }
@@ -250,7 +250,7 @@ update {
         w.UpdateState();
 
         // Hacky attempt to prevent early start from being true right when game starts up
-        return DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime > 1000L;
+        return DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime > vars.minMemToStartTime;
     }
 }
 
@@ -418,7 +418,7 @@ onStart {
 onReset {
     print("RESETING");
     if (settings["recording"]) {
-        vars.rec.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum); // TODO: Remove hardcoded location
+        vars.rec.WriteRun(vars.recPath, vars.runNum);
     }
     vars.rec.Reset();
     vars.running = false;
