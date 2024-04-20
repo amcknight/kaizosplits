@@ -86,12 +86,14 @@ startup {
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
+    vars.t =   Activator.CreateInstance(asm.GetType("SMW.Tracker"));
     vars.ws =  Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
 
     vars.runNum = 0;
     vars.maxLag = 100L;
     vars.ready = false;
+    vars.prevMsg = "junk value";
 }
 
 shutdown {
@@ -149,6 +151,9 @@ exit {
 }
 
 update {
+    var t = vars.t;
+    if (t.HasLines()) print(t.ClearLines());
+
     if (string.IsNullOrWhiteSpace(version)) return false; // Don't start until version
     if (vars.ready) {
         var r = vars.rec; var w = vars.ws; var s = vars.ss;
@@ -160,6 +165,7 @@ update {
             vars.settingsDict[sn] = settings[sn];
         }
         s.Update(vars.settingsDict, w);
+        t.Update(w);
         r.Update(s.recording, w);
         w.UpdateState();
 
@@ -169,6 +175,7 @@ update {
 }
 
 start {
+    var t = vars.t;
     string emuName = game.ProcessName.ToLower();
     if (emuName == "retroarch") {
 
@@ -177,23 +184,23 @@ start {
         string smc = Path.GetFileName(current.smc_path);
 
         if (string.IsNullOrWhiteSpace(core)) {
-            print("NO START: No Retroarch Core");
+            t.DbgOnce("NO START: No Retroarch Core");
             vars.ready = false;
             return false;
         }
         if (string.IsNullOrWhiteSpace(coreVersion)) {
-           print("NO START: No Retroarch Core Version");
-           vars.ready = false;
-           return false;
+            t.DbgOnce("NO START: No Retroarch Core Version");
+            vars.ready = false;
+            return false;
         }
         if (string.IsNullOrWhiteSpace(smc)) {
-            print("NO START: No Retroarch Game");
+            t.DbgOnce("NO START: No Retroarch Game");
             vars.ready = false;
             return false;
         }
 
         if (!vars.ready) {
-            print("SMC: "+smc);
+            t.DbgOnce("SMC: "+smc);
             var coreOffsets = new Dictionary<string, int> {
                 { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
                 { "bsnes_libretro.dll 115",             0x7D39DC },
@@ -203,7 +210,7 @@ start {
             int coreOffset = 0;
             coreOffsets.TryGetValue(coreKey, out coreOffset);
             if (coreOffset == 0) {
-                print("NOT START: No core offset found for '"+coreKey+"'");
+                t.DbgOnce("NOT START: No core offset found for '"+coreKey+"'");
                 return false;
             }
 
@@ -211,7 +218,10 @@ start {
             new DeepPointer(core, coreOffset).DerefOffsets(game, out offset);
             long memOffset = (long) offset;
 
-            if (memOffset == 0) throw new Exception("NOT START: No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
+            if (memOffset == 0) {
+                t.DbgOnce("NOT START: No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
+                return false;
+            }
             vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
@@ -227,13 +237,13 @@ start {
         string smc = Path.GetFileName(smcPath);
 
         if (string.IsNullOrWhiteSpace(smc)) {
-            print("NO START: No Game");
+            t.DbgOnce("NO START: No Game");
             vars.ready = false;
             return false;
         }
 
         if (!vars.ready) {
-            print("SMC: "+smc);
+            t.DbgOnce("SMC: "+smc);
             long memOffset = current.offset;
             vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -243,24 +253,22 @@ start {
 
     var r = vars.rec; var w = vars.ws; var s = vars.ss;
     if (s.StartStatus()) {
-        print("SINCE INIT: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime));
-        r.Dbg("Start: " + s.StartReasons());
-        if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
+        t.Dbg("SINCE INIT: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime));
+        t.Dbg("Start: " + s.StartReasons());
         return true;
     }
 }
 
 reset {
-    var r = vars.rec; var w = vars.ws; var s = vars.ss;
+    var t = vars.t; var r = vars.rec; var w = vars.ws; var s = vars.ss;
     if (s.ResetStatus()) {
-        r.Dbg("Reset: " + s.ResetReasons());
-        if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
+        t.Dbg("Reset: " + s.ResetReasons());
         return true;
     }
 }
 
 split {
-    var r = vars.rec; var w = vars.ws; var s = vars.ss;
+    var t = vars.t; var r = vars.rec; var w = vars.ws; var s = vars.ss;
     var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
@@ -371,17 +379,16 @@ split {
         break;
     }
 
-    if (s.SplitStatus()) r.Dbg("Split: " + s.SplitReasons());
+    if (s.SplitStatus()) t.Dbg("Split: " + s.SplitReasons());
 
-    r.Monitor(w.levelNum, w);
-    r.Monitor(w.roomNum, w);
-    r.Monitor(w.fileSelect, w);
-    r.Monitor(w.marioLives, w);
-    r.Monitor(w.luigiLives, w);
+    t.Monitor(w.levelNum, w);
+    t.Monitor(w.roomNum, w);
+    t.Monitor(w.fileSelect, w);
+    t.Monitor(w.marioLives, w);
+    t.Monitor(w.luigiLives, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
-    if (r.debugInfo.Count > 0) print(string.Join("\n", r.debugInfo));
     vars.endMs = newEndMs;
 
     if (s.UndoStatus()) new TimerModel { CurrentState = timer }.UndoSplit();
@@ -390,7 +397,7 @@ split {
 
     if (s.SplitStatus() && s.autoskipOnLag && lag > vars.maxLag) {
         new TimerModel { CurrentState = timer }.SkipSplit();
-        print("LAG: "+lag);
+        t.Dbg("LAG: "+lag);
         return false;
     } else {
         return s.SplitStatus();
