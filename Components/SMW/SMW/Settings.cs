@@ -102,14 +102,16 @@ namespace SMW {
             return string.Join(" ", reasons);
         }
 
-        public bool ResetStatus() {
-            return (playersUnselect && w.FromFileSelect) ||
+        public bool ResetStatus(bool memOffsetKnown) {
+            return !memOffsetKnown || 
+                (playersUnselect && w.FromFileSelect) ||
                 (livesUnset && w.ToOneLuigiLife)
                 ;
         }
 
-        public string ResetReasons() {
+        public string ResetReasons(bool memOffsetKnown) {
             List<string> reasons = new List<string>();
+            if (!memOffsetKnown) reasons.Add("LostMemoryOffset");
             if (w.FromFileSelect) reasons.Add("FileUnselected");
             if (w.ToOneLuigiLife) reasons.Add("OneLife");
             return string.Join(" ", reasons);

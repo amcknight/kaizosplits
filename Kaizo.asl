@@ -94,6 +94,7 @@ startup {
     vars.maxLag = 100L;
     vars.ready = false;
     vars.prevMsg = "junk value";
+    vars.running = false;
 }
 
 shutdown {
@@ -154,8 +155,87 @@ update {
     var t = vars.t;
     if (t.HasLines()) print(t.ClearLines());
 
-    if (string.IsNullOrWhiteSpace(version)) return false; // Don't start until version
+    if (string.IsNullOrWhiteSpace(version)) return false; // Don't start until emu version found
+    
+    string emuName = game.ProcessName.ToLower();
+
+    if (emuName == "retroarch") {
+        vars.core = Path.GetFileName(current.core_path);
+        vars.coreVersion = current.core_version;
+        vars.smc = Path.GetFileName(current.smc_path);
+
+        if (string.IsNullOrWhiteSpace(vars.core)) {
+            t.DbgOnce("No "+emuName+" Core found");
+            vars.ready = false;
+            return vars.running;
+        }
+        if (string.IsNullOrWhiteSpace(vars.coreVersion)) {
+            t.DbgOnce("No  "+emuName+" Core Version found");
+            vars.ready = false;
+            return vars.running;
+        }
+        if (string.IsNullOrWhiteSpace(vars.smc)) {
+            t.DbgOnce("No "+emuName+" ROM found");
+            vars.ready = false;
+            return vars.running;
+        }
+    } else {
+        string smcPath;
+        try {
+            smcPath = current.smc_path;
+        } catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ex) {
+            int smcOffset = current.smc_path_offset;
+            ExtensionMethods.ReadString(game, (IntPtr)smcOffset, 512, out smcPath);
+        }
+
+        vars.smc = Path.GetFileName(smcPath);
+
+        if (string.IsNullOrWhiteSpace(vars.smc)) {
+            t.DbgOnce("No "+emuName+" ROM found");
+            vars.ready = false;
+            return vars.running;
+        }
+    }
+
+    // Do this only the update after the vars above change
+    if (!vars.ready) {
+        if (emuName == "retroarch") {
+            t.DbgOnce("SMC: "+vars.smc);
+            var coreOffsets = new Dictionary<string, int> {
+                { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
+                { "bsnes_libretro.dll 115",             0x7D39DC },
+            };
+
+            string coreKey = string.Join(" ", vars.core, vars.coreVersion);
+            int coreOffset = 0;
+            coreOffsets.TryGetValue(coreKey, out coreOffset);
+            if (coreOffset == 0) {
+                t.DbgOnce("NOT START: No core offset found for '"+coreKey+"'");
+                return false;
+            }
+
+            IntPtr offset;
+            new DeepPointer(vars.core, coreOffset).DerefOffsets(game, out offset);
+            long memOffset = (long) offset;
+
+            if (memOffset == 0) {
+                t.DbgOnce("No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
+                return false;
+            }
+            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
+            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            vars.ready = true;
+        } else {
+            t.DbgOnce("SMC: "+vars.smc);
+            long memOffset = current.offset;
+            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
+            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            vars.ready = true;
+        }
+    }
+
     if (vars.ready) {
+        t.DbgOnce("READY");
         var r = vars.rec; var w = vars.ws; var s = vars.ss;
         w.UpdateAll(game);
 
@@ -175,94 +255,18 @@ update {
 }
 
 start {
-    var t = vars.t;
-    string emuName = game.ProcessName.ToLower();
-    if (emuName == "retroarch") {
-
-        string core = Path.GetFileName(current.core_path);
-        string coreVersion = current.core_version;
-        string smc = Path.GetFileName(current.smc_path);
-
-        if (string.IsNullOrWhiteSpace(core)) {
-            t.DbgOnce("NO START: No Retroarch Core");
-            vars.ready = false;
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(coreVersion)) {
-            t.DbgOnce("NO START: No Retroarch Core Version");
-            vars.ready = false;
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(smc)) {
-            t.DbgOnce("NO START: No Retroarch Game");
-            vars.ready = false;
-            return false;
-        }
-
-        if (!vars.ready) {
-            t.DbgOnce("SMC: "+smc);
-            var coreOffsets = new Dictionary<string, int> {
-                { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
-                { "bsnes_libretro.dll 115",             0x7D39DC },
-            };
-
-            string coreKey = string.Join(" ", core, coreVersion);
-            int coreOffset = 0;
-            coreOffsets.TryGetValue(coreKey, out coreOffset);
-            if (coreOffset == 0) {
-                t.DbgOnce("NOT START: No core offset found for '"+coreKey+"'");
-                return false;
-            }
-
-            IntPtr offset;
-            new DeepPointer(core, coreOffset).DerefOffsets(game, out offset);
-            long memOffset = (long) offset;
-
-            if (memOffset == 0) {
-                t.DbgOnce("NOT START: No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
-                return false;
-            }
-            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
-        }
-    } else {
-        string smcPath;
-        try {
-            smcPath = current.smc_path;
-        } catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ex) {
-            int smcOffset = current.smc_path_offset;
-            ExtensionMethods.ReadString(game, (IntPtr)smcOffset, 512, out smcPath);
-        }
-        string smc = Path.GetFileName(smcPath);
-
-        if (string.IsNullOrWhiteSpace(smc)) {
-            t.DbgOnce("NO START: No Game");
-            vars.ready = false;
-            return false;
-        }
-
-        if (!vars.ready) {
-            t.DbgOnce("SMC: "+smc);
-            long memOffset = current.offset;
-            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
-        }
-    }
-
-    var r = vars.rec; var w = vars.ws; var s = vars.ss;
+    var t = vars.t; var s = vars.ss;
     if (s.StartStatus()) {
-        t.Dbg("SINCE INIT: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime));
+        t.Dbg("SINCE GAME LOAD: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime)); // TODO: Does this still work?
         t.Dbg("Start: " + s.StartReasons());
         return true;
     }
 }
 
 reset {
-    var t = vars.t; var r = vars.rec; var w = vars.ws; var s = vars.ss;
-    if (s.ResetStatus()) {
-        t.Dbg("Reset: " + s.ResetReasons());
+    var t = vars.t; var s = vars.ss;
+    if (s.ResetStatus(vars.ready)) {
+        t.Dbg("Reset: " + s.ResetReasons(vars.ready));
         return true;
     }
 }
@@ -405,15 +409,17 @@ split {
 }
 
 onStart {
-    print("START");
+    print("STARTING");
     vars.runNum = vars.runNum + 1;
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // This first endMs doesn't really make sense..
+    vars.running = true;
 }
 
 onReset {
-    print("RESET");
+    print("RESETING");
     if (settings["recording"]) {
         vars.rec.WriteRun("C:\\Users\\thedo\\git\\kaizosplits\\runs", vars.runNum); // TODO: Remove hardcoded location
     }
     vars.rec.Reset();
+    vars.running = false;
 }
