@@ -40,7 +40,7 @@ namespace SMW {
                 }
             }
         }
-
+        
         public MemoryWatcher<byte> fileSelect => (MemoryWatcher<byte>)this["fileSelect"];
         public MemoryWatcher<byte> marioLives => (MemoryWatcher<byte>)this["marioLives"];
         public MemoryWatcher<byte> luigiLives => (MemoryWatcher<byte>)this["luigiLives"];

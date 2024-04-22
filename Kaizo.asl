@@ -28,7 +28,7 @@ state("bsnes", "115") {
     string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8;
 } 
 state("higan"){} 
-state("snes9x-rr"){} 
+state("snes9x-rr"){}
 state("emuhawk"){} 
 
 startup {
@@ -93,7 +93,6 @@ startup {
     vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
 
     vars.runNum = 0;
-    vars.maxLag = 100L;
     vars.minMemToStartTime = 1000L;
     vars.ready = false;
     vars.running = false;
@@ -106,8 +105,6 @@ shutdown {
 
 init {
     print("INIT");
-    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
     var versions = new Dictionary<int, string> {
         { 15675392, "1.9.4"  }, // Retroarch
         { 17264640, "1.17.0" }, // Retroarch
@@ -120,7 +117,7 @@ init {
         { 13565952, "1.60"   }, // Snes9x-rr x64
         { 10096640, "107"    }, // bsnes
         { 10338304, "107.1"  }, // bsnes
-        { 47230976, "107.2"  }, // bsnes (also 107.3) // Use game hash to prevent collisions like this
+        { 47230976, "107.2"  }, // bsnes (also 107.3) // Try using game hash to prevent collisions like this
         {131543040, "110"    }, // bsnes
         { 51924992, "111"    }, // bsnes 
         { 52056064, "112"    }, // bsnes
@@ -171,6 +168,12 @@ init {
     long o = 0;
     offsets.TryGetValue(modSize, out o);
     vars.offset = o;
+    vars.startMs = vars.endMs = -1; // junk value
+
+    foreach (string sn in vars.settingNames) {
+        vars.settingsDict[sn] = settings[sn];
+    }
+    vars.ss.Init(vars.settingsDict, 0L);
 }
 
 exit {
@@ -179,8 +182,11 @@ exit {
 
 update {
     var t = vars.t;
+    
     if (t.HasLines()) print(t.ClearLines());
     if (string.IsNullOrWhiteSpace(version)) return false;
+
+    vars.startMs = vars.endMs;
     
     string emuName = game.ProcessName.ToLower();
     if (emuName == "retroarch") {
@@ -251,10 +257,7 @@ update {
 
         // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
         // The order here matters for Spawn recording
-        foreach (string sn in vars.settingNames) {
-            vars.settingsDict[sn] = settings[sn];
-        }
-        s.Update(vars.settingsDict, w);
+        s.Update(w);
         t.Update(w);
         r.Update(s.recording, w);
         w.UpdateState();
@@ -283,10 +286,9 @@ reset {
 
 split {
     var t = vars.t; var r = vars.rec; var w = vars.ws; var s = vars.ss;
-    var startMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
-    // Override Default split variables for individual games
+    // Override Default split variables for individual runs
     switch (runName) {
         case "Bunbun World":
             s.other =
@@ -397,28 +399,26 @@ split {
 
     t.Monitor(w.levelNum, w);
     t.Monitor(w.exitMode, w);
-
-    var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-    var lag = newEndMs - vars.endMs;
-    vars.endMs = newEndMs;
+    t.Monitor(w.buttonsPress2, w);
 
     if (s.UndoStatus()) new TimerModel { CurrentState = timer }.UndoSplit();
 
-    if (s.credits) return true;
+    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-    if (s.SplitStatus() && s.autoskipOnLag && lag > vars.maxLag) {
-        new TimerModel { CurrentState = timer }.SkipSplit();
-        t.Dbg("LAG: "+lag);
-        return false;
-    } else {
-        return s.SplitStatus();
+    if (s.SplitStatus()) {
+        long lag = vars.endMs - vars.startMs;
+        if (s.SkipStatus(lag)) {
+            t.Dbg("Skip: " + s.SkipReasons(lag));
+            new TimerModel { CurrentState = timer }.SkipSplit();
+        } else {
+            return true;
+        }
     }
 }
 
 onStart {
     print("STARTING");
     vars.runNum = vars.runNum + 1;
-    vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // This first endMs doesn't really make sense..
     vars.running = true;
 }
 

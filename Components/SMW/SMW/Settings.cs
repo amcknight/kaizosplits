@@ -23,12 +23,14 @@ namespace SMW {
         public bool other;
         public bool credits;
 
+        public long maxLag;
+
         private bool prevFinished = false;
         private Watchers w;
 
         public Settings() { }
 
-        public void Update(Dictionary<string, bool> settings, Watchers ws) {
+        public void Init(Dictionary<string, bool> settings, long maxLag = 100L) {
             playersSelect = settings["playersSelect"];
             livesSet = settings["livesSet"];
             playersUnselect = settings["playersUnselect"];
@@ -47,6 +49,10 @@ namespace SMW {
             rooms = settings["rooms"];
             recording = settings["recording"];
             autoskipOnLag = settings["autoskipOnLag"];
+            this.maxLag = maxLag;
+        }
+
+        public void Update(Watchers ws) {
             w = ws;
         }
 
@@ -135,6 +141,17 @@ namespace SMW {
                 return true;
             }
             return false;
+        }
+
+
+        public bool SkipStatus(long lag) {
+            return autoskipOnLag && lag > maxLag && !credits;
+        }
+
+        public string SkipReasons(long lag) {
+            List<string> reasons = new List<string>();
+            if (lag > maxLag) reasons.Add("LAG "+lag);
+            return string.Join(" ", reasons);
         }
     }
 }
