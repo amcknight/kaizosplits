@@ -282,7 +282,7 @@ reset {
 }
 
 split {
-    var t = vars.t; var r = vars.rec; var w = vars.ws; var s = vars.ss;
+    var t = vars.t; var w = vars.ws; var s = vars.ss;
 
     string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
     // Override Default split variables for individual runs
@@ -420,9 +420,10 @@ onStart {
 
 onReset {
     print("RESETING");
+    var r = vars.rec;
     if (settings["recording"]) {
-        vars.rec.WriteRun(vars.recPath, vars.runNum);
+        r.WriteRun(vars.recPath, vars.runNum);
     }
-    vars.rec.Reset();
+    r.Reset();
     vars.running = false;
 }

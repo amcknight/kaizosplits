@@ -1,6 +1,10 @@
 ## Changelog
 
-### v2
+### v1.0 TODO: add
+
+### v0.3 TODO: add
+
+### v0.2
 - Has basic run watching for some events but doesn't do anything with them
 - Detecting Deaths and Spawns and Events
 - Writing out initial runs and routes
@@ -9,11 +13,11 @@
 - Skip instead of split if final split call is 50ms later than the last one
 - Auto-undo if die after finishing
 
-### v1
+### v0.1
 - Got basically everything working somewhat ok
 - Cleared out custom game splits
 
-### v0
+### v0.0
 - Fixed an issue in the original splitter by NecroSky90 caused by snes9x-rr v1.6.1 (probably)
 - Got checkpoint splitting working for first CP
 - Created a generic orb exit check

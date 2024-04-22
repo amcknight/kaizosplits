@@ -191,7 +191,7 @@ namespace SMW {
             } else {
                 totalYoshiCoinsStepped = false;
             }
-            // Recording first roomNum when entering level for ignoring first cpEntrance.
+            // Saving first roomNum when entering level to ignore the first cpEntrance
             if (Shifted(levelNum)) {
                 firstRoom = Curr(roomNum);
             } else if (CP) {
