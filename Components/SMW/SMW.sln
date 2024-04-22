@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMW", "SMW\SMW.csproj", "{1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiveSplit.Core", "..\..\..\LiveSplit\src\LiveSplit.Core\LiveSplit.Core.csproj", "{6DE847DB-20A3-4848-AEEE-1B4364AECDFB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiveSplit.ScriptableAutoSplit", "..\..\..\LiveSplit\components\LiveSplit.ScriptableAutoSplit\src\LiveSplit.ScriptableAutoSplit\LiveSplit.ScriptableAutoSplit.csproj", "{CB4EA3D8-CC5D-438C-8B84-C058A04A2C53}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
