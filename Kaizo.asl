@@ -1,5 +1,5 @@
 state("snes9x", "1.62.3") {
-    int smc_path_offset : "snes9x.exe", 0x5C14D4;
+    string512 smc_path : "snes9x.exe", 0x5C14D4, 0x0;
     int offset :          "snes9x.exe", 0x12698;
 }
 state("snes9x-x64", "1.60") {
@@ -11,7 +11,7 @@ state("snes9x-x64", "1.61") {
     long offset :        "snes9x-x64.exe", 0x883158;
 }
 state("snes9x-x64", "1.62.3") {
-    int smc_path_offset : "snes9x-x64.exe", 0xA74398;
+    string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
     long offset :         "snes9x-x64.exe", 0xA62390;
 }
 state("retroarch", "1.17.0") {
@@ -24,7 +24,9 @@ state("retroarch", "1.9.4") {
     string32 core_version : 0xD67600;
     string512 smc_path :    0xD69926;
 }
-state("bsnes"){} 
+state("bsnes", "115") {
+    string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8;
+} 
 state("higan"){} 
 state("snes9x-rr"){} 
 state("emuhawk"){} 
@@ -130,8 +132,30 @@ init {
 		{ 23166976, "109"    }, // higan
 		{ 23224320, "110"    }, // higan
         {  7061504, "2.3"    }, // BizHawk 
-        {  7249920, "2.3.1"  }, // BizHawk 
+        {  7249920, "2.3.1"  }, // BizHawk
         {  6938624, "2.3.2"  }, // BizHawk
+    };
+    var offsets = new Dictionary<int, long> {
+        { 9646080, 0x97EE04 },      // Snes9x-rr 1.60
+        { 13565952, 0x140925118 },  // Snes9x-rr 1.60 (x64)
+        { 9027584, 0x94DB54 },      // Snes9x 1.60
+        { 12836864, 0x1408D8BE8 },  // Snes9x 1.60 (x64)
+        { 16019456, 0x94D144 },     // higan v106
+        { 15360000, 0x8AB144 },     // higan v106.112
+		{ 22388736, 0xB0ECC8 },     // higan v107
+		{ 23142400, 0xBC7CC8 },     // higan v108
+		{ 23166976, 0xBCECC8 },     // higan v109
+		{ 23224320, 0xBDBCC8 },     // higan v110
+        { 10096640, 0x72BECC },     // bsnes v107
+        { 10338304, 0x762F2C },     // bsnes v107.1
+        { 47230976, 0x765F2C },     // bsnes v107.2/107.3
+        { 131543040, 0xA9BD5C },    // bsnes v110
+        { 51924992, 0xA9DD5C },     // bsnes v111
+        { 52056064, 0xAAED7C },     // bsnes v112
+		{ 52477952, 0xB16D7C },     // bsnes v115
+        { 7061504, 0x36F11500240 }, // BizHawk 2.3
+        { 7249920, 0x36F11500240 }, // BizHawk 2.3.1
+        { 6938624, 0x36F11500240 }, // BizHawk 2.3.2
     };
     
     string emuName = game.ProcessName.ToLower();
@@ -140,11 +164,13 @@ init {
     string v = "";
     versions.TryGetValue(modSize, out v);
     if (!string.IsNullOrWhiteSpace(v)) {
-        print("EMU: "+emuName);
         version = v; // This version var is special and lets the correct state be loaded
     } else {
         throw new Exception("UNKNOWN "+emuName+" MODSIZE '"+modSize+"'");
     }
+    long o = 0;
+    offsets.TryGetValue(modSize, out o);
+    vars.offset = o;
 }
 
 exit {
@@ -160,7 +186,6 @@ update {
     if (emuName == "retroarch") {
         vars.core = Path.GetFileName(current.core_path);
         vars.coreVersion = current.core_version;
-        vars.smc = Path.GetFileName(current.smc_path);
 
         if (string.IsNullOrWhiteSpace(vars.core)) {
             t.DbgOnce("No "+emuName+" Core found");
@@ -172,33 +197,20 @@ update {
             vars.ready = false;
             return vars.running;
         }
-        if (string.IsNullOrWhiteSpace(vars.smc)) {
-            t.DbgOnce("No "+emuName+" ROM found");
-            vars.ready = false;
-            return vars.running;
-        }
-    } else {
-        string smcPath;
-        try {
-            smcPath = current.smc_path;
-        } catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ex) {
-            int smcOffset = current.smc_path_offset;
-            ExtensionMethods.ReadString(game, (IntPtr)smcOffset, 512, out smcPath);
-        }
+    }
 
-        vars.smc = Path.GetFileName(smcPath);
-
-        if (string.IsNullOrWhiteSpace(vars.smc)) {
-            t.DbgOnce("No "+emuName+" ROM found");
-            vars.ready = false;
-            return vars.running;
-        }
+    vars.smc = Path.GetFileName(current.smc_path);
+    if (string.IsNullOrWhiteSpace(vars.smc) || vars.smc.StartsWith(emuName)) {
+        t.DbgOnce("No "+emuName+" ROM found");
+        vars.ready = false;
+        return vars.running;
     }
 
     // Do this only the update after the vars above change
     if (!vars.ready) {
+        t.DbgOnce("SMC: "+vars.smc);
+        var ranges = new Dictionary<int, int>() {};
         if (emuName == "retroarch") {
-            t.DbgOnce("SMC: "+vars.smc);
             var coreOffsets = new Dictionary<string, int> {
                 { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
                 { "bsnes_libretro.dll 115",             0x7D39DC },
@@ -220,16 +232,16 @@ update {
                 t.DbgOnce("No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
                 return false;
             }
-            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
+            vars.ws.SetMemoryOffset(memOffset, ranges);
         } else {
-            t.DbgOnce("SMC: "+vars.smc);
-            long memOffset = current.offset;
-            vars.ws.SetMemoryOffset(memOffset, new Dictionary<int, int>() {{0x7E13CA,0x7E1B91},}); // TODO: What are these nums?
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
+            if (vars.offset > 0) {
+                vars.ws.SetMemoryOffset(vars.offset, ranges);
+            } else {
+                vars.ws.SetMemoryOffset(current.offset, ranges);
+            }
         }
+        vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        vars.ready = true;
     }
 
     if (vars.ready) {
@@ -384,10 +396,7 @@ split {
     if (s.SplitStatus()) t.Dbg("Split: " + s.SplitReasons());
 
     t.Monitor(w.levelNum, w);
-    t.Monitor(w.roomNum, w);
-    t.Monitor(w.fileSelect, w);
-    t.Monitor(w.marioLives, w);
-    t.Monitor(w.luigiLives, w);
+    t.Monitor(w.exitMode, w);
 
     var newEndMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
     var lag = newEndMs - vars.endMs;
