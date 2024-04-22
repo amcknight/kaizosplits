@@ -30,7 +30,11 @@ namespace SMW {
 
         public Settings() { }
 
-        public void Init(Dictionary<string, bool> settings, long maxLag = 100L) {
+        public void Init(long maxLag = 100L) {
+            this.maxLag = maxLag;
+        }
+
+        public void Update(Dictionary<string, bool> settings, Watchers ws) {
             playersSelect = settings["playersSelect"];
             livesSet = settings["livesSet"];
             playersUnselect = settings["playersUnselect"];
@@ -49,10 +53,6 @@ namespace SMW {
             rooms = settings["rooms"];
             recording = settings["recording"];
             autoskipOnLag = settings["autoskipOnLag"];
-            this.maxLag = maxLag;
-        }
-
-        public void Update(Watchers ws) {
             w = ws;
         }
 

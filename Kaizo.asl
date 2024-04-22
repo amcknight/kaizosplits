@@ -83,7 +83,6 @@ startup {
         "exits", "introExit", "worlds", "midways", "cpEntrances", "starts", "goals", "orbs", "keys", "bosses", "palaces", "rooms",
         "recording", "autoskipOnLag"
     };
-    vars.settingsDict = new Dictionary<string, bool>();
 
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
@@ -91,12 +90,15 @@ startup {
     vars.t =   Activator.CreateInstance(asm.GetType("SMW.Tracker"));
     vars.ws =  Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
+    
+    vars.ss.Init(50L); // Max Lag
 
     vars.runNum = 0;
     vars.minMemToStartTime = 1000L;
     vars.ready = false;
     vars.running = false;
     vars.recPath = "C:\\Users\\thedo\\git\\kaizosplits\\runs"; // TODO: Remove hardcoded location (where does a relative path go?)
+    vars.startMs = vars.endMs = -1; // junk value
 }
 
 shutdown {
@@ -128,7 +130,7 @@ init {
 		{ 23142400, "108"    }, // higan
 		{ 23166976, "109"    }, // higan
 		{ 23224320, "110"    }, // higan
-        {  7061504, "2.3"    }, // BizHawk 
+        {  7061504, "2.3"    }, // BizHawk
         {  7249920, "2.3.1"  }, // BizHawk
         {  6938624, "2.3.2"  }, // BizHawk
     };
@@ -168,12 +170,6 @@ init {
     long o = 0;
     offsets.TryGetValue(modSize, out o);
     vars.offset = o;
-    vars.startMs = vars.endMs = -1; // junk value
-
-    foreach (string sn in vars.settingNames) {
-        vars.settingsDict[sn] = settings[sn];
-    }
-    vars.ss.Init(vars.settingsDict, 0L);
 }
 
 exit {
@@ -215,6 +211,7 @@ update {
     // Do this only the update after the vars above change
     if (!vars.ready) {
         t.DbgOnce("SMC: "+vars.smc);
+        var w = vars.ws;
         var ranges = new Dictionary<int, int>() {};
         if (emuName == "retroarch") {
             var coreOffsets = new Dictionary<string, int> {
@@ -238,12 +235,12 @@ update {
                 t.DbgOnce("No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
                 return false;
             }
-            vars.ws.SetMemoryOffset(memOffset, ranges);
+            w.SetMemoryOffset(memOffset, ranges);
         } else {
             if (vars.offset > 0) {
-                vars.ws.SetMemoryOffset(vars.offset, ranges);
+                w.SetMemoryOffset(vars.offset, ranges);
             } else {
-                vars.ws.SetMemoryOffset(current.offset, ranges);
+                w.SetMemoryOffset(current.offset, ranges);
             }
         }
         vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -257,7 +254,11 @@ update {
 
         // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
         // The order here matters for Spawn recording
-        s.Update(w);
+        var settingsDict = new Dictionary<string, bool>();
+        foreach (string sn in vars.settingNames) {
+            settingsDict[sn] = settings[sn];
+        }
+        s.Update(settingsDict, w);
         t.Update(w);
         r.Update(s.recording, w);
         w.UpdateState();
@@ -399,7 +400,6 @@ split {
 
     t.Monitor(w.levelNum, w);
     t.Monitor(w.exitMode, w);
-    t.Monitor(w.buttonsPress2, w);
 
     if (s.UndoStatus()) new TimerModel { CurrentState = timer }.UndoSplit();
 

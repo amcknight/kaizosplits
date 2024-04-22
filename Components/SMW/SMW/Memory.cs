@@ -49,6 +49,10 @@ namespace SMW {
             {0x1B403,"cpEntrance"},
 
           // THINGS TO TEST
+            // buttonsHeld1 0015
+            // buttonsPress1 0016
+            // buttonsHeld2 0017
+            // buttonsPress2 0018
             // Level width in Screens 005E
             // Level height in Screens  005F
             // In Water 0075

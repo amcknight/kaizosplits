@@ -72,7 +72,7 @@ namespace SMW {
         public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
         public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
 
-        // Temporary Test Watchers
+        // Temporary Test Watchers TODO keep or drop these
         public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
         public MemoryWatcher<byte> fadeOut => (MemoryWatcher<byte>)this["fadeOut"];
         public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
