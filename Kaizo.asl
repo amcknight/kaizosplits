@@ -91,10 +91,9 @@ startup {
     vars.ws =  Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
     
-    vars.ss.Init(50L); // Max Lag
+    vars.ss.Init(50L, 1000L); // Max Lag, Min start duration
 
     vars.runNum = 0;
-    vars.minMemToStartTime = 1000L;
     vars.ready = false;
     vars.running = false;
     vars.recPath = "C:\\Users\\thedo\\git\\kaizosplits\\runs"; // TODO: Remove hardcoded location (where does a relative path go?)
@@ -262,16 +261,13 @@ update {
         t.Update(w);
         r.Update(s.recording, w);
         w.UpdateState();
-
-        // Hacky attempt to prevent early start from being true right when game starts up
-        return DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime > vars.minMemToStartTime;
     }
 }
 
 start {
     var t = vars.t; var s = vars.ss;
-    if (s.StartStatus()) {
-        t.Dbg("SINCE GAME LOAD: "+(DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime)); // TODO: Does this still work?
+    var startDuration = DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime;
+    if (s.StartStatus(startDuration)) {
         t.Dbg("Start: " + s.StartReasons());
         return true;
     }

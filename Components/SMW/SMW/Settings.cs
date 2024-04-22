@@ -24,14 +24,16 @@ namespace SMW {
         public bool credits;
 
         public long maxLag;
+        public long minStartDuration;
 
         private bool prevFinished = false;
         private Watchers w;
 
         public Settings() { }
 
-        public void Init(long maxLag = 100L) {
+        public void Init(long maxLag, long minStartDuration) {
             this.maxLag = maxLag;
+            this.minStartDuration = minStartDuration;
         }
 
         public void Update(Dictionary<string, bool> settings, Watchers ws) {
@@ -95,10 +97,11 @@ namespace SMW {
             return string.Join(" ", reasons);
         }
 
-        public bool StartStatus() {
-            return (playersSelect && w.ToFileSelect) ||
+        public bool StartStatus(long sinceMemFound) {
+            return sinceMemFound > minStartDuration && (
+                (playersSelect && w.ToFileSelect) ||
                 (livesSet && w.FromOneLuigiLife)
-                ;
+                );
         }
 
         public string StartReasons() {
