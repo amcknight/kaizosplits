@@ -343,6 +343,7 @@ split {
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Nonsense 24 Exit":
+            s.block = w.CPEntrance && w.Curr(w.roomNum) == 101;
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
         break;
         case "Purgatory": // TODO: Retest. Should cancel based on level
@@ -385,16 +386,20 @@ split {
             ;
         break;
     }
-
-    if (s.SplitStatus()) t.Dbg("Split: " + s.SplitReasons());
+    
+    //t.Monitor(w.levelNum, w);
+    //t.Monitor(w.roomNum, w);
+    //t.Monitor(w.cpEntrance, w);
 
     if (s.UndoStatus()) {
+        t.Dbg("Undo: " + s.UndoReasons());
         new TimerModel { CurrentState = timer }.UndoSplit();
     }
 
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     if (s.SplitStatus()) {
+        t.Dbg("Split: " + s.SplitReasons());
         long lag = vars.endMs - vars.startMs;
         if (!s.SkipStatus(lag)) {
             return true;

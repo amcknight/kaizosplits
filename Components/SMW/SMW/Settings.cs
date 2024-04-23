@@ -19,8 +19,10 @@ namespace SMW {
         public bool palaces;
         public bool rooms;
         public bool autoskipOnLag;
-        public bool other;
-        public bool credits;
+
+        public bool other = false;
+        public bool credits = false;
+        public bool block = false;
 
         public long maxLag;
         public long minStartDuration;
@@ -57,7 +59,7 @@ namespace SMW {
         }
 
         public bool SplitStatus() {
-            return (
+            return (!block && (
                 (exits && w.LevelExit) ||
                 (introExit && w.Intro) ||
                 (worlds && w.Overworld) ||
@@ -72,7 +74,7 @@ namespace SMW {
                 (rooms && w.Room) ||
                 other ||
                 credits
-                );
+                ));
         }
 
         public string SplitReasons() {

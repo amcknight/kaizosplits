@@ -89,7 +89,10 @@ namespace SMW {
         public bool IsLuigi => Curr(player) == 1;
 
         // Changed state
+        public bool ToFileSelect => ShiftFrom(fileSelect, 0);
         public bool FromFileSelect => ShiftTo(fileSelect, 0);
+        public bool FromOneMarioLife => ShiftFrom(marioLives, 0);
+        public bool FromOneLuigiLife => ShiftFrom(luigiLives, 0);
         public bool ToOneMarioLife => ShiftTo(marioLives, 0);
         public bool ToOneLuigiLife => ShiftTo(luigiLives, 0);
         public bool ToOrb => ShiftTo(io, 3);
@@ -122,9 +125,6 @@ namespace SMW {
         public bool ExitDoor => Shift(playerAnimation, 13, 0);
 
         // Composite Conditions
-        public bool ToFileSelect => ShiftFrom(fileSelect, 0);
-        public bool FromOneMarioLife => ShiftFrom(marioLives, 0);
-        public bool FromOneLuigiLife => ShiftFrom(luigiLives, 0);
         public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
         public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;
