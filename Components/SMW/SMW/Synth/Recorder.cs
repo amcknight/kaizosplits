@@ -6,46 +6,52 @@ namespace SMW {
     public class Recorder {
         
         public List<Event> events = new List<Event>();
-        private bool recording;
+        private string path;
+        private int runNum = 1;
 
-        public Recorder() {
-            Init();
-        }
+        public Recorder() {}
 
         public void Reset() {
-            Init();
-        }
-
-        public void Init() {
             events = new List<Event>();
+            runNum++;
         }
 
-        public void Update(bool r, Watchers ws) {
-            recording = r;
+        public void Init(string path) {
+            this.path = path;
+        }
+
+        public void Update(Watchers ws) {
             Track(ws.Spawn, "Spawn", ws);
         }
 
         public void Track(bool condition, string name, Watchers ws) {
-            if (recording && condition) {
+            if (condition) {
                 events.Add(BuildEvent(name, ws));
             }
         }
+
+        public void StartReasons(string reason) { }
+        public void ResetReasons(string reason) { }
+        public void SplitReasons(string reason) { }
+        public void UndoReasons(string reason) { }
 
         public Event BuildEvent(string name, Watchers ws) {
             return new Event(name, new Place(ws.Curr(ws.submap), ws.Curr(ws.levelNum), ws.Curr(ws.roomNum), ws.Curr(ws.playerX), ws.Curr(ws.playerY)));
         }
 
-        public void WriteRun(string path, int num) {
+        public void WriteRun() {
             List<string> eventStrs = new List<string>();
             foreach (Event e in events) {
                 eventStrs.Add(e.ToString());
             }
-            File.WriteAllLines(path + "/run" + num + ".txt", eventStrs);
+            File.WriteAllLines(path + "/run-" + runNum + ".txt", eventStrs);
             List<string> routeStrs = new List<string>();
             foreach (Event e in BuildRoute()) {
                 routeStrs.Add(e.ToString());
             }
-            File.WriteAllLines(path + "/route" + num + ".txt", routeStrs);
+            File.WriteAllLines(path + "/route-" + runNum + ".txt", routeStrs);
+
+            Reset();
         }
 
         private Event NumEvent(bool clinched, int num, Event e) {

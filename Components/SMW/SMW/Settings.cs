@@ -18,7 +18,6 @@ namespace SMW {
         public bool bosses;
         public bool palaces;
         public bool rooms;
-        public bool recording;
         public bool autoskipOnLag;
         public bool other;
         public bool credits;
@@ -53,13 +52,12 @@ namespace SMW {
             bosses = settings["bosses"];
             palaces = settings["palaces"];
             rooms = settings["rooms"];
-            recording = settings["recording"];
             autoskipOnLag = settings["autoskipOnLag"];
             w = ws;
         }
 
         public bool SplitStatus() {
-            return !recording && (
+            return (
                 (exits && w.LevelExit) ||
                 (introExit && w.Intro) ||
                 (worlds && w.Overworld) ||

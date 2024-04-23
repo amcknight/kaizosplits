@@ -27,9 +27,9 @@ state("retroarch", "1.9.4") {
 state("bsnes", "115") {
     string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8;
 } 
-state("higan"){}
+state("higan"){} 
 state("snes9x-rr"){}
-state("emuhawk"){}
+state("emuhawk"){} 
 
 startup {
     print("STARTUP");
@@ -84,15 +84,17 @@ startup {
 
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
+    vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.t =   Activator.CreateInstance(asm.GetType("SMW.Tracker"));
     vars.ws =  Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
-
+    
     vars.ss.Init(50L, 1000L); // Max Lag, Min start duration
+    vars.rec.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
 
     vars.ready = false;
     vars.running = false;
-    vars.startMs = vars.endMs = -1; // junk value TODO: Maybe Settings could deal with this timing stuff?
+    vars.startMs = vars.endMs = -1; // junk value
 }
 
 shutdown {
@@ -244,6 +246,7 @@ update {
     if (vars.ready) {
         t.DbgOnce("READY");
         var w = vars.ws; var s = vars.ss;
+        var r = vars.rec;
         w.UpdateAll(game);
 
         // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
@@ -254,23 +257,28 @@ update {
         }
         s.Update(settingsDict, w);
         t.Update(w);
+        r.Update(w);
         w.UpdateState();
     }
 }
 
 start {
     var t = vars.t; var s = vars.ss;
+    var r = vars.rec;
     var startDuration = DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime;
     if (s.StartStatus(startDuration)) {
         t.Dbg("Start: " + s.StartReasons());
+        r.StartReasons(s.StartReasons());
         return true;
     }
 }
 
 reset {
     var t = vars.t; var s = vars.ss;
+    var r = vars.rec;
     if (s.ResetStatus(vars.ready)) {
         t.Dbg("Reset: " + s.ResetReasons(vars.ready));
+        r.ResetReasons(s.ResetReasons(vars.ready));
         return true;
     }
 }
@@ -386,25 +394,19 @@ split {
         break;
     }
 
-    if (s.SplitStatus()) t.Dbg("Split: " + s.SplitReasons());
+    var r = vars.rec;
 
-    t.Monitor(w.levelNum, w);
-    t.Monitor(w.exitMode, w);
-
+    if (s.SplitStatus()) {
+        t.Dbg("Split: " + s.SplitReasons());
+        r.SplitReasons(s.SplitReasons());
+    }
+    
     if (s.UndoStatus()) {
         new TimerModel { CurrentState = timer }.UndoSplit();
+        r.UndoReasons(s.UndoReasons());
     }
 
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
-    if (s.SplitStatus()) {
-        long lag = vars.endMs - vars.startMs;
-        if (!s.SkipStatus(lag)) {
-            return true;
-        }
-        t.Dbg("Skip: " + s.SkipReasons(lag));
-        new TimerModel { CurrentState = timer }.SkipSplit();
-    }
 }
 
 onStart {
@@ -414,5 +416,7 @@ onStart {
 
 onReset {
     print("RESETING");
+    var r = vars.rec;
+    r.WriteRun();
     vars.running = false;
 }
