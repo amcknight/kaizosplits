@@ -45,7 +45,7 @@ startup {
         settings.SetToolTip("livesUnset", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken");
     settings.Add("split", true, "Split when");
         settings.Add("exits", true, "Level Exit", "split");
-        settings.SetToolTip("exits", "Split when leaving a level by beating");
+        settings.SetToolTip("exits", "Split when leaving a level by beating it");
         settings.Add("introExit", true, "Intro Exit", "split");
         settings.SetToolTip("introExit", "Split at the end of the intro level");
         settings.Add("worlds", true, "Overworlds", "split");
@@ -59,7 +59,7 @@ startup {
             settings.Add("starts", false, "Starts", "level");
             settings.SetToolTip("starts", "Split at the start of each level");
             settings.Add("finishes", false, "Goals, Orbs, Keys, and Bosses", "level");
-            settings.SetToolTip("finishes", "Split on crossing goal tapes, getting orbs, and activating keyholes");
+            settings.SetToolTip("finishes", "Split on goal tapes, orbs, activating keyholes, killing bosses, and finishing palaces.\n These splits are undone automatically if you die before getting the Level Exit.");
                 settings.Add("goals", true, "Goal Tape", "finishes");
                 settings.SetToolTip("goals", "Split on crossing goal tapes");
                 settings.Add("orbs", true, "Orbs", "finishes");
@@ -387,9 +387,6 @@ split {
     }
 
     if (s.SplitStatus()) t.Dbg("Split: " + s.SplitReasons());
-
-    t.Monitor(w.levelNum, w);
-    t.Monitor(w.exitMode, w);
 
     if (s.UndoStatus()) {
         new TimerModel { CurrentState = timer }.UndoSplit();
