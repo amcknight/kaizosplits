@@ -12,7 +12,7 @@ state("snes9x-x64", "1.61") {
 }
 state("snes9x-x64", "1.62.3") {
     string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
-    long offset :         "snes9x-x64.exe", 0xA62390;
+    long offset :        "snes9x-x64.exe", 0xA62390;
 }
 state("retroarch", "1.17.0") {
     string512 core_path :   0xEEB59A;
@@ -43,6 +43,8 @@ startup {
         settings.SetToolTip("playersUnselect", "Reset when the number of players is not selected and so probably back in the menu");
         settings.Add("livesUnset", true, "Luigi 1 Life", "reset");
         settings.SetToolTip("livesUnset", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken");
+        settings.Add("gameChanged", true, "Changed Game", "reset");
+        settings.SetToolTip("gameChanged", "Reset when changed game. Turn this off for multi-game runs");
     settings.Add("split", true, "Split when");
         settings.Add("exits", true, "Level Exit", "split");
         settings.SetToolTip("exits", "Split when leaving a level by beating it");
@@ -77,7 +79,7 @@ startup {
 
     vars.settingNames = new List<string>() {
         "playersSelect", "livesSet",
-        "playersUnselect", "livesUnset",
+        "playersUnselect", "livesUnset", "gameChanged",
         "exits", "introExit", "worlds", "midways", "cpEntrances", "starts", "goals", "orbs", "keys", "bosses", "palaces", "rooms",
         "autoskipOnLag"
     };
@@ -164,6 +166,7 @@ init {
     long o = 0;
     offsets.TryGetValue(modSize, out o);
     vars.offset = o;
+    vars.smc = "";
 }
 
 exit {
@@ -174,9 +177,11 @@ update {
     var t = vars.t;
     
     if (t.HasLines()) print(t.ClearLines());
+
     if (string.IsNullOrWhiteSpace(version)) return false;
 
     vars.startMs = vars.endMs;
+    vars.prevSmc = vars.smc;
     
     string emuName = game.ProcessName.ToLower();
     if (emuName == "retroarch") {
@@ -194,17 +199,17 @@ update {
             return vars.running;
         }
     }
-
+    
     vars.smc = Path.GetFileName(current.smc_path);
     if (string.IsNullOrWhiteSpace(vars.smc) || vars.smc.StartsWith(emuName)) {
         t.DbgOnce("No "+emuName+" ROM found");
         vars.ready = false;
         return vars.running;
     }
+    t.DbgOnce("SMC: "+vars.smc);
 
     // Do this only the update after the vars above change
     if (!vars.ready) {
-        t.DbgOnce("SMC: "+vars.smc);
         var w = vars.ws;
         var ranges = new Dictionary<int, int>() {};
         if (emuName == "retroarch") {
@@ -242,7 +247,7 @@ update {
     }
 
     if (vars.ready) {
-        t.DbgOnce("READY");
+        //t.DbgOnce("READY");
         var w = vars.ws; var s = vars.ss;
         w.UpdateAll(game);
 
@@ -269,8 +274,9 @@ start {
 
 reset {
     var t = vars.t; var s = vars.ss;
-    if (s.ResetStatus(vars.ready)) {
-        t.Dbg("Reset: " + s.ResetReasons(vars.ready));
+    bool newSmc = vars.prevSmc != vars.smc;
+    if (s.ResetStatus(vars.ready, newSmc)) {
+        t.Dbg("Reset: " + s.ResetReasons(vars.ready, newSmc));
         return true;
     }
 }

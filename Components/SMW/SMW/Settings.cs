@@ -6,6 +6,7 @@ namespace SMW {
         public bool livesSet;
         public bool playersUnselect;
         public bool livesUnset;
+        public bool gameChanged;
         public bool exits;
         public bool introExit;
         public bool worlds;
@@ -42,6 +43,7 @@ namespace SMW {
             livesSet = settings["livesSet"];
             playersUnselect = settings["playersUnselect"];
             livesUnset = settings["livesUnset"];
+            gameChanged = settings["gameChanged"];
             exits = settings["exits"];
             introExit = settings["introExit"];
             worlds = settings["worlds"];
@@ -111,16 +113,18 @@ namespace SMW {
             return string.Join(" ", reasons);
         }
 
-        public bool ResetStatus(bool memOffsetKnown) {
-            return !memOffsetKnown || 
+        public bool ResetStatus(bool memOffsetKnown, bool isGameChanged) {
+            return !memOffsetKnown ||
+                (gameChanged && isGameChanged) ||
                 (playersUnselect && w.FromFileSelect) ||
                 (livesUnset && w.ToOneLuigiLife)
                 ;
         }
 
-        public string ResetReasons(bool memOffsetKnown) {
+        public string ResetReasons(bool memOffsetKnown, bool isGameChanged) {
             List<string> reasons = new List<string>();
             if (!memOffsetKnown) reasons.Add("LostMemoryOffset");
+            if (isGameChanged) reasons.Add("GameChanged");
             if (w.FromFileSelect) reasons.Add("FileUnselected");
             if (w.ToOneLuigiLife) reasons.Add("OneLife");
             return string.Join(" ", reasons);
