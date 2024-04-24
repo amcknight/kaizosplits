@@ -2,6 +2,10 @@ state("snes9x", "1.62.3") {
     string512 smc_path : "snes9x.exe", 0x5C14D4, 0x0;
     int offset : "snes9x.exe", 0x12698;
 }
+state("snes9x-x64", "1.59.2")   {
+    string512 smc_path : "snes9x-x64.exe", 0x8EA749;
+    long offset : "snes9x-x64.exe", 0x8D86F8;
+}
 state("snes9x-x64", "1.60")   {
     string512 smc_path : "snes9x-x64.exe", 0x8EAC39;
     long offset : "snes9x-x64.exe", 0x8D8BE8;
@@ -9,6 +13,14 @@ state("snes9x-x64", "1.60")   {
 state("snes9x-x64", "1.61")   {
     string512 smc_path : "snes9x-x64.exe", 0x8951CF;
     long offset : "snes9x-x64.exe", 0x883158;
+}
+state("snes9x-x64", "1.62") {
+    string512 smc_path : "snes9x-x64.exe", 0x176AD48, 0x0;
+    long offset : "snes9x-x64.exe", 0x1758D40;
+}
+state("snes9x-x64", "1.62.2") {
+    string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
+    long offset : "snes9x-x64.exe", 0xA62390;
 }
 state("snes9x-x64", "1.62.3") {
     string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
@@ -101,21 +113,24 @@ shutdown {
 
 init {
     print("INIT");
+    // TODO: Try using game hash to prevent collisions like in the "also" comments
     var versions = new Dictionary<int, string> {
         { 15675392, "1.9.4"  }, // Retroarch
         { 17264640, "1.17.0" }, // Retroarch
         {  9027584, "1.60"   }, // Snes9x
         { 10399744, "1.62.3" }, // Snes9x
+        { 12537856, "1.59.2" }, // Snes9x x64
         { 12836864, "1.60"   }, // Snes9x x64
         { 12955648, "1.61"   }, // Snes9x x64
-        { 15474688, "1.62.3" }, // Snes9x x64
+        { 29069312, "1.62"   }, // Snes9x x64
+        { 15474688, "1.62.3" }, // Snes9x x64 (also 1.62.2)
         {  9646080, "1.60"   }, // Snes9x-rr
         { 13565952, "1.60"   }, // Snes9x-rr x64
         { 10096640, "107"    }, // bsnes
         { 10338304, "107.1"  }, // bsnes
-        { 47230976, "107.2"  }, // bsnes (also 107.3) // Try using game hash to prevent collisions like this
+        { 47230976, "107.2"  }, // bsnes (also 107.3)
         {131543040, "110"    }, // bsnes
-        { 51924992, "111"    }, // bsnes 
+        { 51924992, "111"    }, // bsnes
         { 52056064, "112"    }, // bsnes
 		{ 52477952, "115"    }, // bsnes
         { 16019456, "106"    }, // higan
