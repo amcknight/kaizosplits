@@ -7,6 +7,7 @@ namespace SMW {
     public class Watchers : MemoryWatcherList {
 
         public bool died;
+        public bool gameOvered;
         public bool roomStep;
         public ushort prevIO;
         public ushort firstRoom;
@@ -17,6 +18,7 @@ namespace SMW {
 
         public Watchers() {
             died = false;
+            gameOvered = false;
             roomStep = false;
             prevIO = 256; // junk default value
             firstRoom = 0; // junk default value
@@ -71,9 +73,9 @@ namespace SMW {
         public MemoryWatcher<byte> player => (MemoryWatcher<byte>)this["player"];
         public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
         public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
+        public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
 
         // Temporary Test Watchers TODO keep or drop these
-        public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
         public MemoryWatcher<byte> fadeOut => (MemoryWatcher<byte>)this["fadeOut"];
         public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
         public MemoryWatcher<uint> layer1Pointer => (MemoryWatcher<uint>)this["layer1Pointer"];
@@ -98,12 +100,16 @@ namespace SMW {
         public bool ToOrb => ShiftTo(io, 3);
         public bool ToGoal => ShiftTo(io, 4);
         public bool ToKey => ShiftTo(io, 7);
+        public bool GmFileSelect => ShiftTo(gameMode, 8);    // TODO: not yet incorporated into START
+        public bool GmPlayerSelect => ShiftTo(gameMode, 10); // TODO: not yet incorporated into START
+        public bool GmOverworldFadeIn => ShiftTo(gameMode, 13);
         public bool GmFadeToLevel => ShiftTo(gameMode, 15);
         public bool GmFadeToLevelBlack => ShiftTo(gameMode, 16);
         public bool GmLoadLevel => ShiftTo(gameMode, 17);
         public bool GmPrepareLevel => ShiftTo(gameMode, 18);
         public bool GmLevelFadeIn => ShiftTo(gameMode, 19);
         public bool GmLevel => ShiftTo(gameMode, 20);
+        public bool GmGameOver => ShiftFrom(gameMode, 23);
         public bool NewEvent => Stepped(eventsTriggered);
         public bool ToOverworldPortal => Shift(overworldPortal, 1, 0);
         public bool SubmapShift => Shifted(submap);
@@ -167,12 +173,18 @@ namespace SMW {
         }
 
         public void UpdateState() {
-            // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
+            // Maintain these until "shut off"
             died = died || DiedNow;
+            gameOvered = gameOvered || GmGameOver;
 
+            // Only roomStep if didn't just die. Assumes every death sets the roomCount to 1.
             roomStep = false;
             if (Stepped(roomCounter)) {
                 roomStep = Curr(roomCounter) != 1 || !died;
+            }
+            // Track whether in post-gameover restart state
+            if (GmOverworldFadeIn) {
+                gameOvered = false;
             }
             // PrevIO is basically Current IO except when a P-Switch or Star shifts the io to 0
             if (Curr(io) != 0) {

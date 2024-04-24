@@ -61,7 +61,7 @@ namespace SMW {
         }
 
         public bool SplitStatus() {
-            return (!block && (
+            return (!block && !w.gameOvered && (
                 (exits && w.LevelExit) ||
                 (introExit && w.Intro) ||
                 (worlds && w.Overworld) ||
