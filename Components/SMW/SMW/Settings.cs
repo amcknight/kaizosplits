@@ -116,8 +116,8 @@ namespace SMW {
         public bool ResetStatus(bool memOffsetKnown, bool isGameChanged) {
             return !memOffsetKnown ||
                 (gameChanged && isGameChanged) ||
-                (playersUnselect && w.FromFileSelect) ||
-                (livesUnset && w.ToOneLuigiLife)
+                (playersUnselect && w.FromFileSelect && !w.gameOvered) || // TODO: Maybe roll these gameOvered checks into Watchers to reduce logic here
+                (livesUnset && w.ToOneLuigiLife && !w.gameOvered)
                 ;
         }
 
