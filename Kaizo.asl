@@ -260,6 +260,10 @@ update {
         s.Update(settingsDict, w);
         t.Update(w);
         w.UpdateState();
+        
+        // MONITOR HERE
+        //t.Monitor(w.exitMode, w);
+        //t.Monitor(w.gameMode, w);
     }
 }
 
