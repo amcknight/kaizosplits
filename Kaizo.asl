@@ -1,35 +1,33 @@
 state("snes9x", "1.62.3") {
     string512 smc_path : "snes9x.exe", 0x5C14D4, 0x0;
-    int offset :          "snes9x.exe", 0x12698;
+    int offset : "snes9x.exe", 0x12698;
 }
-state("snes9x-x64", "1.60") {
+state("snes9x-x64", "1.60")   {
     string512 smc_path : "snes9x-x64.exe", 0x8EAC39;
-    long offset :        "snes9x-x64.exe", 0x8D8BE8;
+    long offset : "snes9x-x64.exe", 0x8D8BE8;
 }
-state("snes9x-x64", "1.61") {
+state("snes9x-x64", "1.61")   {
     string512 smc_path : "snes9x-x64.exe", 0x8951CF;
-    long offset :        "snes9x-x64.exe", 0x883158;
+    long offset : "snes9x-x64.exe", 0x883158;
 }
 state("snes9x-x64", "1.62.3") {
     string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
-    long offset :        "snes9x-x64.exe", 0xA62390;
+    long offset : "snes9x-x64.exe", 0xA62390;
 }
-state("retroarch", "1.17.0") {
+state("bsnes", "115") { string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8; }
+state("higan"){}
+state("snes9x-rr"){}
+state("emuhawk"){}
+state("retroarch", "1.17.0") {                                                                       // x
     string512 core_path :   0xEEB59A;
     string32 core_version : 0xEFD5A9;
     string512 smc_path :    0xEFF8A9;
 }
-state("retroarch", "1.9.4") {
+state("retroarch", "1.9.4") {                                                                        // x
     string512 core_path :   0xD6A900;
     string32 core_version : 0xD67600;
     string512 smc_path :    0xD69926;
 }
-state("bsnes", "115") {
-    string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8;
-} 
-state("higan"){}
-state("snes9x-rr"){}
-state("emuhawk"){}
 
 startup {
     print("STARTUP");
@@ -130,42 +128,42 @@ init {
         {  7249920, "2.3.1"  }, // BizHawk
         {  6938624, "2.3.2"  }, // BizHawk
     };
-    var offsets = new Dictionary<int, long> {
-        { 9646080, 0x97EE04 },      // Snes9x-rr 1.60
-        { 13565952, 0x140925118 },  // Snes9x-rr 1.60 (x64)
-        { 9027584, 0x94DB54 },      // Snes9x 1.60
-        { 12836864, 0x1408D8BE8 },  // Snes9x 1.60 (x64)
-        { 16019456, 0x94D144 },     // higan v106
-        { 15360000, 0x8AB144 },     // higan v106.112
-		{ 22388736, 0xB0ECC8 },     // higan v107
-		{ 23142400, 0xBC7CC8 },     // higan v108
-		{ 23166976, 0xBCECC8 },     // higan v109
-		{ 23224320, 0xBDBCC8 },     // higan v110
-        { 10096640, 0x72BECC },     // bsnes v107
-        { 10338304, 0x762F2C },     // bsnes v107.1
-        { 47230976, 0x765F2C },     // bsnes v107.2/107.3
-        { 131543040, 0xA9BD5C },    // bsnes v110
-        { 51924992, 0xA9DD5C },     // bsnes v111
-        { 52056064, 0xAAED7C },     // bsnes v112
-		{ 52477952, 0xB16D7C },     // bsnes v115
-        { 7061504, 0x36F11500240 }, // BizHawk 2.3
-        { 7249920, 0x36F11500240 }, // BizHawk 2.3.1
-        { 6938624, 0x36F11500240 }, // BizHawk 2.3.2
+    // (remove x after testing)
+    vars.offsets = new Dictionary<string, long> {
+        { "snes9x 1.60",       0x94DB54 }, // x
+        { "higan 106",         0x94D144 }, // x
+        { "higan 106.112",     0x8AB144 }, // x
+		{ "higan 107",         0xB0ECC8 }, // x
+		{ "higan 108",         0xBC7CC8 }, // x
+	    { "higan 109",         0xBCECC8 }, // x
+        { "higan 110",         0xBDBCC8 }, // x
+        { "bsnes 107",         0x72BECC }, // x
+        { "bsnes 107.1",       0x762F2C }, // x
+        { "bsnes 107.2",       0x765F2C }, // x
+        { "bsnes 107.3",       0x765F2C }, // x
+        { "bsnes 110",         0xA9BD5C }, // x
+        { "bsnes 111",         0xA9DD5C }, // x
+        { "bsnes 112",         0xAAED7C }, // x
+		{ "bsnes 115",         0xB16D7C }, // x
+        { "emuhawk 2.3",  0x36F11500240 }, // x
+        { "emuhawk 2.3.1",0x36F11500240 }, // x
+        { "emuhawk 2.3.2",0x36F11500240 }, // x
+    };
+    var coreOffsets = new Dictionary<string, int> {
+        { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 }, // x
+        { "bsnes_libretro.dll 115",             0x7D39DC }, // x
     };
     
-    string emuName = game.ProcessName.ToLower();
     int modSize = modules.First().ModuleMemorySize;
-
     string v = "";
     versions.TryGetValue(modSize, out v);
     if (!string.IsNullOrWhiteSpace(v)) {
         version = v; // This version var is special and lets the correct state be loaded
     } else {
+        string emuName = game.ProcessName.ToLower();
         throw new Exception("UNKNOWN "+emuName+" MODSIZE '"+modSize+"'");
     }
-    long o = 0;
-    offsets.TryGetValue(modSize, out o);
-    vars.offset = o;
+
     vars.smc = "";
 }
 
@@ -174,6 +172,7 @@ exit {
 }
 
 update {
+    // TODO: Move as much of this as possible that never changes into init
     var t = vars.t;
     
     if (t.HasLines()) print(t.ClearLines());
@@ -206,28 +205,24 @@ update {
         vars.ready = false;
         return vars.running;
     }
-    t.DbgOnce("SMC: "+vars.smc);
-
+    //t.DbgOnce("SMC: "+vars.smc);
+    
+    // TODO: Could be done prior to loading SMC?
     // Do this only the update after the vars above change
     if (!vars.ready) {
         var w = vars.ws;
         var ranges = new Dictionary<int, int>() {};
         if (emuName == "retroarch") {
-            var coreOffsets = new Dictionary<string, int> {
-                { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
-                { "bsnes_libretro.dll 115",             0x7D39DC },
-            };
-
             string coreKey = string.Join(" ", vars.core, vars.coreVersion);
             int coreOffset = 0;
-            coreOffsets.TryGetValue(coreKey, out coreOffset);
+            vars.coreOffsets.TryGetValue(coreKey, out coreOffset);
             if (coreOffset == 0) {
                 t.DbgOnce("NOT START: No core offset found for '"+coreKey+"'");
                 return false;
             }
 
             IntPtr offset;
-            new DeepPointer(vars.core, coreOffset).DerefOffsets(game, out offset);
+            new DeepPointer(vars.core, coreOffset).DerefOffsets(game, out offset); // TODO: should vars.core be coreKey?
             long memOffset = (long) offset;
 
             if (memOffset == 0) {
@@ -236,10 +231,18 @@ update {
             }
             w.SetMemoryOffset(memOffset, ranges);
         } else {
-            if (vars.offset > 0) {
-                w.SetMemoryOffset(vars.offset, ranges);
-            } else {
+            try {
                 w.SetMemoryOffset(current.offset, ranges);
+                t.Dbg("Overriding offset using state");
+            } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
+                string emu = string.Join(" ", emuName, version);
+                long offset = 0;
+                vars.offsets.TryGetValue(emu, out offset);
+                if (offset == 0) {
+                    t.DbgOnce("No offset found for '"+emu+"'");
+                    return false;
+                }
+                w.SetMemoryOffset(offset, ranges);
             }
         }
         vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
