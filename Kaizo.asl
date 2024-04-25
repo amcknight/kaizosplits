@@ -34,12 +34,12 @@ state("bsnes", "115") { string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100,
 state("higan"){}
 state("snes9x-rr"){}
 state("emuhawk"){}
-state("retroarch", "1.17.0") {                                                                       // x
+state("retroarch", "1.17.0") {
     string512 core_path :   0xEEB59A;
     string32 core_version : 0xEFD5A9;
     string512 smc_path :    0xEFF8A9;
 }
-state("retroarch", "1.9.4") {                                                                        // x
+state("retroarch", "1.9.4") {
     string512 core_path :   0xD6A900;
     string32 core_version : 0xD67600;
     string512 smc_path :    0xD69926;
@@ -121,6 +121,7 @@ init {
     var versions = new Dictionary<int, string> {
         { 15675392, "1.9.4"  }, // Retroarch
         { 17264640, "1.17.0" }, // Retroarch
+        {  6991872, "1.57"   }, // Snes9x
         {  9027584, "1.60"   }, // Snes9x
         { 10399744, "1.62.3" }, // Snes9x
         { 12537856, "1.59.2" }, // Snes9x x64
@@ -208,6 +209,7 @@ update {
     // TODO: Could be done prior to loading SMC?
     // Do this only the update after the vars above change
     if (!vars.ready) {
+        string emu = string.Join(" ", emuName, version);
         var w = vars.ws;
         var ranges = new Dictionary<int, int>() {};
         if (emuName == "retroarch") {
@@ -215,7 +217,7 @@ update {
             int coreOffset = 0;
             vars.coreOffsets.TryGetValue(coreKey, out coreOffset);
             if (coreOffset == 0) {
-                t.DbgOnce("NOT START: No core offset found for '"+coreKey+"'");
+                t.DbgOnce("No core offset found for '"+coreKey+"'");
                 return false;
             }
 
@@ -231,16 +233,8 @@ update {
         } else {
             try {
                 w.SetMemoryOffset(current.offset, ranges);
-                t.Dbg("Overriding offset using state");
             } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
-                string emu = string.Join(" ", emuName, version);
-                long offset = 0;
-                vars.offsets.TryGetValue(emu, out offset);
-                if (offset == 0) {
-                    t.DbgOnce("No offset found for '"+emu+"'");
-                    return false;
-                }
-                w.SetMemoryOffset(offset, ranges);
+                t.Dbg("No offset found for '"+emu+"'");
             }
         }
         vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
