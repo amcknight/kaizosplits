@@ -30,10 +30,11 @@ state("snes9x-x64", "1.62.3") {
     string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
     long offset : "snes9x-x64.exe", 0xA62390;
 }
-state("bsnes", "115") { string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8; }
-state("higan"){}
-state("snes9x-rr"){}
-state("emuhawk"){}
+// TODO: bsnes is broken
+state("bsnes", "115") {
+    string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8;
+    long offset : "bsnes.exe", 0x716E87;
+}
 state("retroarch", "1.17.0") {
     string512 core_path :   0xEEB59A;
     string32 core_version : 0xEFD5A9;
@@ -44,6 +45,9 @@ state("retroarch", "1.9.4") {
     string32 core_version : 0xD67600;
     string512 smc_path :    0xD69926;
 }
+state("higan"){}
+state("snes9x-rr"){}
+state("emuhawk"){}
 
 startup {
     print("STARTUP");
