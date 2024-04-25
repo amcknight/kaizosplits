@@ -1,3 +1,7 @@
+state("snes9x", "1.60") {
+    string512 smc_path : "snes9x.exe", 0x557B7D;
+    int offset : "snes9x.exe", 0x54DB54;
+}
 state("snes9x", "1.62.3") {
     string512 smc_path : "snes9x.exe", 0x5C14D4, 0x0;
     int offset : "snes9x.exe", 0x12698;
@@ -143,29 +147,8 @@ init {
         {  7249920, "2.3.1"  }, // BizHawk
         {  6938624, "2.3.2"  }, // BizHawk
     };
-    // (remove x after testing)
-    vars.offsets = new Dictionary<string, long> {
-        { "snes9x 1.60",       0x94DB54 }, // x
-        { "higan 106",         0x94D144 }, // x
-        { "higan 106.112",     0x8AB144 }, // x
-		{ "higan 107",         0xB0ECC8 }, // x
-		{ "higan 108",         0xBC7CC8 }, // x
-	    { "higan 109",         0xBCECC8 }, // x
-        { "higan 110",         0xBDBCC8 }, // x
-        { "bsnes 107",         0x72BECC }, // x
-        { "bsnes 107.1",       0x762F2C }, // x
-        { "bsnes 107.2",       0x765F2C }, // x
-        { "bsnes 107.3",       0x765F2C }, // x
-        { "bsnes 110",         0xA9BD5C }, // x
-        { "bsnes 111",         0xA9DD5C }, // x
-        { "bsnes 112",         0xAAED7C }, // x
-		{ "bsnes 115",         0xB16D7C }, // x
-        { "emuhawk 2.3",  0x36F11500240 }, // x
-        { "emuhawk 2.3.1",0x36F11500240 }, // x
-        { "emuhawk 2.3.2",0x36F11500240 }, // x
-    };
-    var coreOffsets = new Dictionary<string, int> {
-        { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 }, // x
+    vars.coreOffsets = new Dictionary<string, int> {
+        { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
         { "bsnes_libretro.dll 115",             0x7D39DC }, // x
     };
     
