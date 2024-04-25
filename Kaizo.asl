@@ -30,10 +30,8 @@ state("snes9x-x64", "1.62.3") {
     string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
     long offset : "snes9x-x64.exe", 0xA62390;
 }
-// TODO: bsnes is broken
 state("bsnes", "115") {
-    string512 smc_path : "bsnes.exe", 0x31FC5B0, 0x0, 0x100, 0x40, 0x40, 0xE8;
-    long offset : "bsnes.exe", 0x716E87;
+    string128 smc_path : "bsnes.exe", 0x31FC528, 0x0, 0xE8;
 }
 state("retroarch", "1.17.0") {
     string512 core_path :   0xEEB59A;
@@ -152,6 +150,9 @@ init {
         {  7249920, "2.3.1"  }, // BizHawk
         {  6938624, "2.3.2"  }, // BizHawk
     };
+    vars.offsets = new Dictionary<string, long> {
+        { "bsnes 115", 0xB16D7C },
+    };
     vars.coreOffsets = new Dictionary<string, int> {
         { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
         { "bsnes_libretro.dll 115",             0x7D39DC }, // x
@@ -164,7 +165,7 @@ init {
         version = v; // This version var is special and lets the correct state be loaded
     } else {
         string emuName = game.ProcessName.ToLower();
-        throw new Exception("UNKNOWN "+emuName+" MODSIZE '"+modSize+"'");
+        throw new Exception("Can't find version of "+emuName+" using mod size '"+modSize+"'");
     }
 
     vars.smc = "";
@@ -208,7 +209,7 @@ update {
         vars.ready = false;
         return vars.running;
     }
-    //t.DbgOnce("SMC: "+vars.smc);
+    t.DbgOnce("SMC: "+vars.smc);
     
     // TODO: Could be done prior to loading SMC?
     // Do this only the update after the vars above change
@@ -238,7 +239,13 @@ update {
             try {
                 w.SetMemoryOffset(current.offset, ranges);
             } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
-                t.Dbg("No offset found for '"+emu+"'");
+                long offset = 0;
+                vars.offsets.TryGetValue(emu, out offset);
+                if (offset == 0) {
+                    t.DbgOnce("No offset found for '"+emu+"'");
+                    return false;
+                }
+                w.SetMemoryOffset(offset, ranges);
             }
         }
         vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
