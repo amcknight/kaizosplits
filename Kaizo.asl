@@ -53,7 +53,7 @@ update {
     try {
         e.Ready();
     } catch (Exception ex) { // CoreException
-        t.DbgOnce(ex.Message);
+        t.DbgOnce(ex.Message, ex.GetType());
         vars.ready = false;
         return vars.running; // Return running for opposite behaviour in Start vs Reset
     }
@@ -61,16 +61,16 @@ update {
     // TODO: Could be done prior to loading SMC?
     // Does this only the update after the vars above change
     if (!vars.ready) {
-        //t.DbgOnce("SMC: " + e.Smc());
+        t.DbgOnce("SMC: " + e.Smc(), "info");
         var ranges = new Dictionary<int, int>() {};
         try {
             var offset = e.GetOffset();
             w.SetMemoryOffset(offset, ranges);
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            t.DbgOnce("READY");
+            t.DbgOnce("READY", "info");
             vars.ready = true;
         } catch (Exception ex) {
-            t.DbgOnce(ex.Message);
+            t.DbgOnce(ex.Message, ex.GetType());
             return false;
         }
     }

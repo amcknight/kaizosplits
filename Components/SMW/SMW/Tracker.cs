@@ -6,7 +6,7 @@ namespace SMW {
     public class Tracker {
 
         private List<string> debugInfo = new List<string>();
-        private string prevMsg = "junk val";
+        private Dictionary<object, string> prevMsg = new Dictionary<object, string>();
 
         public Tracker() { }
 
@@ -30,13 +30,16 @@ namespace SMW {
             debugInfo.Add(msg);
         }
 
-        public bool DbgOnce(string msg) {
-            if (msg != prevMsg) {
-                debugInfo.Add(msg);
-                prevMsg = msg;
-                return true;
+        public bool DbgOnce(string msg, object tag) {
+            if (!prevMsg.ContainsKey(tag)) {
+                prevMsg[tag] = null;
             }
-            return false;
+            bool changed = msg != prevMsg[tag];
+            if (changed) {
+                debugInfo.Add(msg);
+                prevMsg[tag] = msg;
+            }
+            return changed;
         }
 
         public void Monitor(MemoryWatcher<byte> w, Watchers ws) {
