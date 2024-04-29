@@ -1,0 +1,198 @@
+using Codaxy.Xlio;
+using LiveSplit.ComponentUtil;
+using SpeedrunComSharp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+
+namespace SNES {
+    public class Emu {
+
+        // TODO: Try using game hash to prevent collisions like in the "also" comments
+        Dictionary<int, string> versions = new Dictionary<int, string> {
+            { 15675392, "1.9.4"  }, // Retroarch
+            { 16793600, "1.16.0" }, // Retroarch
+            { 17264640, "1.17.0" }, // Retroarch
+            {  6991872, "1.57"   }, // Snes9x
+            {  9027584, "1.60"   }, // Snes9x
+            { 10399744, "1.62.3" }, // Snes9x
+            { 12537856, "1.59.2" }, // Snes9x x64
+            { 12836864, "1.60"   }, // Snes9x x64
+            { 12955648, "1.61"   }, // Snes9x x64
+            { 29069312, "1.62"   }, // Snes9x x64
+            { 15474688, "1.62.3" }, // Snes9x x64 (also 1.62.2)
+            {  9646080, "1.60"   }, // Snes9x-rr
+            { 13565952, "1.60"   }, // Snes9x-rr x64
+            { 10096640, "107"    }, // bsnes
+            { 10338304, "107.1"  }, // bsnes
+            { 47230976, "107.2"  }, // bsnes (also 107.3)
+            {131543040, "110"    }, // bsnes
+            { 51924992, "111"    }, // bsnes
+            { 52056064, "112"    }, // bsnes
+		    { 52477952, "115"    }, // bsnes
+            { 16019456, "106"    }, // higan
+            { 15360000, "106.112"}, // higan
+		    { 22388736, "107"    }, // higan
+		    { 23142400, "108"    }, // higan
+		    { 23166976, "109"    }, // higan
+		    { 23224320, "110"    }, // higan
+            {  7061504, "2.3"    }, // BizHawk
+            {  7249920, "2.3.1"  }, // BizHawk
+            {  6938624, "2.3.2"  }, // BizHawk
+        };
+        // x comments means I didnt test the offset. picked up from prior splitters
+        Dictionary<string, long> offsets = new Dictionary<string, long> {
+            { "higan 106",    0x94D144 }, // x
+            { "higan 106.112",0x8AB144 }, // x
+		    { "higan 107",    0xB0ECC8 }, // x
+		    { "higan 108",    0xBC7CC8 }, // x
+		    { "higan 109",    0xBCECC8 }, // x
+		    { "higan 110",    0xBDBCC8 }, // x
+            { "bsnes 107",    0x72BECC }, // x
+            { "bsnes 107.1",  0x762F2C }, // x
+            { "bsnes 107.2",  0x765F2C }, // x
+            { "bsnes 107.3",  0x765F2C }, // x
+            { "bsnes 110",    0xA9BD5C }, // x
+            { "bsnes 111",    0xA9DD5C }, // x
+            { "bsnes 112",    0xAAED7C }, // x
+		    { "bsnes 115",    0xB16D7C },
+            { "emuhawk 2.3",  0x36F11500240 }, // x
+            { "emuhawk 2.3.1",0x36F11500240 }, // x
+            { "emuhawk 2.3.2",0x36F11500240 }, // x
+        };
+        Dictionary<string, DeepPointer> offsetPtrs = new Dictionary<string, DeepPointer> {
+            { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x54DB54) },
+            { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x12698)  },
+            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8D86F8)  },
+            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8D86F8)  },
+            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x883158)  },
+            { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x1758D40) },
+            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA62390)  },
+            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA62390)  },
+        };
+        Dictionary<string, DeepPointer> smcPathPtrs = new Dictionary<string, DeepPointer> {
+            { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x557B7D)      },
+            { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x5C14D4, 0x0) },
+            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8EA749)       },
+            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8EAC39)       },
+            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x8951CF)       },
+            { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x176AD48, 0x0) },
+            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0)  },
+            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0)  },
+            { "bsnes 115", new DeepPointer("bsnes.exe", 0x31FC528, 0x0, 0xE8) },
+            { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD69926) },
+            { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8E80F) },
+            { "retroarch 1.17.0", new DeepPointer("retroarch.exe", 0xEFF8A9) },
+        };
+        Dictionary<string, DeepPointer> corePathPtrs = new Dictionary<string, DeepPointer> {
+            { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD6A900) },
+            { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8F7E9) },
+            { "retroarch 1.17.0", new DeepPointer("retroarch.exe", 0xEEB59A) },
+        };
+        Dictionary<string, DeepPointer> coreVersionPtrs = new Dictionary<string, DeepPointer> {
+            { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD67600) },
+            { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8C4E9) },
+            { "retroarch 1.17.0", new DeepPointer("retroarch.exe", 0xEFD5A9) },
+        };
+        Dictionary<string, int> coreOffsetPtrs = new Dictionary<string, int> {
+            { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
+            { "bsnes_libretro.dll 115",             0x7D39DC },
+        };
+
+        private Process emu;
+        private string name; 
+        private string version = "";
+        private string smc = "";
+        private string prevSmc;
+
+        private string core;
+        private string coreVersion;
+
+        public Emu(){}
+
+        public void Init(int modSize, Process emu) {
+            this.emu = emu;
+            this.name = Name();
+            versions.TryGetValue(modSize, out version);
+            if (string.IsNullOrWhiteSpace(version)) {
+                throw new Exception("Can't find version of using mod size '" + modSize + "'");
+            }
+        }
+
+        public string Name() {
+            return emu.ProcessName.ToLower();
+        }
+        
+        public void Ready() {
+            if (name == "retroarch") {
+                core = Core();
+                coreVersion = CoreVersion();
+                if (string.IsNullOrWhiteSpace(core)) {
+                    throw new CoreException("No " + name + " Core found");
+                }
+                if (string.IsNullOrWhiteSpace(coreVersion)) {
+                    throw new CoreException("No " + name + " Core Version found");
+                }
+            }
+
+            prevSmc = smc;
+            smc = Smc();
+            if (string.IsNullOrWhiteSpace(smc) || smc.StartsWith(name)) {
+                throw new CoreException("No " + name + " ROM found");
+            }
+        }
+
+        public long GetOffset() {
+            if (name == "retroarch") {
+                string coreKey = Key(core, coreVersion);
+                //t.DbgOnce("Core key: '" + coreKey + "'");
+                int coreOffset = 0;
+                coreOffsetPtrs.TryGetValue(coreKey, out coreOffset);
+                if (coreOffset == 0) {
+                    throw new CoreException("No core offset found for '" + coreKey + "'");
+                }
+
+                IntPtr offset;
+                new DeepPointer(core, coreOffset).DerefOffsets(emu, out offset); // TODO: should core be coreKey?
+                long memOffset = (long)offset;
+
+                if (memOffset == 0) {
+                    throw new CoreException("No memory offset found for '" + coreKey + "' at '" + coreOffset.ToString("X4") + "'");
+                }
+                return memOffset;
+            }
+
+            try {
+                IntPtr offset;
+                offsetPtrs[Key(name, version)].DerefOffsets(emu, out offset);
+                return (long)offset;
+            } catch (ArgumentException) {
+                long offset = 0;
+                offsets.TryGetValue(Key(name, version), out offset);
+                if (offset == 0) {
+                    throw new CoreException("No offset found for '" + emu + "'");
+                }
+                return offset;
+            }
+        }
+
+        private string Core() {
+            var corePath = corePathPtrs[Key(Name(), version)].DerefString(emu, 512);
+            return Path.GetFileName(corePath);
+        }
+
+        private string CoreVersion() {
+            return coreVersionPtrs[Key(Name(), version)].DerefString(emu, 32);
+        }
+
+        private string Smc() {
+            var smcPath = smcPathPtrs[Key(Name(), version)].DerefString(emu, 512);
+            return Path.GetFileName(smcPath);
+        }
+
+        private string Key(string k1, string k2) {
+            return string.Join(" ", k1, k2);
+        }
+    }
+}

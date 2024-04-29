@@ -1,53 +1,7 @@
-state("snes9x", "1.60") {
-    int offset : "snes9x.exe", 0x54DB54;
-    string512 smc_path : "snes9x.exe", 0x557B7D;
-}
-state("snes9x", "1.62.3") {
-    int offset : "snes9x.exe", 0x12698;
-    string512 smc_path : "snes9x.exe", 0x5C14D4, 0x0;
-}
-state("snes9x-x64", "1.59.2")   {
-    long offset : "snes9x-x64.exe", 0x8D86F8;
-    string512 smc_path : "snes9x-x64.exe", 0x8EA749;
-}
-state("snes9x-x64", "1.60")   {
-    long offset : "snes9x-x64.exe", 0x8D8BE8;
-    string512 smc_path : "snes9x-x64.exe", 0x8EAC39;
-}
-state("snes9x-x64", "1.61")   {
-    long offset : "snes9x-x64.exe", 0x883158;
-    string512 smc_path : "snes9x-x64.exe", 0x8951CF;
-}
-state("snes9x-x64", "1.62") {
-    long offset : "snes9x-x64.exe", 0x1758D40;
-    string512 smc_path : "snes9x-x64.exe", 0x176AD48, 0x0;
-}
-state("snes9x-x64", "1.62.2") {
-    long offset : "snes9x-x64.exe", 0xA62390;
-    string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
-}
-state("snes9x-x64", "1.62.3") {
-    long offset : "snes9x-x64.exe", 0xA62390;
-    string512 smc_path : "snes9x-x64.exe", 0xA74398, 0x0;
-}
-state("bsnes", "115") {
-    string128 smc_path : "bsnes.exe", 0x31FC528, 0x0, 0xE8;
-}
-state("retroarch", "1.17.0") {
-    string512 core_path :   0xEEB59A;
-    string32 core_version : 0xEFD5A9;
-    string512 smc_path :    0xEFF8A9;
-}
-state("retroarch", "1.16.0") {
-    string512 core_path :   0xE8F7E9;
-    string32 core_version : 0xE8C4E9;
-    string512 smc_path :    0xE8E80F;
-}
-state("retroarch", "1.9.4") {
-    string512 core_path :   0xD6A900;
-    string32 core_version : 0xD67600;
-    string512 smc_path :    0xD69926;
-}
+state("snes9x"){}
+state("snes9x-x64"){}
+state("bsnes") {}
+state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
 state("emuhawk"){}
@@ -105,11 +59,15 @@ startup {
         "autoskipOnLag"
     };
 
-    byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
-    Assembly asm = Assembly.Load(bytes);
-    vars.t =   Activator.CreateInstance(asm.GetType("SMW.Tracker"));
-    vars.ws =  Activator.CreateInstance(asm.GetType("SMW.Watchers"));
-    vars.ss =  Activator.CreateInstance(asm.GetType("SMW.Settings"));
+    byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
+    Assembly smwAsm = Assembly.Load(smwBytes);
+    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
+    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
+    vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
+    
+    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
+    Assembly snesAsm = Assembly.Load(snesBytes);
+    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
 
     vars.ss.Init(50L, 1000L); // Max Lag, Min start duration
 
@@ -124,74 +82,8 @@ shutdown {
 
 init {
     print("INIT");
-    // TODO: Try using game hash to prevent collisions like in the "also" comments
-    var versions = new Dictionary<int, string> {
-        { 15675392, "1.9.4"  }, // Retroarch
-        { 16793600, "1.16.0" }, // Retroarch
-        { 17264640, "1.17.0" }, // Retroarch
-        {  6991872, "1.57"   }, // Snes9x
-        {  9027584, "1.60"   }, // Snes9x
-        { 10399744, "1.62.3" }, // Snes9x
-        { 12537856, "1.59.2" }, // Snes9x x64
-        { 12836864, "1.60"   }, // Snes9x x64
-        { 12955648, "1.61"   }, // Snes9x x64
-        { 29069312, "1.62"   }, // Snes9x x64
-        { 15474688, "1.62.3" }, // Snes9x x64 (also 1.62.2)
-        {  9646080, "1.60"   }, // Snes9x-rr
-        { 13565952, "1.60"   }, // Snes9x-rr x64
-        { 10096640, "107"    }, // bsnes
-        { 10338304, "107.1"  }, // bsnes
-        { 47230976, "107.2"  }, // bsnes (also 107.3)
-        {131543040, "110"    }, // bsnes
-        { 51924992, "111"    }, // bsnes
-        { 52056064, "112"    }, // bsnes
-		{ 52477952, "115"    }, // bsnes
-        { 16019456, "106"    }, // higan
-        { 15360000, "106.112"}, // higan
-		{ 22388736, "107"    }, // higan
-		{ 23142400, "108"    }, // higan
-		{ 23166976, "109"    }, // higan
-		{ 23224320, "110"    }, // higan
-        {  7061504, "2.3"    }, // BizHawk
-        {  7249920, "2.3.1"  }, // BizHawk
-        {  6938624, "2.3.2"  }, // BizHawk
-    };
-    // x comments means I didnt test the offset. picked up from prior splitters
-    vars.offsets = new Dictionary<string, long> {
-        { "higan 106",    0x94D144 }, // x
-        { "higan 106.112",0x8AB144 }, // x
-		{ "higan 107",    0xB0ECC8 }, // x
-		{ "higan 108",    0xBC7CC8 }, // x
-		{ "higan 109",    0xBCECC8 }, // x
-		{ "higan 110",    0xBDBCC8 }, // x
-        { "bsnes 107",    0x72BECC }, // x
-        { "bsnes 107.1",  0x762F2C }, // x
-        { "bsnes 107.2",  0x765F2C }, // x
-        { "bsnes 107.3",  0x765F2C }, // x
-        { "bsnes 110",    0xA9BD5C }, // x
-        { "bsnes 111",    0xA9DD5C }, // x
-        { "bsnes 112",    0xAAED7C }, // x
-		{ "bsnes 115",    0xB16D7C },
-        { "emuhawk 2.3",  0x36F11500240 }, // x
-        { "emuhawk 2.3.1",0x36F11500240 }, // x
-        { "emuhawk 2.3.2",0x36F11500240 }, // x
-    };
-    vars.coreOffsets = new Dictionary<string, int> {
-        { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
-        { "bsnes_libretro.dll 115",             0x7D39DC },
-    };
-    
     int modSize = modules.First().ModuleMemorySize;
-    string v = "";
-    versions.TryGetValue(modSize, out v);
-    if (!string.IsNullOrWhiteSpace(v)) {
-        version = v; // This version var is special and lets the correct state be loaded
-    } else {
-        string emuName = game.ProcessName.ToLower();
-        throw new Exception("Can't find version of "+emuName+" using mod size '"+modSize+"'");
-    }
-
-    vars.smc = "";
+    vars.e.Init(modSize, game);
 }
 
 exit {
@@ -200,80 +92,37 @@ exit {
 
 update {
     // TODO: Move as much of this as possible that never changes into init
-    var t = vars.t;
+    var t = vars.t; var e = vars.e;
     
     if (t.HasLines()) print(t.ClearLines());
 
     if (string.IsNullOrWhiteSpace(version)) return false;
 
     vars.startMs = vars.endMs;
-    vars.prevSmc = vars.smc;
-    
-    string emuName = game.ProcessName.ToLower();
-    if (emuName == "retroarch") {
-        vars.core = Path.GetFileName(current.core_path);
-        vars.coreVersion = current.core_version;
 
-        if (string.IsNullOrWhiteSpace(vars.core)) {
-            t.DbgOnce("No "+emuName+" Core found");
-            vars.ready = false;
-            return vars.running;
-        }
-        if (string.IsNullOrWhiteSpace(vars.coreVersion)) {
-            t.DbgOnce("No  "+emuName+" Core Version found");
-            vars.ready = false;
-            return vars.running;
-        }
-    }
-    
-    vars.smc = Path.GetFileName(current.smc_path);
-    if (string.IsNullOrWhiteSpace(vars.smc) || vars.smc.StartsWith(emuName)) {
-        t.DbgOnce("No "+emuName+" ROM found");
+    try {
+        e.Ready(game);
+        //t.DbgOnce("SMC: " + vars.smc);
+    } catch (Exception ex) { // CoreException
+        t.DbgOnce(ex);
         vars.ready = false;
         return vars.running;
     }
-    t.DbgOnce("SMC: "+vars.smc);
     
     // TODO: Could be done prior to loading SMC?
     // Do this only the update after the vars above change
     if (!vars.ready) {
-        string emu = string.Join(" ", emuName, version);
         var w = vars.ws;
         var ranges = new Dictionary<int, int>() {};
-        if (emuName == "retroarch") {
-            string coreKey = string.Join(" ", vars.core, vars.coreVersion);
-            t.DbgOnce("Core key: '"+coreKey+"'");
-            int coreOffset = 0;
-            vars.coreOffsets.TryGetValue(coreKey, out coreOffset);
-            if (coreOffset == 0) {
-                t.DbgOnce("No core offset found for '"+coreKey+"'");
-                return false;
-            }
-
-            IntPtr offset;
-            new DeepPointer(vars.core, coreOffset).DerefOffsets(game, out offset); // TODO: should vars.core be coreKey?
-            long memOffset = (long) offset;
-
-            if (memOffset == 0) {
-                t.DbgOnce("No memory offset found for '"+coreKey+"' at '"+coreOffset.ToString("X4")+"'");
-                return false;
-            }
-            w.SetMemoryOffset(memOffset, ranges);
-        } else {
-            try {
-                w.SetMemoryOffset(current.offset, ranges);
-            } catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) {
-                long offset = 0;
-                vars.offsets.TryGetValue(emu, out offset);
-                if (offset == 0) {
-                    t.DbgOnce("No offset found for '"+emu+"'");
-                    return false;
-                }
-                w.SetMemoryOffset(offset, ranges);
-            }
+        try {
+            var offset = e.GetOffset();
+            w.SetMemoryOffset(offset, ranges);
+            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            vars.ready = true;
+        } catch (Exception ex) {
+            t.DbgOnce(ex);
+            return false;
         }
-        vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        vars.ready = true;
     }
 
     if (vars.ready) {
