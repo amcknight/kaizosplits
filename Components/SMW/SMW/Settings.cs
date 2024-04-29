@@ -31,7 +31,6 @@ namespace SMW {
         private bool prevFinished = false;
         private Watchers w;
 
-        // TODO: Should this be static? Passed in as a file?
         private List<ISetting> settings = new List<ISetting>{
             new Group("Start when", "Start splits when...", kids : new List<ISetting>{
                 new Setting("playersSelect", "Players Selected", "Start when the number of players is selected"),
@@ -175,7 +174,7 @@ namespace SMW {
         public bool ResetStatus(bool memOffsetKnown, bool isGameChanged) {
             return !memOffsetKnown ||
                 (gameChanged && isGameChanged) ||
-                (playersUnselect && w.FromFileSelect && !w.gameOvered) || // TODO: Maybe roll these gameOvered checks into Watchers to reduce logic here
+                (playersUnselect && w.FromFileSelect && !w.gameOvered) ||
                 (livesUnset && w.ToOneLuigiLife && !w.gameOvered)
                 ;
         }
@@ -190,7 +189,6 @@ namespace SMW {
         }
 
         public bool UndoStatus() {
-            // TODO: Does it make sense to check key or palace?
             if ((goals && w.Goal) ||
                 (orbs && w.Orb) ||
                 (keyholes && w.Key) ||

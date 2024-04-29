@@ -75,7 +75,7 @@ namespace SMW {
         public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
         public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
 
-        // Temporary Test Watchers TODO keep or drop these
+        // Temporary Test Watchers. keep or drop these
         public MemoryWatcher<byte> fadeOut => (MemoryWatcher<byte>)this["fadeOut"];
         public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
         public MemoryWatcher<uint> layer1Pointer => (MemoryWatcher<uint>)this["layer1Pointer"];
@@ -100,8 +100,8 @@ namespace SMW {
         public bool ToOrb => ShiftTo(io, 3);
         public bool ToGoal => ShiftTo(io, 4);
         public bool ToKey => ShiftTo(io, 7);
-        public bool GmFileSelect => ShiftTo(gameMode, 8);    // TODO: not yet incorporated into START
-        public bool GmPlayerSelect => ShiftTo(gameMode, 10); // TODO: not yet incorporated into START
+        public bool GmFileSelect => ShiftTo(gameMode, 8);
+        public bool GmPlayerSelect => ShiftTo(gameMode, 10);
         public bool GmOverworldFadeIn => ShiftTo(gameMode, 13);
         public bool GmFadeToLevel => ShiftTo(gameMode, 15);
         public bool GmFadeToLevelBlack => ShiftTo(gameMode, 16);

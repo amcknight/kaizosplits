@@ -9,7 +9,7 @@ state("emuhawk"){}
 startup {
     vars.ready = false;
     vars.running = false;
-    vars.startMs = vars.endMs = -1; // junk value TODO: Maybe Settings could deal with this timing stuff?
+    vars.startMs = vars.endMs = -1; // junk value
 
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
@@ -41,24 +41,20 @@ init {
 exit {}
 
 update {
-    // TODO: Move as much of this as possible that never changes into init
     var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
     
     if (t.HasLines()) print(t.ClearLines());
-
-    //if (string.IsNullOrWhiteSpace(version)) return false;
 
     vars.startMs = vars.endMs;
 
     try {
         e.Ready();
-    } catch (Exception ex) { // CoreException
+    } catch (Exception ex) {
         t.DbgOnce(ex.Message, ex.GetType());
         vars.ready = false;
         return vars.running; // Return running for opposite behaviour in Start vs Reset
     }
     
-    // TODO: Could be done prior to loading SMC?
     // Does this only the update after the vars above change
     if (!vars.ready) {
         t.DbgOnce("SMC: " + e.Smc(), "info");
@@ -76,10 +72,8 @@ update {
     }
 
     if (vars.ready) {
-        w.UpdateAll(game);
-
-        // TODO: Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
         // The order here matters (for Spawn recording)
+        w.UpdateAll(game);
         var settingsDict = new Dictionary<string, bool>();
         foreach (string k in s.keys) {
             settingsDict[k] = settings[k];
@@ -107,7 +101,8 @@ reset {
     var t = vars.t; var s = vars.ss; var e = vars.e;
     bool smcChanged = e.SmcChanged();
     if (s.ResetStatus(vars.ready, smcChanged)) {
-        t.Dbg("Reset: " + s.ResetReasons(vars.ready, smcChanged));
+        var reasons = s.ResetReasons(vars.ready, smcChanged);
+        t.Dbg("Reset: " + reasons);
         return true;
     }
 }
@@ -121,7 +116,7 @@ split {
         case "Bunbun World":
             s.other =
                 w.RoomShiftsInLevel(80) || // Six-Screen Suites
-                w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
+                w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
                 w.RoomShiftInLevel(45, 9, 10) || // Mt. Ninji Ending
                 w.RoomShiftInLevel(48, 12, 254) || // Slippery Spirits to Boss
                 w.RoomShiftsInLevel(37) || // Cotton Candy Castle
@@ -136,14 +131,13 @@ split {
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
         break;
-        case "Bunbun World 2": // TODO: Retest. TODO cancel midway on level. Also maybe use rooms instead of coins or just drop this.
+        case "Bunbun World 2": // Retest and cancel midway on level. CoinFlag was dropped so needs fixing
             s.Midway = w.Prev(w.io) != 61 // KLDC Dolphins
                 && w.prevIO != 48 // Mirror Temple
                 ;
-            w.Room = w.Room && w.Prev(w.io) != 65; // Using yoshiCoins
-            w.CoinFlag = w.Stepped(w.yoshiCoin) && w.Prev(w.io) == 65; // TODO: Splits on YoshiCoins steps rather than #s 1 thru 4. Not idempotent.
+            w.Room = w.Room && w.Prev(w.io) != 65;
         break;
-        case "Cute Kaizo World": // TODO: Retest. Can probably use cpEntrance out of the box but if not should cancel on level
+        case "Cute Kaizo World": // Retest. Can probably use cpEntrance out of the box but if not should cancel on level
             w.Midway = w.Midway && w.Prev(w.io) != 55;  // Using doors
             s.credits = w.ShiftTo(w.io, 21);
         break;
@@ -167,7 +161,7 @@ split {
                 // w.RoomShiftsInLevel(31) || // Glacier Soup
                 // w.RoomShiftsInLevel(62) || // Yellow
                 // w.RoomShiftsInLevel(36) || // Warehouse
-                // w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. TODO: This should split on 1-up triggering the pipe instead
+                // w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
                 // false;
             s.credits = false;
         break;
@@ -183,7 +177,7 @@ split {
             s.block = w.CPEntrance && w.Curr(w.roomNum) == 101;
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
         break;
-        case "Purgatory": // TODO: Retest. Should cancel based on level
+        case "Purgatory": // Retest. Should cancel based on level
             w.Midway = w.Midway
                 && w.Prev(w.io) != 56  // Cancel for Sea Moon
                 && w.Prev(w.io) != 49  // Cancel for Soft and Wet

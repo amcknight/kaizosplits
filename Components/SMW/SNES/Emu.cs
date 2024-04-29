@@ -8,8 +8,6 @@ using System.IO;
 
 namespace SNES {
     public class Emu {
-
-        // TODO: Try using game hash to prevent collisions like in the "also" comments
         Dictionary<int, string> versions = new Dictionary<int, string> {
             { 15675392, "1.9.4"  }, // Retroarch
             { 16793600, "1.16.0" }, // Retroarch
@@ -102,7 +100,7 @@ namespace SNES {
 
         private Process emu;
         private string name;
-        private string version = "";
+        private string version;
         private string smc = "";
         private string prevSmc;
 

@@ -19,7 +19,7 @@ startup {
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    vars.ss.Init(100L, 1000L); // Max Lag, Min start duration, TODO: shouldn't need these for Synth
+    vars.ss.Init(100L, 1000L); // Max Lag, Min start duration, (don't need these for Synth)
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.rec.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
     
@@ -42,44 +42,38 @@ init {
 exit {}
 
 update {
-    // TODO: Move as much of this as possible that never changes into init
     var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
     var r = vars.rec;
     
     if (t.HasLines()) print(t.ClearLines());
-
-    //if (string.IsNullOrWhiteSpace(version)) return false;
     
     try {
         e.Ready();
-    } catch (Exception ex) { // CoreException
-        t.DbgOnce(ex.Message);
+    } catch (Exception ex) {
+        t.DbgOnce(ex.Message, ex.GetType());
         vars.ready = false;
         return vars.running; // Return running for opposite behaviour in Start vs Reset
     }
     
-    // TODO: Could be done prior to loading SMC?
     // Does this only the update after the vars above change
     if (!vars.ready) {
-        //t.DbgOnce("SMC: " + e.Smc());
+        t.DbgOnce("SMC: " + e.Smc(), "info");
         var ranges = new Dictionary<int, int>() {};
         try {
             var offset = e.GetOffset();
             w.SetMemoryOffset(offset, ranges);
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            t.DbgOnce("READY");
+            t.DbgOnce("READY", "info");
             vars.ready = true;
         } catch (Exception ex) {
-            t.DbgOnce(ex.Message);
+            t.DbgOnce(ex.Message, ex.GetType());
             return false;
         }
     }
 
     if (vars.ready) {
-        w.UpdateAll(game);
-
-        // TODO: Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
         // The order here matters (for Spawn recording)
+        w.UpdateAll(game);
         var settingsDict = new Dictionary<string, bool>();
         foreach (string k in s.keys) {
             settingsDict[k] = settings[k];
