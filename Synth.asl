@@ -37,8 +37,7 @@ startup {
 shutdown {}
 
 init {
-    int modSize = modules.First().ModuleMemorySize; // TODO: Can get size from game?
-    vars.e.Init(modSize, game);
+    vars.e.Init(game);
 }
 exit {}
 
@@ -56,11 +55,11 @@ update {
     } catch (Exception ex) { // CoreException
         t.DbgOnce(ex.Message);
         vars.ready = false;
-        return vars.running;
+        return vars.running; // Return running for opposite behaviour in Start vs Reset
     }
     
     // TODO: Could be done prior to loading SMC?
-    // Do this only the update after the vars above change
+    // Does this only the update after the vars above change
     if (!vars.ready) {
         //t.DbgOnce("SMC: " + e.Smc());
         var ranges = new Dictionary<int, int>() {};

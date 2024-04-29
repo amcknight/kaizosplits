@@ -100,7 +100,7 @@ namespace SNES {
             { "bsnes_libretro.dll 115",             0x7D39DC },
         };
 
-        private Process proc;
+        private Process emu;
         private string name;
         private string version = "";
         private string smc = "";
@@ -111,12 +111,13 @@ namespace SNES {
 
         public Emu() { }
 
-        public void Init(int modSize, Process emu) {
-            this.proc = emu;
-            name = emu.ProcessName.ToLower();
-            versions.TryGetValue(modSize, out version);
+        public void Init(Process emu) {
+            this.emu = emu;
+            this.name = emu.ProcessName.ToLower();
+            var size = emu.MainModuleWow64Safe().ModuleMemorySize;
+            versions.TryGetValue(size, out version);
             if (string.IsNullOrWhiteSpace(version)) {
-                throw new Exception("Can't find version of using mod size '" + modSize + "'");
+                throw new EmuException("Can't find emulator version from it's size (" + size + ")");
             }
         }
 
@@ -135,7 +136,7 @@ namespace SNES {
             UpdateSmc();
 
             if (string.IsNullOrWhiteSpace(smc) || smc.StartsWith(name)) {
-                throw new CoreException("No " + name + " ROM found");
+                throw new EmuException("No " + name + " ROM found");
             }
         }
 
@@ -150,7 +151,7 @@ namespace SNES {
                     throw new CoreException("No core offset found for '" + coreKey + "'");
                 }
 
-                new DeepPointer(core, coreOffset).DerefOffsets(proc, out offset); // TODO: should core be coreKey?
+                new DeepPointer(core, coreOffset).DerefOffsets(emu, out offset); // TODO: should core be coreKey?
                 memOffset = (long)offset;
 
                 if (memOffset == 0) {
@@ -163,28 +164,28 @@ namespace SNES {
             DeepPointer offsetPtr;
             offsetPtrs.TryGetValue(emuKey, out offsetPtr);
             if (offsetPtr != null) {
-                offsetPtr.DerefOffsets(proc, out offset);
+                offsetPtr.DerefOffsets(emu, out offset);
                 memOffset = (long)offset;
                 if (memOffset == 0) {
-                    throw new CoreException("No memory offset found for '" + emuKey + "' at '" + offset.ToString("X4") + "'");
+                    throw new EmuException("No memory offset found for '" + emuKey + "' at '" + offset.ToString("X4") + "'");
                 }
                 return memOffset;
             }
 
             offsets.TryGetValue(emuKey, out memOffset);
             if (memOffset == 0) {
-                throw new CoreException("No offset found for '" + emuKey + "'");
+                throw new EmuException("No offset found for '" + emuKey + "'");
             }
             return memOffset;
         }
 
         private string Core() {
-            var corePath = corePathPtrs[Key(name, version)].DerefString(proc, 512);
+            var corePath = corePathPtrs[Key(name, version)].DerefString(emu, 512);
             return Path.GetFileName(corePath);
         }
 
         private string CoreVersion() {
-            return coreVersionPtrs[Key(name, version)].DerefString(proc, 32);
+            return coreVersionPtrs[Key(name, version)].DerefString(emu, 32);
         }
 
         private string Key(string k1, string k2) {
@@ -194,7 +195,7 @@ namespace SNES {
         // Only call once per update
         private void UpdateSmc() {
             prevSmc = smc;
-            var smcPath = smcPathPtrs[Key(name, version)].DerefString(proc, 512);
+            var smcPath = smcPathPtrs[Key(name, version)].DerefString(emu, 512);
             smc = Path.GetFileName(smcPath);
         }
 
