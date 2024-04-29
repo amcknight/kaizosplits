@@ -1,7 +1,7 @@
 state("snes9x"){}
 state("snes9x-x64"){}
 state("bsnes") {}
-//state("retroarch"){}
+state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
 state("emuhawk"){}
@@ -11,21 +11,27 @@ startup {
     
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
-    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
+    vars.e = Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
 
     byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly smwAsm = Assembly.Load(smwBytes);
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    vars.ss.Init(50L, 1000L); // Max Lag, Min start duration
-
-    foreach (string key in vars.ss.Keys()) {
-      // code block to be executed
+    var ss = vars.ss;
+    ss.Init(100L, 1000L); // Max Lag, Min start duration
+    
+    foreach (var entry in ss.entries) {
+        var k = entry.Key;
+        var v = entry.Value;
+        var on =      v.Item1;
+        var name =    v.Item2;
+        var tooltip = v.Item3;
+        var parent =  v.Item4;
+        settings.Add(k, on, name, parent);
+        settings.SetToolTip(k, tooltip);
     }
-    settings.Add("playersUnselect", true, "# Players not Selected", "reset");
-    settings.SetToolTip("playersUnselect", "Reset when the number of players is not selected and so probably back in the menu");
-
+    
     vars.ready = false;
     vars.running = false;
     vars.startMs = vars.endMs = -1; // junk value TODO: Maybe Settings could deal with this timing stuff?
@@ -86,11 +92,11 @@ update {
         var w = vars.ws; var s = vars.ss;
         w.UpdateAll(game);
 
-        // Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
+        // TODO: Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
         // The order here matters (for Spawn recording)
         var settingsDict = new Dictionary<string, bool>();
-        foreach (string sn in vars.settingNames) {
-            settingsDict[sn] = settings[sn];
+        foreach (string k in s.keys) {
+            settingsDict[k] = settings[k];
         }
         s.Update(settingsDict, w);
         t.Update(w);
