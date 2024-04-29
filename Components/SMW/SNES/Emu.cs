@@ -129,7 +129,7 @@ namespace SNES {
                     throw new CoreException("No " + name + " Core found");
                 }
                 if (string.IsNullOrWhiteSpace(coreVersion)) {
-                    throw new CoreException("No " + name + " Core Version found");
+                    throw new CoreException("No " + name + " Core Version found for " + core);
                 }
             }
 
@@ -151,11 +151,11 @@ namespace SNES {
                     throw new CoreException("No core offset found for '" + coreKey + "'");
                 }
 
-                new DeepPointer(core, coreOffset).DerefOffsets(emu, out offset); // TODO: should core be coreKey?
+                new DeepPointer(core, coreOffset).DerefOffsets(emu, out offset);
                 memOffset = (long)offset;
 
                 if (memOffset == 0) {
-                    throw new CoreException("No memory offset found for '" + coreKey + "' at '" + coreOffset.ToString("X4") + "'");
+                    throw new CoreException("No memory offset found for '" + core + "' at '" + coreOffset.ToString("X4") + "'");
                 }
                 return memOffset;
             }
