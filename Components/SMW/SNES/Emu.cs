@@ -100,8 +100,8 @@ namespace SNES {
             { "bsnes_libretro.dll 115",             0x7D39DC },
         };
 
-        private Process emu;
-        private string name; 
+        private Process proc;
+        private string name;
         private string version = "";
         private string smc = "";
         private string prevSmc;
@@ -109,21 +109,17 @@ namespace SNES {
         private string core;
         private string coreVersion;
 
-        public Emu(){}
+        public Emu() { }
 
         public void Init(int modSize, Process emu) {
-            this.emu = emu;
-            this.name = Name();
+            this.proc = emu;
+            name = emu.ProcessName.ToLower();
             versions.TryGetValue(modSize, out version);
             if (string.IsNullOrWhiteSpace(version)) {
                 throw new Exception("Can't find version of using mod size '" + modSize + "'");
             }
         }
 
-        public string Name() {
-            return emu.ProcessName.ToLower();
-        }
-        
         public void Ready() {
             if (name == "retroarch") {
                 core = Core();
@@ -136,8 +132,8 @@ namespace SNES {
                 }
             }
 
-            prevSmc = smc;
-            smc = Smc();
+            UpdateSmc();
+
             if (string.IsNullOrWhiteSpace(smc) || smc.StartsWith(name)) {
                 throw new CoreException("No " + name + " ROM found");
             }
@@ -154,7 +150,7 @@ namespace SNES {
                 }
 
                 IntPtr offset;
-                new DeepPointer(core, coreOffset).DerefOffsets(emu, out offset); // TODO: should core be coreKey?
+                new DeepPointer(core, coreOffset).DerefOffsets(proc, out offset); // TODO: should core be coreKey?
                 long memOffset = (long)offset;
 
                 if (memOffset == 0) {
@@ -165,34 +161,44 @@ namespace SNES {
 
             try {
                 IntPtr offset;
-                offsetPtrs[Key(name, version)].DerefOffsets(emu, out offset);
+                offsetPtrs[Key(name, version)].DerefOffsets(proc, out offset);
                 return (long)offset;
             } catch (ArgumentException) {
                 long offset = 0;
                 offsets.TryGetValue(Key(name, version), out offset);
                 if (offset == 0) {
-                    throw new CoreException("No offset found for '" + emu + "'");
+                    throw new CoreException("No offset found for '" + proc + "'");
                 }
                 return offset;
             }
         }
 
         private string Core() {
-            var corePath = corePathPtrs[Key(Name(), version)].DerefString(emu, 512);
+            var corePath = corePathPtrs[Key(name, version)].DerefString(proc, 512);
             return Path.GetFileName(corePath);
         }
 
         private string CoreVersion() {
-            return coreVersionPtrs[Key(Name(), version)].DerefString(emu, 32);
-        }
-
-        private string Smc() {
-            var smcPath = smcPathPtrs[Key(Name(), version)].DerefString(emu, 512);
-            return Path.GetFileName(smcPath);
+            return coreVersionPtrs[Key(name, version)].DerefString(proc, 32);
         }
 
         private string Key(string k1, string k2) {
             return string.Join(" ", k1, k2);
+        }
+
+        // Only call once per update
+        private void UpdateSmc() {
+            prevSmc = smc;
+            var smcPath = smcPathPtrs[Key(name, version)].DerefString(proc, 512);
+            smc = Path.GetFileName(smcPath);
+        }
+
+        public bool SmcChanged() {
+            return smc != prevSmc;
+        }
+
+        public string Smc() {
+            return smc;
         }
     }
 }

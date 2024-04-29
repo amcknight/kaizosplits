@@ -82,6 +82,7 @@ shutdown {
 
 init {
     print("INIT");
+    // TODO: Can get size from game?
     int modSize = modules.First().ModuleMemorySize;
     vars.e.Init(modSize, game);
 }
@@ -96,15 +97,15 @@ update {
     
     if (t.HasLines()) print(t.ClearLines());
 
-    if (string.IsNullOrWhiteSpace(version)) return false;
+    //if (string.IsNullOrWhiteSpace(version)) return false;
 
     vars.startMs = vars.endMs;
 
     try {
-        e.Ready(game);
-        //t.DbgOnce("SMC: " + vars.smc);
+        e.Ready();
+        t.DbgOnce("SMC: " + e.Smc());
     } catch (Exception ex) { // CoreException
-        t.DbgOnce(ex);
+        t.DbgOnce(ex.Message);
         vars.ready = false;
         return vars.running;
     }
@@ -156,10 +157,10 @@ start {
 }
 
 reset {
-    var t = vars.t; var s = vars.ss;
-    bool newSmc = vars.prevSmc != vars.smc;
-    if (s.ResetStatus(vars.ready, newSmc)) {
-        t.Dbg("Reset: " + s.ResetReasons(vars.ready, newSmc));
+    var t = vars.t; var s = vars.ss; var e = vars.e;
+    bool smcChanged = e.SmcChanged();
+    if (s.ResetStatus(vars.ready, smcChanged)) {
+        t.Dbg("Reset: " + s.ResetReasons(vars.ready, smcChanged));
         return true;
     }
 }
