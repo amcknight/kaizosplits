@@ -140,18 +140,18 @@ namespace SNES {
         }
 
         public long GetOffset() {
+            long memOffset;
+            IntPtr offset;
             if (name == "retroarch") {
                 string coreKey = Key(core, coreVersion);
-                //t.DbgOnce("Core key: '" + coreKey + "'");
                 int coreOffset = 0;
                 coreOffsetPtrs.TryGetValue(coreKey, out coreOffset);
                 if (coreOffset == 0) {
                     throw new CoreException("No core offset found for '" + coreKey + "'");
                 }
 
-                IntPtr offset;
                 new DeepPointer(core, coreOffset).DerefOffsets(proc, out offset); // TODO: should core be coreKey?
-                long memOffset = (long)offset;
+                memOffset = (long)offset;
 
                 if (memOffset == 0) {
                     throw new CoreException("No memory offset found for '" + coreKey + "' at '" + coreOffset.ToString("X4") + "'");
@@ -159,18 +159,23 @@ namespace SNES {
                 return memOffset;
             }
 
-            try {
-                IntPtr offset;
-                offsetPtrs[Key(name, version)].DerefOffsets(proc, out offset);
-                return (long)offset;
-            } catch (ArgumentException) {
-                long offset = 0;
-                offsets.TryGetValue(Key(name, version), out offset);
-                if (offset == 0) {
-                    throw new CoreException("No offset found for '" + proc + "'");
+            string emuKey = Key(name, version);
+            DeepPointer offsetPtr;
+            offsetPtrs.TryGetValue(emuKey, out offsetPtr);
+            if (offsetPtr != null) {
+                offsetPtr.DerefOffsets(proc, out offset);
+                memOffset = (long)offset;
+                if (memOffset == 0) {
+                    throw new CoreException("No memory offset found for '" + emuKey + "' at '" + offset.ToString("X4") + "'");
                 }
-                return offset;
+                return memOffset;
             }
+
+            offsets.TryGetValue(emuKey, out memOffset);
+            if (memOffset == 0) {
+                throw new CoreException("No offset found for '" + emuKey + "'");
+            }
+            return memOffset;
         }
 
         private string Core() {

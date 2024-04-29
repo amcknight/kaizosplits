@@ -7,8 +7,10 @@ state("snes9x-rr"){}
 state("emuhawk"){}
 
 startup {
-    print("STARTUP");
-    
+    vars.ready = false;
+    vars.running = false;
+    vars.startMs = vars.endMs = -1; // junk value TODO: Maybe Settings could deal with this timing stuff?
+
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
     vars.e = Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
@@ -30,30 +32,18 @@ startup {
         settings.Add(k, on, name, parent);
         settings.SetToolTip(k, tooltip);
     }
-    
-    vars.ready = false;
-    vars.running = false;
-    vars.startMs = vars.endMs = -1; // junk value TODO: Maybe Settings could deal with this timing stuff?
 }
-
-shutdown {
-    print("SHUTDOWN");
-}
+shutdown {}
 
 init {
-    print("INIT");
-    // TODO: Can get size from game?
-    int modSize = modules.First().ModuleMemorySize;
+    int modSize = modules.First().ModuleMemorySize; // TODO: Can get size from game?
     vars.e.Init(modSize, game);
 }
-
-exit {
-    print("EXIT");
-}
+exit {}
 
 update {
     // TODO: Move as much of this as possible that never changes into init
-    var t = vars.t; var e = vars.e;
+    var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
     
     if (t.HasLines()) print(t.ClearLines());
 
@@ -63,7 +53,6 @@ update {
 
     try {
         e.Ready();
-        t.DbgOnce("SMC: " + e.Smc());
     } catch (Exception ex) { // CoreException
         t.DbgOnce(ex.Message);
         vars.ready = false;
@@ -73,22 +62,22 @@ update {
     // TODO: Could be done prior to loading SMC?
     // Do this only the update after the vars above change
     if (!vars.ready) {
-        var w = vars.ws;
+        //t.DbgOnce("SMC: " + e.Smc());
         var ranges = new Dictionary<int, int>() {};
         try {
             var offset = e.GetOffset();
+            print("OFFSET: "+offset);
             w.SetMemoryOffset(offset, ranges);
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            t.DbgOnce("READY");
             vars.ready = true;
         } catch (Exception ex) {
-            t.DbgOnce(ex);
+            t.DbgOnce(ex.Message);
             return false;
         }
     }
 
     if (vars.ready) {
-        //t.DbgOnce("READY");
-        var w = vars.ws; var s = vars.ss;
         w.UpdateAll(game);
 
         // TODO: Currently can't put these into UpdateAll due to troubles importing Process from System.Diagnostics.Process
@@ -236,10 +225,6 @@ split {
             ;
         break;
     }
-    
-    //t.Monitor(w.levelNum, w);
-    //t.Monitor(w.roomNum, w);
-    //t.Monitor(w.cpEntrance, w);
 
     if (s.UndoStatus()) {
         t.Dbg("Undo: " + s.UndoReasons());
@@ -260,11 +245,9 @@ split {
 }
 
 onStart {
-    print("STARTING");
     vars.running = true;
 }
 
 onReset {
-    print("RESETING");
     vars.running = false;
 }
