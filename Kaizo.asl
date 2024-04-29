@@ -1,6 +1,6 @@
 state("snes9x"){}
 state("snes9x-x64"){}
-state("bsnes") {}
+state("bsnes"){}
 state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
@@ -18,10 +18,9 @@ startup {
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    var ss = vars.ss;
-    ss.Init(100L, 1000L); // Max Lag, Min start duration
+    vars.ss.Init(100L, 1000L); // Max Lag, Min start duration
     
-    foreach (var entry in ss.entries) {
+    foreach (var entry in vars.ss.entries) {
         var k = entry.Key;
         var v = entry.Value;
         var on =      v.Item1;

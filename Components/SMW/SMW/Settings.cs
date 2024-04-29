@@ -31,6 +31,7 @@ namespace SMW {
         private bool prevFinished = false;
         private Watchers w;
 
+        // TODO: Should this be static? Passed in as a file?
         private List<ISetting> settings = new List<ISetting>{
             new Group("Start when", "Start splits when...", kids : new List<ISetting>{
                 new Setting("playersSelect", "Players Selected", "Start when the number of players is selected"),
