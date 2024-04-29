@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SMW {
     public class Settings {
@@ -30,6 +31,39 @@ namespace SMW {
 
         private bool prevFinished = false;
         private Watchers w;
+
+        private List<Setting> settings = new List<Setting> {
+            new Setting("Start when", "Start splits when below conditions hold", kids : new List<Setting>{
+                new Setting("Players Selected", "Start when the number of players is selected"),
+                new Setting("Luigi >1 Life", "Start when Luigi's lives is set to more than 1. Good for one player speedruns when Players Selected is broken"),
+            }),
+            new Setting("Reset when", "Reset splits when below conditions hold", kids : new List<Setting>{
+                new Setting("# Players not Selected", "Reset when the number of players is not selected and so probably back in the menu"),
+                new Setting("Luigi 1 Life", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken"),
+                new Setting("Changed Game", "Reset when changed game. Turn this off for multi-game runs"),
+            }),
+            new Setting("Split when", "Split when...", kids : new List<Setting>{
+                new Setting("Level Exit", "leaving a level by beating it"),
+                new Setting("Intro Exit", "at the end of the intro level"),
+                new Setting("Overworld Change", "switching overworlds. Good to use with subsplits"),
+                new Setting("Level Event", "these in-level events", kids : new List<Setting>{
+                    new Setting("Checkpoint", "getting a Checkpoints", kids : new List<Setting> {
+                        new Setting("Midway", "getting the first midway checkpoint tape in the level"),
+                        new Setting("CP Entrance Change", "entrance to appear at on death changes, excluding when entering a level"),
+                    }),
+                    new Setting("Start", "Split at the start of each level"),
+                    new Setting("Finish", "Goals, Orbs, Bosses, Keys, and Palaces", on : false, kids : new List<Setting> {
+                        new Setting("Goal Tape", "getting the big goal tape"),
+                        new Setting("Orb", "getting an orb"),
+                        new Setting("Boss", "defeating a boss"),
+                        new Setting("Keyhole", "activating a key hole"),
+                        new Setting("Palace", "hitting a switch palace"),
+                    }),
+                    new Setting("Room Change", "your room transitions", on : false),
+                }),
+            }),
+            new Setting("Autoskip Lag Splits", "Autoskip splits that might have had more than 100ms of lag"),
+        };
 
         public Settings() { }
 

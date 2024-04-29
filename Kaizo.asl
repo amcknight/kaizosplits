@@ -1,75 +1,30 @@
 state("snes9x"){}
 state("snes9x-x64"){}
 state("bsnes") {}
-state("retroarch"){}
+//state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
 state("emuhawk"){}
 
 startup {
     print("STARTUP");
-    settings.Add("start", true, "Start when");
-        settings.Add("playersSelect", true, "# Players Selected", "start");
-        settings.SetToolTip("playersSelect", "Start when the number of players is selected");
-        settings.Add("livesSet", true, "Luigi >1 Life", "start");
-        settings.SetToolTip("livesSet", "Start when Luigi's lives is set to more than 1. Good for one player speedruns when Players Selected is broken");
-    settings.Add("reset", true, "Reset when");
-        settings.Add("playersUnselect", true, "# Players not Selected", "reset");
-        settings.SetToolTip("playersUnselect", "Reset when the number of players is not selected and so probably back in the menu");
-        settings.Add("livesUnset", true, "Luigi 1 Life", "reset");
-        settings.SetToolTip("livesUnset", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken");
-        settings.Add("gameChanged", true, "Changed Game", "reset");
-        settings.SetToolTip("gameChanged", "Reset when changed game. Turn this off for multi-game runs");
-    settings.Add("split", true, "Split when");
-        settings.Add("exits", true, "Level Exit", "split");
-        settings.SetToolTip("exits", "Split when leaving a level by beating it");
-        settings.Add("introExit", true, "Intro Exit", "split");
-        settings.SetToolTip("introExit", "Split at the end of the intro level");
-        settings.Add("worlds", true, "Overworlds", "split");
-        settings.SetToolTip("worlds", "Split when switching overworlds. Good to use with subsplits");
-        settings.Add("level", true, "Level Events", "split");
-            settings.Add("checkpoints", true, "Checkpoints", "level");
-                settings.Add("midways", true, "First midway tape", "checkpoints");
-                settings.SetToolTip("midways", "Split when getting the first checkpoint tape in the level");
-                settings.Add("cpEntrances", true, "Checkpoint Entrance Changes", "checkpoints");
-                settings.SetToolTip("cpEntrances", "Split when entrance to appear at on death changes, excluding when entering a level");
-            settings.Add("starts", false, "Starts", "level");
-            settings.SetToolTip("starts", "Split at the start of each level");
-            settings.Add("finishes", false, "Goals, Orbs, Keys, and Bosses", "level");
-            settings.SetToolTip("finishes", "Split on goal tapes, orbs, activating keyholes, killing bosses, and finishing palaces.\n These splits are undone automatically if you die before getting the Level Exit.");
-                settings.Add("goals", true, "Goal Tape", "finishes");
-                settings.SetToolTip("goals", "Split on crossing goal tapes");
-                settings.Add("orbs", true, "Orbs", "finishes");
-                settings.SetToolTip("orbs", "Split when getting an orb");
-                settings.Add("keys", true, "Keys", "finishes");
-                settings.SetToolTip("keys", "Split when activating a keyhole");
-                settings.Add("bosses", true, "Bosses", "finishes");
-                settings.SetToolTip("bosses", "Split when defeating a boss");
-                settings.Add("palaces", true, "Palaces", "finishes");
-                settings.SetToolTip("palaces", "Split when hitting a switch palace");
-            settings.Add("rooms", false, "Room Changes", "level");
-            settings.SetToolTip("rooms", "Split whenever your room transitions");
-    settings.Add("autoskipOnLag", false, "Autoskip laggy splits");
-    settings.SetToolTip("autoskipOnLag", "Autoskip splits that might have had more than 100ms of lag");
-
-    vars.settingNames = new List<string>() {
-        "playersSelect", "livesSet",
-        "playersUnselect", "livesUnset", "gameChanged",
-        "exits", "introExit", "worlds", "midways", "cpEntrances", "starts", "goals", "orbs", "keys", "bosses", "palaces", "rooms",
-        "autoskipOnLag"
-    };
+    
+    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
+    Assembly snesAsm = Assembly.Load(snesBytes);
+    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
 
     byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly smwAsm = Assembly.Load(smwBytes);
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    
-    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
-    Assembly snesAsm = Assembly.Load(snesBytes);
-    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
-
     vars.ss.Init(50L, 1000L); // Max Lag, Min start duration
+
+    foreach (string key in vars.ss.Keys()) {
+      // code block to be executed
+    }
+    settings.Add("playersUnselect", true, "# Players not Selected", "reset");
+    settings.SetToolTip("playersUnselect", "Reset when the number of players is not selected and so probably back in the menu");
 
     vars.ready = false;
     vars.running = false;
