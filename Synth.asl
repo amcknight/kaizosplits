@@ -52,7 +52,7 @@ update {
     } catch (Exception ex) {
         t.DbgOnce(ex.Message, ex.GetType());
         vars.ready = false;
-        return vars.running; // Return running for opposite behaviour in Start vs Reset
+        return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
     }
 
     t.DbgOnce("SMC: " + e.Smc(), "smc");

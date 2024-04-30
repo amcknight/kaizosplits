@@ -33,12 +33,10 @@ startup {
         settings.SetToolTip(k, tooltip);
     }
 }
-shutdown {}
 
 init {
     vars.e.Init(game);
 }
-exit {}
 
 update {
     var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
@@ -52,7 +50,7 @@ update {
     } catch (Exception ex) {
         t.DbgOnce(ex.Message, ex.GetType());
         vars.ready = false;
-        return vars.running; // Return running for opposite behaviour in Start vs Reset
+        return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
     }
     
     t.DbgOnce("SMC: " + e.Smc(), "smc");
@@ -83,8 +81,8 @@ update {
         w.UpdateState();
         
         // MONITOR HERE
-        //t.Monitor(w.exitMode, w);
-        //t.Monitor(w.gameMode, w);
+        t.Monitor(w.exitMode, w);
+        t.Monitor(w.gameMode, w);
     }
 }
 
