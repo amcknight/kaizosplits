@@ -48,7 +48,7 @@ update {
     try {
         e.Ready();
     } catch (Exception ex) {
-        t.DbgOnce(ex.Message, ex.GetType());
+        t.DbgOnce(ex);
         vars.ready = false;
         return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
     }
@@ -64,7 +64,7 @@ update {
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
         } catch (Exception ex) {
-            t.DbgOnce(ex.Message, ex.GetType());
+            t.DbgOnce(ex);
             return false;
         }
     }

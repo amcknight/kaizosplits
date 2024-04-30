@@ -1,4 +1,5 @@
 ﻿using LiveSplit.ComponentUtil;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -28,6 +29,10 @@ namespace SMW {
 
         public void Dbg(string msg) {
             debugInfo.Add(msg);
+        }
+
+        public bool DbgOnce(Exception ex) {
+            return DbgOnce(ex.Message, ex.GetType());
         }
 
         public bool DbgOnce(string msg, object tag) {

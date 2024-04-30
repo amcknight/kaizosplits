@@ -9,19 +9,20 @@ using System.IO;
 namespace SNES {
     public class Emu {
         Dictionary<int, string> versions = new Dictionary<int, string> {
-            { 15675392, "1.9.4"  }, // Retroarch
-            { 16793600, "1.16.0" }, // Retroarch
-            { 17264640, "1.17.0" }, // Retroarch
-            {  6991872, "1.57"   }, // Snes9x
-            {  9027584, "1.60"   }, // Snes9x
-            { 10399744, "1.62.3" }, // Snes9x
-            { 12537856, "1.59.2" }, // Snes9x x64
-            { 12836864, "1.60"   }, // Snes9x x64
-            { 12955648, "1.61"   }, // Snes9x x64
-            { 29069312, "1.62"   }, // Snes9x x64
-            { 15474688, "1.62.3" }, // Snes9x x64 (also 1.62.2)
-            {  9646080, "1.60"   }, // Snes9x-rr
-            { 13565952, "1.60"   }, // Snes9x-rr x64
+            { 15675392, "1.9.4"  }, // retroarch
+            { 16793600, "1.16.0" }, // retroarch
+            { 17264640, "1.17.0" }, // retroarch
+            {  6991872, "1.57"   }, // snes9x
+            {  9027584, "1.60"   }, // snes9x
+            {  9158656, "1.61"   }, // snes9x
+            { 10399744, "1.62.3" }, // snes9x
+            { 12537856, "1.59.2" }, // snes9x x64
+            { 12836864, "1.60"   }, // snes9x x64
+            { 12955648, "1.61"   }, // snes9x x64
+            { 29069312, "1.62"   }, // snes9x x64
+            { 15474688, "1.62.3" }, // snes9x x64 (also 1.62.2)
+            {  9646080, "1.60"   }, // snes9x-rr
+            { 13565952, "1.60"   }, // snes9x-rr x64
             { 10096640, "107"    }, // bsnes
             { 10338304, "107.1"  }, // bsnes
             { 47230976, "107.2"  }, // bsnes (also 107.3)
@@ -61,23 +62,25 @@ namespace SNES {
         };
         Dictionary<string, DeepPointer> offsetPtrs = new Dictionary<string, DeepPointer> {
             { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x54DB54) },
-            { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x12698)  },
-            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8D86F8)  },
-            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8D86F8)  },
-            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x883158)  },
+            { "snes9x 1.61",   new DeepPointer("snes9x.exe",0x507BC4) },
+            { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x12698) },
+            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8D86F8) },
+            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8D86F8) },
+            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x883158) },
             { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x1758D40) },
-            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA62390)  },
-            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA62390)  },
+            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA62390) },
+            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA62390) },
         };
         Dictionary<string, DeepPointer> smcPathPtrs = new Dictionary<string, DeepPointer> {
-            { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x557B7D)      },
+            { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x557B7D) },
+            { "snes9x 1.61",   new DeepPointer("snes9x.exe", 0xE162C, 0x1) },
             { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x5C14D4, 0x0) },
-            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8EA749)       },
-            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8EAC39)       },
-            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x8951CF)       },
+            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8EA749) },
+            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8EAC39) },
+            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x8951CF) },
             { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x176AD48, 0x0) },
-            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0)  },
-            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0)  },
+            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0) },
+            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0) },
             { "bsnes 115", new DeepPointer("bsnes.exe", 0x31FC528, 0x0, 0xE8) },
             { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD69926) },
             { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8E80F) },
@@ -101,6 +104,7 @@ namespace SNES {
         private Process emu;
         private string name;
         private string version;
+        private string emuKey;
         private string smc = "";
         private string prevSmc;
 
@@ -111,12 +115,13 @@ namespace SNES {
 
         public void Init(Process emu) {
             this.emu = emu;
-            this.name = emu.ProcessName.ToLower();
             var size = emu.MainModuleWow64Safe().ModuleMemorySize;
             versions.TryGetValue(size, out version);
             if (string.IsNullOrWhiteSpace(version)) {
                 throw new EmuException("Can't find emulator version from it's size (" + size + ")");
             }
+            name = emu.ProcessName.ToLower();
+            emuKey = Key(name, version);
         }
 
         public void Ready() {
@@ -172,18 +177,24 @@ namespace SNES {
 
             offsets.TryGetValue(emuKey, out memOffset);
             if (memOffset == 0) {
-                throw new EmuException("No offset found for '" + emuKey + "'");
+                throw new EmuException("No memory offset found for '" + emuKey + "'");
             }
             return memOffset;
         }
 
         private string Core() {
-            var corePath = corePathPtrs[Key(name, version)].DerefString(emu, 512);
+            if (!corePathPtrs.ContainsKey(emuKey)) {
+                throw new EmuException("No Core Path pointer exists for '" + emuKey + "'");
+            }
+            var corePath = corePathPtrs[emuKey].DerefString(emu, 512);
             return Path.GetFileName(corePath);
         }
 
         private string CoreVersion() {
-            return coreVersionPtrs[Key(name, version)].DerefString(emu, 32);
+            if (!coreVersionPtrs.ContainsKey(emuKey)) {
+                throw new EmuException("No Core Version pointer exists for '" + emuKey + "'");
+            }
+            return coreVersionPtrs[emuKey].DerefString(emu, 32);
         }
 
         private string Key(string k1, string k2) {
@@ -193,7 +204,10 @@ namespace SNES {
         // Only call once per update
         private void UpdateSmc() {
             prevSmc = smc;
-            var smcPath = smcPathPtrs[Key(name, version)].DerefString(emu, 512);
+            if (!smcPathPtrs.ContainsKey(emuKey)) {
+                throw new EmuException("No SMC path pointer exists for '"+emuKey+"'");
+            }
+            var smcPath = smcPathPtrs[emuKey].DerefString(emu, 512);
             smc = Path.GetFileName(smcPath);
         }
 
