@@ -54,21 +54,6 @@ update {
     }
     
     t.DbgOnce("SMC: " + e.Smc(), "smc");
-    
-    // Does this only the update after the vars above change
-    if (!vars.ready) {
-        var ranges = new Dictionary<int, int>() {};
-        try {
-            var offset = e.GetOffset();
-            w.SetMemoryOffset(offset, ranges);
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
-        } catch (Exception ex) {
-            t.DbgOnce(ex);
-            return false;
-        }
-    }
-
     if (vars.ready) {
         // The order here matters (for Spawn recording)
         w.UpdateAll(game);
@@ -80,9 +65,19 @@ update {
         t.Update(w);
         w.UpdateState();
         
-        // MONITOR HERE
-        t.Monitor(w.exitMode, w);
-        t.Monitor(w.gameMode, w);
+        // MONITOR HERE for monitoring even while not in a run
+        //t.Monitor(w.roomNum, w);
+    } else {
+        var ranges = new Dictionary<int, int>() {};
+        try {
+            var offset = e.GetOffset();
+            w.SetMemoryOffset(offset, ranges);
+            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            vars.ready = true;
+        } catch (Exception ex) {
+            t.DbgOnce(ex);
+            return false;
+        }
     }
 }
 

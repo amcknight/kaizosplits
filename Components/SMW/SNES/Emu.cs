@@ -41,6 +41,7 @@ namespace SNES {
             {  6938624, "2.3.2"  }, // BizHawk
         };
         // x comments means I didnt test the offset. picked up from prior splitters
+        // If using a direct address, use this
         Dictionary<string, long> offsets = new Dictionary<string, long> {
             { "higan 106",    0x94D144 }, // x
             { "higan 106.112",0x8AB144 }, // x
@@ -60,27 +61,28 @@ namespace SNES {
             { "emuhawk 2.3.1",0x36F11500240 }, // x
             { "emuhawk 2.3.2",0x36F11500240 }, // x
         };
+        // if using a pointer, use this. Without the 0x0 offset, it doesn't dereference properly...
         Dictionary<string, DeepPointer> offsetPtrs = new Dictionary<string, DeepPointer> {
-            { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x54DB54) },
-            { "snes9x 1.61",   new DeepPointer("snes9x.exe",0x507BC4) },
-            { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x12698) },
-            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8D86F8) },
-            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8D86F8) },
-            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x883158) },
-            { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x1758D40) },
-            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA62390) },
-            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA62390) },
+            { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x54DB54, 0x0) },
+            { "snes9x 1.61",   new DeepPointer("snes9x.exe", 0x507BC4, 0x0) },
+            { "snes9x 1.62.3", new DeepPointer("snes9x.exe",  0x12698, 0x0) },
+            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe",  0x8D86F8, 0x0) },
+            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe",  0x8D86F8, 0x0) },
+            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe",  0x883158, 0x0) },
+            { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x1758D40, 0x0) },
+            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe",  0xA62390, 0x0) },
+            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe",  0xA62390, 0x0) },
         };
         Dictionary<string, DeepPointer> smcPathPtrs = new Dictionary<string, DeepPointer> {
             { "snes9x 1.60",   new DeepPointer("snes9x.exe", 0x557B7D) },
-            { "snes9x 1.61",   new DeepPointer("snes9x.exe", 0xE162C, 0x1) },
+            { "snes9x 1.61",   new DeepPointer("snes9x.exe",  0xE162C, 0x1) },
             { "snes9x 1.62.3", new DeepPointer("snes9x.exe", 0x5C14D4, 0x0) },
-            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe", 0x8EA749) },
-            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe", 0x8EAC39) },
-            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe", 0x8951CF) },
+            { "snes9x-x64 1.59.2", new DeepPointer("snes9x-x64.exe",  0x8EA749) },
+            { "snes9x-x64 1.60",   new DeepPointer("snes9x-x64.exe",  0x8EAC39) },
+            { "snes9x-x64 1.61",   new DeepPointer("snes9x-x64.exe",  0x8951CF) },
             { "snes9x-x64 1.62",   new DeepPointer("snes9x-x64.exe", 0x176AD48, 0x0) },
-            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0) },
-            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe", 0xA74398, 0x0) },
+            { "snes9x-x64 1.62.2", new DeepPointer("snes9x-x64.exe",  0xA74398, 0x0) },
+            { "snes9x-x64 1.62.3", new DeepPointer("snes9x-x64.exe",  0xA74398, 0x0) },
             { "bsnes 115", new DeepPointer("bsnes.exe", 0x31FC528, 0x0, 0xE8) },
             { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD69926) },
             { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8E80F) },
