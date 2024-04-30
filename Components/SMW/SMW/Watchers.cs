@@ -153,22 +153,6 @@ namespace SMW {
         public bool LevelFinish => Goal || Key || Orb || Palace || Boss;
         public bool Overworld => !InLevel && (Portal || Submap);
 
-        public bool RoomShiftInLevel(ushort level, ushort fromRoom, ushort toRoom) {
-            return Shift(roomNum, fromRoom, toRoom) && Curr(levelNum) == level;
-        }
-
-        public bool RoomShiftsInLevel(ushort level) {
-            return Shifted(roomNum) && Curr(roomCounter) > 0 && Curr(levelNum) == level;
-        }
-
-        public bool ShiftIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from, byte to) {
-            return Shift(shiftW, from, to) && Curr(inW) == inVal;
-        }
-
-        public bool ShiftsIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW) {
-            return Shifted(shiftW) && Curr(inW) == inVal;
-        }
-
         public void UpdateState() {
             // Maintain these until "shut off"
             died = died || DiedNow;
@@ -290,5 +274,22 @@ namespace SMW {
         public bool Crossed(MemoryWatcher<uint> w, ushort c) {
             return Prev(w) < c && Curr(w) >= c;
         }
+
+        public bool RoomShiftInLevel(ushort level, ushort fromRoom, ushort toRoom) {
+            return Shift(roomNum, fromRoom, toRoom) && Curr(levelNum) == level;
+        }
+        
+        public bool RoomShiftsInLevel(ushort level) {
+            return Shifted(roomNum) && Curr(roomCounter) > 0 && Curr(levelNum) == level;
+        }
+
+        public bool ShiftIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from, byte to) {
+            return Shift(shiftW, from, to) && Curr(inW) == inVal;
+        }
+
+        public bool ShiftsIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW) {
+            return Shifted(shiftW) && Curr(inW) == inVal;
+        }
+
     }
 }

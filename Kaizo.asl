@@ -23,12 +23,12 @@ startup {
     vars.ss.Init(100L, 1000L); // Max Lag, Min start duration
     
     foreach (var entry in vars.ss.entries) {
-        var k = entry.Key;
+        string k = entry.Key;
         var v = entry.Value;
-        var on =      v.Item1;
-        var name =    v.Item2;
-        var tooltip = v.Item3;
-        var parent =  v.Item4;
+        bool on =        v.Item1;
+        string name =    v.Item2;
+        string tooltip = v.Item3;
+        string parent =  v.Item4;
         settings.Add(k, on, name, parent);
         settings.SetToolTip(k, tooltip);
     }
@@ -104,10 +104,12 @@ reset {
 split {
     var t = vars.t; var w = vars.ws; var s = vars.ss;
 
-    string runName = string.Join(" ", timer.Run.GameName, timer.Run.CategoryName);
-    // Override Default split variables for individual runs
+    string runName = string.Join(" - ", timer.Run.GameName, timer.Run.CategoryName);
+    t.DbgOnce("Run: '"+runName+"'", "run");
+
+    // Override Default split variables for individual runs check github.com/amcknight/kaizosplits/CustomSplits.md for a tutorial
     switch (runName) {
-        case "Bunbun World":
+        case "Bunbun World - 100%":
             s.other =
                 w.RoomShiftsInLevel(80) || // Six-Screen Suites
                 w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
@@ -119,31 +121,21 @@ split {
                 w.RoomShiftsInLevel(68) || // Breathtaking
                 w.RoomShiftsInLevel(61) || // Night Sky Scamper
                 w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
-                w.ShiftIn(w.levelNum, 52, w.io, 3, 20) || // Bunbun Bastion any%
+                w.ShiftIn(w.levelNum, 52, w.io, 3, 20) || // any% ending
                 w.RoomShiftsInLevel(62) || // Culmination Castle
                 w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
         break;
         case "Bunbun World 2": // Retest and cancel midway on level. CoinFlag was dropped so needs fixing
-            s.Midway = w.Prev(w.io) != 61 // KLDC Dolphins
-                && w.prevIO != 48 // Mirror Temple
+            s.Midway = w.Prev(w.io) != 61 &&
+                w.prevIO != 48 // Mirror Temple
                 ;
-            w.Room = w.Room && w.Prev(w.io) != 65;
+            s.block = w.Room && w.Prev(w.io) == 65;
         break;
         case "Cute Kaizo World": // Retest. Can probably use cpEntrance out of the box but if not should cancel on level
-            w.Midway = w.Midway && w.Prev(w.io) != 55;  // Using doors
+            s.block = w.Checkpoint && w.Prev(w.io) == 55;  // Using doors
             s.credits = w.ShiftTo(w.io, 21);
-        break;
-        case "Dancer to a Discordant System":
-            s.other =
-                w.RoomShiftInLevel(5, 6, 7) ||
-                w.RoomShiftInLevel(51, 14, 13) ||
-                w.RoomShiftInLevel(11, 10, 21) ||
-                w.RoomShiftInLevel(11, 21, 22) ||
-                w.RoomShiftInLevel(11, 22, 12) ||
-                w.RoomShiftInLevel(11, 12, 23) ||
-              false;
         break;
         case "Janked Up Mario Party":
             // s.other =
@@ -167,7 +159,7 @@ split {
                 ;
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
-        case "Nonsense 24 Exit":
+        case "Nonsense - 24 Exit":
             s.block = w.CPEntrance && w.Curr(w.roomNum) == 101;
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
         break;
@@ -180,34 +172,7 @@ split {
         break;
         case "Quickie World 2":
           s.other =
-            w.RoomShiftInLevel(10, 10, 41) ||
-            w.RoomShiftInLevel(2, 2, 48) ||
-            w.RoomShiftInLevel(9, 9, 36) ||
-            w.RoomShiftInLevel(17, 17, 23) || // CP shifting to Secret room
-            w.RoomShiftInLevel(17, 23, 42) ||
-            w.RoomShiftInLevel(4, 4, 44) ||
-            w.RoomShiftInLevel(6, 6, 33) ||
-            w.RoomShiftInLevel(6, 6, 207) || // CP shifting to Boss room
-            w.RoomShiftInLevel(5, 5, 49) ||
-            w.RoomShiftInLevel(20, 20, 34) ||
-            w.RoomShiftInLevel(3, 3, 32) ||
-            w.RoomShiftInLevel(14, 14, 15) || // CP Shifting to Secret room
-            w.RoomShiftInLevel(14, 15, 47) ||
-            w.RoomShiftInLevel(24, 24, 30) ||
-            w.RoomShiftInLevel(19, 19, 28) ||
-            w.RoomShiftInLevel(21, 21, 29) ||
-            w.RoomShiftInLevel(12, 12, 35) ||
-            w.RoomShiftInLevel(7, 7, 40) ||
-            w.RoomShiftInLevel(1, 1, 43) ||
-            w.RoomShiftInLevel(11, 11, 38) ||
-            w.RoomShiftInLevel(18, 18, 27) ||
-            w.RoomShiftInLevel(18, 18, 25) || // Castle Door instead of Midway
-            w.RoomShiftInLevel(8, 8, 46) ||
-            w.RoomShiftInLevel(16, 16, 26) ||
-            w.RoomShiftInLevel(22, 22, 37) ||
-            w.RoomShiftInLevel(13, 13, 31) ||
-            w.RoomShiftInLevel(13, 13, 45) ||
-            w.RoomShiftInLevel(13, 13, 235) // Yoshi pipe
+            s.block = w.Midway && w.Curr(w.roomNum) == 18;
             ;
         break;
     }

@@ -32,34 +32,32 @@ namespace SMW {
         private Watchers w;
 
         private List<ISetting> settings = new List<ISetting>{
-            new Group("Start when", "Start splits when...", kids : new List<ISetting>{
+            new Group("Start when", "Start splits when...", kids: new List<ISetting>{
                 new Setting("playersSelect", "Players Selected", "Start when the number of players is selected"),
                 new Setting("livesSet", "Luigi >1 Life", "Start when Luigi's lives is set to more than 1. Good for one player speedruns when Players Selected is broken"),
             }),
-            new Group("Reset when", "Reset splits when...", kids : new List<ISetting>{
+            new Group("Reset when", "Reset splits when...", kids: new List<ISetting>{
                 new Setting("playersUnselect", "# Players not Selected", "Reset when the number of players is not selected and so probably back in the menu"),
                 new Setting("livesUnset", "Luigi 1 Life", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken"),
-                new Setting("gameChanged", "Changed Game", "Reset when changed game. Turn this off for multi-game runs"),
+                new Setting("gameChanged", "Game Change", "Reset when changed game. Turn this off for multi-game runs"),
             }),
-            new Group("Split when", "Split when...", kids : new List<ISetting>{
+            new Group("Split when", "Split when...", kids: new List<ISetting>{
                 new Setting("exits", "Level Exit", "leaving a level by beating it"),
                 new Setting("introExit", "Intro Exit", "at the end of the intro level"),
-                new Setting("worlds", "Overworld Change", "switching overworlds. Good to use with subsplits"),
-                new Group("Level Event", "these in-level events", kids : new List<ISetting>{
-                    new Group("Checkpoint", "getting a Checkpoints", kids : new List<ISetting> {
-                        new Setting("midways", "Midway", "getting the first midway checkpoint tape in the level"),
-                        new Setting("cpEntrances", "CP Entrance Change", "entrance to appear at on death changes, excluding when entering a level"),
-                    }),
-                    new Setting("starts", "Start", "Split at the start of each level"),
-                    new Group("Finish", "Goals, Orbs, Bosses, Keys, and Palaces", on : false, kids : new List<ISetting> {
-                        new Setting("goals", "Goal Tape", "getting the big goal tape"),
-                        new Setting("orbs", "Orb", "getting an orb"),
-                        new Setting("bosses", "Boss", "defeating a boss"),
-                        new Setting("keyholes", "Key", "activating a key hole with a key"),
-                        new Setting("palaces", "Palace", "hitting a switch palace"),
-                    }),
-                    new Setting("rooms", "Room Change", "your room transitions", on : false),
+                new Setting("worlds", "Overworld Change", "switching overworlds. Good to use with subsplits", on: false),
+                new Group("Checkpoint", "getting a Checkpoints", kids: new List<ISetting> {
+                    new Setting("midways", "Midway", "getting the first midway checkpoint tape in the level"),
+                    new Setting("cpEntrances", "CP Entrance Change", "entrance to appear at on death changes, excluding when entering a level"),
                 }),
+                new Setting("starts", "Start", "Split at the start of each level", on: false),
+                new Group("Finish", "Goals, Orbs, Bosses, Keys, and Palaces", on: false, kids: new List<ISetting> {
+                    new Setting("goals", "Goal Tape", "getting the big goal tape"),
+                    new Setting("orbs", "Orb", "getting an orb"),
+                    new Setting("bosses", "Boss", "defeating a boss"),
+                    new Setting("keyholes", "Key", "activating a key hole with a key"),
+                    new Setting("palaces", "Palace", "hitting a switch palace"),
+                }),
+                new Setting("rooms", "Room Change", "your room transitions", on: false),
             }),
             new Setting("skipOnLag", "Autoskip Lag Splits", "Autoskip splits that might have had more than 100ms of lag"),
         };

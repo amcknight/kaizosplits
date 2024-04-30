@@ -37,7 +37,13 @@ Open the solution in VS2022 and build it
 
 ### Installation
 
-You're gonna need to build it like the above, for now, sorry.
+- Find your LiveSplit folder and copy or move the two DLLs into the `Components` folder inside
+- Put the `Kaizo.asl` somewhere. I keep it where I keep my splits files but it can be anywhere.
+- Open LiveSplit and `Edit Layout...` press `+` and then choose `Control > Scriptable Auto Splitter`
+- Now click `Layout Settings` and the `Scripable Auto Splitter` tab
+- Click `Browse` and go find your `Kaizo.asl` file
+
+If all went well you should see a bunch of settings, with some checked. You're set!
 
 ### Adding new Emulators
 
@@ -46,7 +52,7 @@ You're gonna need to build it like the above, for now, sorry.
 - Run DbgView, livesplit, and the new emulator
 - DbgView should show the modSize and errors
 - Add a line to `memoryOffsets` like `{ modSize you found, ??? } // emulator name`
-- Run a hack with a value you know how to change. I use roomNum `r.Monitor(w.roomNum, w);` to the split function.
+- Run a hack with a value you know how to change. I use roomNum `t.Monitor(w.roomNum, w);` to the split function.
 - Use Cheat Engine to isolate the roomNum memory address
 - Close the emulator and do it again so you have two memory addresses
 - Do a pointer scan, comparing the two addresses
@@ -54,3 +60,37 @@ You're gonna need to build it like the above, for now, sorry.
 - Back in Cheat ENgine main screen, double click the new variable's address
 - Copy the `"emu.exe"+00blah` section into comment and the address after the arrow into the value for the modSize key
 - Save and should see the room number changing in DbgView without errors
+
+### Custom Splits (Advanced)
+
+If you end up wanting more fine-grained splits, such as removing some checkpoint splits, custom credits split, or room splits for only one level, you're in the right place.
+
+Open your `Kaizo.asl` which is defines the whole autosplitter and take a look at the `split {}` section for the switch cases.
+
+To add custom splits to a run, add a case for your run name which you can see in Livesplit or by using the DebugViewer debugging program.
+
+Add credits split: `s.credits = CONDITION;`
+Add splits: `s.other = CONDITION || CONDITION || ... || CONDITION;`
+Suppress splits: `s.block = CONDITION || CONDITION || ... || CONDITION;`
+
+These CONDITIONS are usually:
+`w.SHIFT_CONDITION`
+`(w.ONGOING_CONDITION && w.SHIFT_CONDITION)`
+The list of `ONGOING_CONDITION`s and `SHIFT_CONDITION`s are in [Watchers.cs](Components/SMW/SMW/Watchers.cs#184) relative to this README file. You'll need to find specific room numbers or other values to fill in these conditions. Check the Debugging section for how.
+
+This is generic C# code, but if you follow the examples that exist there already, you shouldn't need to learn any programming.
+
+Note that these custom splits depend heavily on your settings config, but currently you can't have different cases per settings config, so you'll probably need to change your custom splits if you change your settings config.
+    
+### Debugging
+
+[DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) is a program for debugging Windows programs generally. All errors from all your programs go there, but LiveSplit and the LiveSplit autosplitter plugin, and kaizosplits will have useful messages there if you're stuck.
+
+If you're trying to add custom splits but need level numbers or room numbers or whatever, then go to the `update{}` section of `Kaizo.asl` and find the `MONITOR HERE` comment. Below it, add a line for each memory item you want to monitor.
+
+```
+t.Monitor(w.A_MEMORY_WATCHER_NAME, w);
+t.Monitor(w.ANOTHER_MEMORY_WATCHER_NAME, w);
+```
+
+The list of `MEMORY_WATCHER_NAME`s are in [Watchers.cs](Components/SMW/SMW/Watchers.cs#43) and an example would be `roomNum`.
