@@ -56,34 +56,3 @@ t.Monitor(w.ANOTHER_MEMORY_WATCHER_NAME, w);
 ```
 
 The list of `MEMORY_WATCHER_NAME`s are in [Watchers.cs](Components/SMW/SMW/Watchers.cs#L42). Some examples are `levelNum`, `roomNum`, or `io`.
-
-### Development Setup Log
-
-This is mostly for myself as a non-C# programmer.
-
-This is how I got it working last time. Next time re-setting up, improve these instructions.
-
-1) Install Visual Studio 2022 (can try the latest but I used 2022)
-
-2) Build LiveSplit for its components
-- `git clone --recursive https://github.com/LiveSplit/LiveSplit.git`
-- Open the solution in VS2022 as a Solution
-- CTRL+Shift+B to build it
-- Don't move on until this builds properly (it needs .net 4.6.1 and netstandard 2.0)
-- This gets a reference to LiveSplit.Core. Could possibly get these built alone but having the whole project allows for some stepthrough debugging in worst case scenarios.
-
-3) Build kaizosplits DLLs
-```
-git clone https://github.com/amcknight/kaizosplits.git
-```
-Open the solution in Visual Studio 2022 as a folder. Build the solution by right clicking on the `SMW.sln` file.
-
-4) Reinstall SMW dll every time it builds:
-- Exit LiveSplit
-- Creating a symlink by running PowerShell in Administrator mode and using:
-```
-cmd /c mklink 'C:\PATH\TO\LIVESPLIT\Components\SMW.dll' 'C:\PATH\TO\KAIZOSPLITS\Components\SMW\SMW\bin\Debug\netstandard2.0\SMW.dll'
-cmd /c mklink 'C:\PATH\TO\LIVESPLIT\Components\SNES.dll' 'C:\PATH\TO\KAIZOSPLITS\Components\SMW\SNES\bin\Debug\netstandard2.0\SNES.dll'
-```
-- You don't need to recopy it if only changed the .asl file
-- Start LiveSplit
