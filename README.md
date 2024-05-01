@@ -1,4 +1,4 @@
-## Kaizosplits
+# Kaizosplits
 
 A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a 2021.
 
@@ -6,7 +6,7 @@ Their's a v1 decent autosplitter that's supposed to work as well as possible by 
 
 However, there's also an ambitious v2 split manager that will robustly handle fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress and will likely be forked into it's own project!
 
-### Installation
+## Installation
 
 Go to Releases and download the zip.
 
@@ -14,14 +14,14 @@ Instructions are in the README.
 
 Customize splits in the Scriptable Autosplitter settings once it's installed
 
-### Debugging
+## Debugging
 
 You'll need to be able to debug to customize splits, override emulators, or for development.
 
 [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) is a program for debugging Windows programs generally. All errors from all your programs go there, but LiveSplit and the LiveSplit autosplitter plugin, and kaizosplits will have useful messages there if you're stuck.
 
 
-### Custom Splits
+## Custom Splits
 
 If you end up wanting more fine-grained splits, such as removing some checkpoint splits, custom credits split, or room splits for only one level, you're in the right place.
 
