@@ -68,9 +68,11 @@ namespace SMW {
         public MemoryWatcher<byte> overworldExitEvent => (MemoryWatcher<byte>)this["overworldExitEvent"];
         public MemoryWatcher<byte> exitMode => (MemoryWatcher<byte>)this["exitMode"];
         public MemoryWatcher<byte> player => (MemoryWatcher<byte>)this["player"];
-        public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
-        public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
         public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
+        public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
+        public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"]; 
+        public MemoryWatcher<ushort> marioOverworldX => (MemoryWatcher<ushort>)this["marioOverworldX"];
+        public MemoryWatcher<ushort> marioOverworldY => (MemoryWatcher<ushort>)this["marioOverworldY"];
 
         // Temporary Test Watchers. keep or drop these
         public MemoryWatcher<byte> fadeOut => (MemoryWatcher<byte>)this["fadeOut"];

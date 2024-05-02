@@ -9,6 +9,8 @@ state("emuhawk"){}
 startup {
     vars.ready = false;
     vars.running = false;
+    int maxLagMs = 100;
+    int minStartDurationMs = 1000;
 
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
@@ -19,17 +21,17 @@ startup {
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    vars.ss.Init(100L, 1000L); // Max Lag, Min start duration, (don't need these for Synth)
+    vars.ss.Init(maxLagMs, minStartDurationMs);
     vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.rec.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
     
     foreach (var entry in vars.ss.entries) {
-        var k = entry.Key;
+        string k = entry.Key;
         var v = entry.Value;
-        var on =      v.Item1;
-        var name =    v.Item2;
-        var tooltip = v.Item3;
-        var parent =  v.Item4;
+        bool on =        v.Item1;
+        string name =    v.Item2;
+        string tooltip = v.Item3;
+        string parent =  v.Item4;
         settings.Add(k, on, name, parent);
         settings.SetToolTip(k, tooltip);
     }
@@ -67,6 +69,7 @@ update {
         
         // MONITOR HERE for monitoring even while not in a run
         //t.Monitor(w.roomNum, w);
+        //t.Monitor(w.submap, w);
     } else {
         var ranges = new Dictionary<int, int>() {};
         try {

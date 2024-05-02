@@ -10,6 +10,8 @@ startup {
     vars.ready = false;
     vars.running = false;
     vars.startMs = vars.endMs = -1; // junk value
+    int maxLagMs = 100;
+    int minStartDurationMs = 1000;
 
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
@@ -20,7 +22,7 @@ startup {
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    vars.ss.Init(100L, 1000L); // Max Lag, Min start duration
+    vars.ss.Init(maxLagMs, minStartDurationMs);
     
     foreach (var entry in vars.ss.entries) {
         string k = entry.Key;
@@ -66,7 +68,10 @@ update {
         w.UpdateState();
         
         // MONITOR HERE for monitoring even while not in a run
+        
         //t.Monitor(w.roomNum, w);
+        //t.Monitor(w.submap, w);
+
     } else {
         var ranges = new Dictionary<int, int>() {};
         try {
@@ -107,7 +112,7 @@ split {
     string runName = string.Join(" - ", timer.Run.GameName, timer.Run.CategoryName);
     t.DbgOnce("Run: '"+runName+"'", "run");
 
-    // Override Default split variables for individual runs check github.com/amcknight/kaizosplits/CustomSplits.md for a tutorial
+    // Override Default split variables for individual runs. Customize Splits Tutorial: https://github.com/amcknight/kaizosplits?tab=readme-ov-file#custom-splits
     switch (runName) {
         case "Bunbun World - 100%":
             s.other =
@@ -127,53 +132,18 @@ split {
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
         break;
-        case "Bunbun World 2": // Retest and cancel midway on level. CoinFlag was dropped so needs fixing
-            s.Midway = w.Prev(w.io) != 61 &&
-                w.prevIO != 48 // Mirror Temple
-                ;
-            s.block = w.Room && w.Prev(w.io) == 65;
-        break;
-        case "Cute Kaizo World": // Retest. Can probably use cpEntrance out of the box but if not should cancel on level
-            s.block = w.Checkpoint && w.Prev(w.io) == 55;  // Using doors
+        case "Cute Kaizo World - 100%":
             s.credits = w.ShiftTo(w.io, 21);
         break;
-        case "Janked Up Mario Party":
-            // s.other =
-                // w.RoomShiftsInLevel(38) || // Mushroom Ledge
-                // w.RoomShiftsInLevel(37) || // Bastion Blue
-                // w.RoomShiftsInLevel(93) || // Tides, Ok?
-                // w.RoomShiftsInLevel(84) || // Roy
-                // w.RoomShiftsInLevel(19) || // Peek a Boo
-                // w.RoomShiftsInLevel(31) || // Glacier Soup
-                // w.RoomShiftsInLevel(62) || // Yellow
-                // w.RoomShiftsInLevel(36) || // Warehouse
-                // w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
-                // false;
-            s.credits = false;
+        case "Easyland - Beat the Game":
+            s.credits = w.Curr(w.submap) == 6 && w.GmFadeToLevel && w.Curr(w.marioOverworldX) == 456 && w.Curr(w.marioOverworldY) == 392;
         break;
-        case "Love Yourself":
-            s.other =
-                w.RoomShiftInLevel(74, 39, 40) || // 3rd Castle room
-                w.RoomShiftInLevel(74, 40, 42) || // 4th castle room
-                (w.Stepped(w.roomNum) && w.Curr(w.roomNum) > 50 && w.Curr(w.roomNum) < 67 && w.Curr(w.levelNum) == 85) // All room other than credits door
-                ;
+        case "Love Yourself - Welcome Home%":
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
         case "Nonsense - 24 Exit":
-            s.block = w.CPEntrance && w.Curr(w.roomNum) == 101;
+            s.block = w.CPEntrance && w.Curr(w.roomNum) == 101; // Extra CP at beginning of Angry Parachutes when icy
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
-        break;
-        case "Purgatory": // Retest. Should cancel based on level
-            w.Midway = w.Midway
-                && w.Prev(w.io) != 56  // Cancel for Sea Moon
-                && w.Prev(w.io) != 49  // Cancel for Soft and Wet
-                && w.Prev(w.io) != 63  // Cancel for Summit of Salvation
-                ;
-        break;
-        case "Quickie World 2":
-          s.other =
-            s.block = w.Midway && w.Curr(w.roomNum) == 18;
-            ;
         break;
     }
 
