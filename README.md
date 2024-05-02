@@ -1,29 +1,24 @@
-## Kaizosplits
+# Kaizosplits
 
-A Super Mario World romhack autosplitter heavily updated from [NecroSky90 on SMWCentral](https://www.smwcentral.net/?p=section&a=details&id=28606)'s version from a 2021.
+A Super Mario World romhack autosplitter with ambitions to make all SNES emulator autosplitting easier.
 
-Their's a v1 decent autosplitter that's supposed to work as well as possible by default but it's a all kind of a mess right now. This is the file you probably want to use. If you just want level splits, this is the one.
+Should work for most normal splits out of the box but I like fine-grained splits so there's support for checkpoints, room transitions, and more. Unforutunately SMW romhacks can be weird, so you will need to add a couple custom splits (or disable a couple splits) if using fine-grained splits and there is some rudimentary custom split support for this.
 
-However, there's also an ambitious v2 split manager that will robustly handle fine-grained and custom autosplits and that will create initial split files by watching your runs. By having a mechanism to make sure your splits and autosplitter are exactly in sync, we can do some cool stuff. If you skip a checkpoint or die and go back before a split, the autosplitter can see this and skip a split or undo a split accordingly. v2 is a Work in Progress and will likely be forked into it's own project!
+## Installation
 
-### Installation
+Go to Releases and download the zip. Instructions are in the README.
 
-Go to Releases and download the zip.
+Customize splits in the Scriptable Autosplitter settings once it's installed.
 
-Instructions are in the README.
+## Debugging
 
-Customize splits in the Scriptable Autosplitter settings once it's installed
+You'll need to be able to debug to customize splits, add new emulators, or for development in general.
 
-### Debugging
+[DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) is a program for viewing debug statements. All errors from all your Windows programs go there, but LiveSplit and the LiveSplit autosplitter plugin, and kaizosplits will have useful messages there if you're stuck.
 
-You'll need to be able to debug to customize splits, override emulators, or for development.
+## Custom Splits
 
-[DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) is a program for debugging Windows programs generally. All errors from all your programs go there, but LiveSplit and the LiveSplit autosplitter plugin, and kaizosplits will have useful messages there if you're stuck.
-
-
-### Custom Splits
-
-If you end up wanting more fine-grained splits, such as removing some checkpoint splits, custom credits split, or room splits for only one level, you're in the right place.
+If you end up wanting more fine-grained splits, such as removing some checkpoint splits, custom credits split, or room splits for only one level, then this gets a bit complicated. Here's how:
 
 Open your `Kaizo.asl` which is defines the whole autosplitter and take a look at the `split {}` section for the switch cases.
 
@@ -56,34 +51,3 @@ t.Monitor(w.ANOTHER_MEMORY_WATCHER_NAME, w);
 ```
 
 The list of `MEMORY_WATCHER_NAME`s are in [Watchers.cs](Components/SMW/SMW/Watchers.cs#L42). Some examples are `levelNum`, `roomNum`, or `io`.
-
-### Development Setup Log
-
-This is mostly for myself as a non-C# programmer.
-
-This is how I got it working last time. Next time re-setting up, improve these instructions.
-
-1) Install Visual Studio 2022 (can try the latest but I used 2022)
-
-2) Build LiveSplit for its components
-- `git clone --recursive https://github.com/LiveSplit/LiveSplit.git`
-- Open the solution in VS2022 as a Solution
-- CTRL+Shift+B to build it
-- Don't move on until this builds properly (it needs .net 4.6.1 and netstandard 2.0)
-- This gets a reference to LiveSplit.Core. Could possibly get these built alone but having the whole project allows for some stepthrough debugging in worst case scenarios.
-
-3) Build kaizosplits DLLs
-```
-git clone https://github.com/amcknight/kaizosplits.git
-```
-Open the solution in Visual Studio 2022 as a folder. Build the solution by right clicking on the `SMW.sln` file.
-
-4) Reinstall SMW dll every time it builds:
-- Exit LiveSplit
-- Creating a symlink by running PowerShell in Administrator mode and using:
-```
-cmd /c mklink 'C:\PATH\TO\LIVESPLIT\Components\SMW.dll' 'C:\PATH\TO\KAIZOSPLITS\Components\SMW\SMW\bin\Debug\netstandard2.0\SMW.dll'
-cmd /c mklink 'C:\PATH\TO\LIVESPLIT\Components\SNES.dll' 'C:\PATH\TO\KAIZOSPLITS\Components\SMW\SNES\bin\Debug\netstandard2.0\SNES.dll'
-```
-- You don't need to recopy it if only changed the .asl file
-- Start LiveSplit
