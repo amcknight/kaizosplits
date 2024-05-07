@@ -23,6 +23,9 @@ startup {
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
     vars.ss.Init(maxLagMs, minStartDurationMs);
+
+    vars.ranges = new Dictionary<int, int>() {};
+    vars.settingsDict = new Dictionary<string, bool>();
     
     foreach (var entry in vars.ss.entries) {
         string k = entry.Key;
@@ -59,11 +62,12 @@ update {
     if (vars.ready) {
         // The order here matters (for Spawn recording)
         w.UpdateAll(game);
-        var settingsDict = new Dictionary<string, bool>();
+        var sd = vars.settingsDict;
+        sd.Clear();
         foreach (string k in s.keys) {
-            settingsDict[k] = settings[k];
+            sd[k] = settings[k];
         }
-        s.Update(settingsDict, w);
+        s.Update(sd, w);
         t.Update(w);
         w.UpdateState();
         
@@ -73,10 +77,9 @@ update {
         //t.Monitor(w.submap, w);
 
     } else {
-        var ranges = new Dictionary<int, int>() {};
         try {
             var offset = e.GetOffset();
-            w.SetMemoryOffset(offset, ranges);
+            w.SetMemoryOffset(offset, vars.ranges);
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
         } catch (Exception ex) {
