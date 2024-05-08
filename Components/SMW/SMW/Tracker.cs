@@ -9,9 +9,9 @@ namespace SMW {
         private List<string> debugInfo = new List<string>();
         private Dictionary<object, string> prevMsg = new Dictionary<object, string>();
 
-        private bool showDebug = false;
+        private bool showDebug = true;
         private bool showHist = true;
-        private int numBuckets = 10;
+        private int numBuckets = 20;
         private int bucketSize = 10;
         private int[] histEnd;
         private int[] histMid;

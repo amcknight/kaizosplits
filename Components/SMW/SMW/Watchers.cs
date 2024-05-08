@@ -13,6 +13,12 @@ namespace SMW {
         public ushort firstRoom;
         public List<MemoryWatcher<byte>> xs = new List<MemoryWatcher<byte>>();
 
+        private string[] enabledMemory = {
+            "fileSelect", "luigiLives", "submap", "fanfare", "bossDefeat", "io", "yellowSwitch", "greenSwitch", "blueSwitch", "redSwitch",
+            "roomCounter", "midway", "cpEntrance", "pipe", "playerAnimation", "levelStart", "weirdLevVal", "overworldPortal",
+            "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile"
+        };
+
         public Watchers() {
             died = false;
             gameOvered = false;
@@ -23,13 +29,19 @@ namespace SMW {
 
         public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
             foreach (KeyValuePair<int, string> entry in Memory.intMap) {
-                Add(new MemoryWatcher<uint>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                if (enabledMemory.Contains(entry.Value)) {
+                    Add(new MemoryWatcher<uint>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                }
             }
             foreach (KeyValuePair<int, string> entry in Memory.shortMap) {
-                Add(new MemoryWatcher<ushort>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                if (enabledMemory.Contains(entry.Value)) {
+                    Add(new MemoryWatcher<ushort>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                }
             }
             foreach (KeyValuePair<int, string> entry in Memory.byteMap) {
-                Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                if (enabledMemory.Contains(entry.Value)) {
+                    Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+                }
             }
             foreach (KeyValuePair<int, int> entry in ranges) {
                 for (int i = entry.Key; i < entry.Value; i++) {
@@ -39,7 +51,7 @@ namespace SMW {
                 }
             }
         }
-        
+
         public MemoryWatcher<byte> fileSelect => (MemoryWatcher<byte>)this["fileSelect"];
         public MemoryWatcher<byte> marioLives => (MemoryWatcher<byte>)this["marioLives"];
         public MemoryWatcher<byte> luigiLives => (MemoryWatcher<byte>)this["luigiLives"];
@@ -65,19 +77,26 @@ namespace SMW {
         public MemoryWatcher<byte> overworldPortal => (MemoryWatcher<byte>)this["overworldPortal"];
         public MemoryWatcher<byte> levelNum => (MemoryWatcher<byte>)this["levelNum"];
         public MemoryWatcher<byte> roomNum => (MemoryWatcher<byte>)this["roomNum"];
-        public MemoryWatcher<byte> overworldExitEvent => (MemoryWatcher<byte>)this["overworldExitEvent"];
         public MemoryWatcher<byte> exitMode => (MemoryWatcher<byte>)this["exitMode"];
         public MemoryWatcher<byte> player => (MemoryWatcher<byte>)this["player"];
         public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
+        public MemoryWatcher<byte> overworldTile => (MemoryWatcher<byte>)this["overworldTile"];
+        public MemoryWatcher<byte> buttonsHeld1 => (MemoryWatcher<byte>)this["buttonsHeld1"];
+        public MemoryWatcher<byte> buttonsPress1 => (MemoryWatcher<byte>)this["buttonsPress1"];
+        public MemoryWatcher<byte> buttonsHeld2 => (MemoryWatcher<byte>)this["buttonsHeld2"];
+        public MemoryWatcher<byte> buttonsPress2 => (MemoryWatcher<byte>)this["buttonsPress2"];
+
         public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
-        public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"]; 
+        public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
         public MemoryWatcher<ushort> marioOverworldX => (MemoryWatcher<ushort>)this["marioOverworldX"];
         public MemoryWatcher<ushort> marioOverworldY => (MemoryWatcher<ushort>)this["marioOverworldY"];
 
         // Temporary Test Watchers. keep or drop these
-        public MemoryWatcher<byte> fadeOut => (MemoryWatcher<byte>)this["fadeOut"];
         public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
+        public MemoryWatcher<byte> inWater => (MemoryWatcher<byte>)this["inWater"];
+        public MemoryWatcher<byte> moonCounter => (MemoryWatcher<byte>)this["moonCounter"];
         public MemoryWatcher<uint> layer1Pointer => (MemoryWatcher<uint>)this["layer1Pointer"];
+
 
         // Ongoing state
         public bool GotOrb => Curr(io) == 3;

@@ -41,21 +41,26 @@ startup {
 
 init {
     vars.e.Init(game);
+    vars.tick = 0;
 }
 
 update {
     var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
+    t.HistNow();
     
     if (t.HasLines()) print(t.ClearLines());
 
     vars.startMs = vars.endMs;
-
-    try {
-        e.Ready();
-    } catch (Exception ex) {
-        t.DbgOnce(ex);
-        vars.ready = false;
-        return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
+    
+    vars.tick++;
+    if (!vars.ready || vars.tick % 20 == 0) {
+        try {
+            e.Ready();
+        } catch (Exception ex) {
+            t.DbgOnce(ex);
+            vars.ready = false;
+            return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
+        }
     }
     
     t.DbgOnce("SMC: " + e.Smc(), "smc");
@@ -74,8 +79,9 @@ update {
         // MONITOR HERE for monitoring even while not in a run
         
         //t.Monitor(w.roomNum, w);
-        //t.Monitor(w.submap, w);
-
+        //t.Monitor(w.levelNum, w);
+        //t.Monitor(w.io, w);
+        //t.Monitor(w.overworldTile, w);
     } else {
         try {
             var offset = e.GetOffset();
@@ -139,7 +145,7 @@ split {
             s.credits = w.ShiftTo(w.io, 21);
         break;
         case "Easyland - Beat the Game":
-            s.credits = w.Curr(w.submap) == 6 && w.GmFadeToLevel && w.Curr(w.marioOverworldX) == 456 && w.Curr(w.marioOverworldY) == 392;
+            s.credits = w.Curr(w.submap) == 6 && w.GmFadeToLevel && w.Curr(w.overworldTile) == 97;
         break;
         case "Love Yourself - Welcome Home%":
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;

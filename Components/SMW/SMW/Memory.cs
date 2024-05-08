@@ -41,25 +41,19 @@ namespace SMW {
             {0x1F11, "submap"},
             {0x1B9C, "overworldPortal"},
             {0x0100, "gameMode"},
-            {0x1DEA, "overworldExitEvent"},
             {0x0DD5, "exitMode"},
             {0x0DB3, "player"},
-            {0x13C5, "moonCounter"},
             {0x1935, "levelStart"},
             {0x1B403,"cpEntrance"},
 
-          // THINGS TO TEST
-            // buttonsHeld1 0015
-            // buttonsPress1 0016
-            // buttonsHeld2 0017
-            // buttonsPress2 0018
-            // Level width in Screens 005E
-            // Level height in Screens  005F
-            // In Water 0075
-            // 13C1 Overworld tile number
-            // 1B96 Side exits enabled
-            // 0D9B Battle mode
-            // 13FB Freeze player (yoshi grow, keyhole, yoshi eat berry, some bosses, etc)
+            {0x0015, "buttonsHeld1"},
+            {0x0016, "buttonsPress1"},
+            {0x0017, "buttonsHeld2"},
+            {0x0018, "buttonsPress2"},
+            {0x13C1, "overworldTile"},
+            {0x0075, "inWater"},
+            {0x13C5, "moonCounter"},
+
             // 049AC5 Level names (460 bytes)
             // 04A0FC How to put level names together (186 bytes, 16 bytes at a time)
         };
