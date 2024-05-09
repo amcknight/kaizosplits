@@ -4,48 +4,19 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace SMW {
-    public class Tracker {
+    public class Debugger {
 
         private List<string> debugInfo = new List<string>();
         private Dictionary<object, string> prevMsg = new Dictionary<object, string>();
 
         private bool showDebug = true;
-        private bool showHist = true;
-        private int numBuckets = 20;
-        private int bucketSize = 10;
-        private int[] histEnd;
-        private int[] histMid;
-        private long prevMs;
-        private int ticks = 0;
-        private int numTicksUntilShow = 500;
 
-        public Tracker() {
-            histEnd = new int[numBuckets];
-            histMid = new int[numBuckets];
-        }
+        public Debugger() {}
 
         public void Update(Watchers ws) {
-            if (showDebug) {
-                foreach (MemoryWatcher<byte> w in ws.xs) {
+            if (showDebug)
+                foreach (MemoryWatcher<byte> w in ws.xs)
                     Monitor(w, ws);
-                }
-            }
-            if (showHist) {
-                UpdateHist();
-            }
-        }
-
-        public void HistNow() {
-            if (ticks <= 1) return;
-
-            long ms = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            int durMs = (int)(ms - prevMs);
-            int hindex = durMs / bucketSize;
-            if (hindex >= numBuckets) {
-                hindex = numBuckets - 1;
-            }
-
-            histMid[hindex]++;
         }
 
         public bool HasLines() {
@@ -99,28 +70,6 @@ namespace SMW {
             if (!showDebug) return;
             if (ws.Shifted(w)) {
                 Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
-            }
-        }
-
-        private void UpdateHist() {
-            long ms = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            int durMs = (int)(ms - prevMs);
-            prevMs = ms;
-
-            ticks++;
-            if (ticks <= 1) return;
-
-            int hindex = durMs / bucketSize;
-            if (hindex >= numBuckets) {
-                hindex = numBuckets - 1;
-                Dbg("LAG: " + durMs);
-            }
-
-            histEnd[hindex]++;
-
-            if (ticks % numTicksUntilShow == 0) {
-                debugInfo.Add("MIDS: " + string.Join(" ", histMid));
-                debugInfo.Add("ENDS: " + string.Join(" ", histEnd));
             }
         }
     }

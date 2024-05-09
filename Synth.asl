@@ -9,6 +9,9 @@ state("emuhawk"){}
 startup {
     vars.ready = false;
     vars.running = false;
+    vars.ticksUntilShowHist = 500;
+    vars.ticksUntilRecheckGame = 20;
+    vars.tick = 0;
     int maxLagMs = 100;
     int minStartDurationMs = 1000;
 
@@ -18,12 +21,16 @@ startup {
 
     byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly smwAsm = Assembly.Load(smwBytes);
-    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
+    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Timer"));
+    vars.d =  Activator.CreateInstance(smwAsm.GetType("SMW.Debugger"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
     vars.ss.Init(maxLagMs, minStartDurationMs);
-    vars.rec = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
-    vars.rec.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
+    vars.r = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
+    vars.r.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
+
+    vars.ranges = new Dictionary<int, int>() {};
+    vars.settingsDict = new Dictionary<string, bool>();
     
     foreach (var entry in vars.ss.entries) {
         string k = entry.Key;
@@ -42,67 +49,73 @@ init {
 }
 
 update {
-    var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
-    var r = vars.rec;
+    var t = vars.t; var d = vars.d; var e = vars.e; var w = vars.ws; var s = vars.ss; var r = vars.r;
     
-    if (t.HasLines()) print(t.ClearLines());
+    t.Update();
+    if (vars.tick % vars.ticksUntilShowHist == 0) print(t.ToString());
+    if (d.HasLines()) print(d.ClearLines());
+    vars.tick++;
+    bool recheck = vars.tick % vars.ticksUntilRecheckGame == 0;
     
-    try {
-        e.Ready();
-    } catch (Exception ex) {
-        t.DbgOnce(ex);
-        vars.ready = false;
-        return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
+    if (!vars.ready || recheck) {
+        try {
+            e.Ready();
+        } catch (Exception ex) {
+            d.DbgOnce(ex);
+            vars.ready = false;
+            return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
+        }
     }
 
-    t.DbgOnce("SMC: " + e.Smc(), "smc");
+    d.DbgOnce("SMC: " + e.Smc(), "smc");
     if (vars.ready) {
         // The order here matters (for Spawn recording)
         w.UpdateAll(game);
-        var settingsDict = new Dictionary<string, bool>();
+        var sd = vars.settingsDict;
+        sd.Clear();
         foreach (string k in s.keys) {
-            settingsDict[k] = settings[k];
+            sd[k] = settings[k];
         }
-        s.Update(settingsDict, w);
-        t.Update(w);
+        s.Update(sd, w);
+        d.Update(w);
         w.UpdateState();
         
         // MONITOR HERE for monitoring even while not in a run
-        //t.Monitor(w.roomNum, w);
-        //t.Monitor(w.submap, w);
+        
+        //d.Monitor(w.roomNum, w);
+        //d.Monitor(w.levelNum, w);
+        //d.Monitor(w.io, w);
+        //d.Monitor(w.overworldTile, w);
     } else {
-        var ranges = new Dictionary<int, int>() {};
         try {
             var offset = e.GetOffset();
-            w.SetMemoryOffset(offset, ranges);
+            w.SetMemoryOffset(offset, vars.ranges);
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
         } catch (Exception ex) {
-            t.DbgOnce(ex);
+            d.DbgOnce(ex);
             return false;
         }
     }
 }
 
 start {
-    var t = vars.t; var s = vars.ss;
-    var r = vars.rec;
+    var d = vars.d; var s = vars.ss; var r = vars.r;
     var startDuration = DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime;
     if (s.StartStatus(startDuration)) {
-        t.Dbg("Start: " + s.StartReasons());
+        d.Dbg("Start: " + s.StartReasons());
         r.StartReasons(s.StartReasons());
         return true;
     }
 }
 
 reset {
-    var t = vars.t; var s = vars.ss; var e = vars.e;
-    var r = vars.rec;
+    var d = vars.d; var s = vars.ss; var e = vars.e; var r = vars.r;
     bool smcChanged = e.SmcChanged();
     if (s.ResetStatus(vars.ready, smcChanged)) {
         var reasons = s.ResetReasons(vars.ready, smcChanged);
         r.ResetReasons(reasons);
-        t.Dbg("Reset: " + reasons);
+        d.Dbg("Reset: " + reasons);
         vars.ready = false;
         return true;
     }

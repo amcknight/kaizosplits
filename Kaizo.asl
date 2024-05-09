@@ -10,6 +10,9 @@ startup {
     vars.ready = false;
     vars.running = false;
     vars.startMs = vars.endMs = -1; // junk value
+    vars.ticksUntilShowHist = 500;
+    vars.ticksUntilRecheckGame = 20;
+    vars.tick = 0;
     int maxLagMs = 100;
     int minStartDurationMs = 1000;
 
@@ -19,7 +22,8 @@ startup {
 
     byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly smwAsm = Assembly.Load(smwBytes);
-    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Tracker"));
+    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Timer"));
+    vars.d =  Activator.CreateInstance(smwAsm.GetType("SMW.Debugger"));
     vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
     vars.ss.Init(maxLagMs, minStartDurationMs);
@@ -41,29 +45,29 @@ startup {
 
 init {
     vars.e.Init(game);
-    vars.tick = 0;
 }
 
 update {
-    var t = vars.t; var e = vars.e; var w = vars.ws; var s = vars.ss;
-    t.HistNow();
-    
-    if (t.HasLines()) print(t.ClearLines());
+    var t = vars.t; var d = vars.d; var e = vars.e; var w = vars.ws; var s = vars.ss;
 
+    t.Update();
+    if (vars.tick % vars.ticksUntilShowHist == 0) print(t.ToString());
+    if (d.HasLines()) print(d.ClearLines());
     vars.startMs = vars.endMs;
-    
     vars.tick++;
-    if (!vars.ready || vars.tick % 20 == 0) {
+    bool recheck = vars.tick % vars.ticksUntilRecheckGame == 0;
+
+    if (!vars.ready || recheck) {
         try {
             e.Ready();
         } catch (Exception ex) {
-            t.DbgOnce(ex);
+            d.DbgOnce(ex);
             vars.ready = false;
             return vars.running; // Return vars.running for opposite behaviour in Start vs Reset
         }
     }
     
-    t.DbgOnce("SMC: " + e.Smc(), "smc");
+    d.DbgOnce("SMC: " + e.Smc(), "smc");
     if (vars.ready) {
         // The order here matters (for Spawn recording)
         w.UpdateAll(game);
@@ -73,15 +77,15 @@ update {
             sd[k] = settings[k];
         }
         s.Update(sd, w);
-        t.Update(w);
+        d.Update(w);
         w.UpdateState();
         
         // MONITOR HERE for monitoring even while not in a run
         
-        //t.Monitor(w.roomNum, w);
-        //t.Monitor(w.levelNum, w);
-        //t.Monitor(w.io, w);
-        //t.Monitor(w.overworldTile, w);
+        //d.Monitor(w.roomNum, w);
+        //d.Monitor(w.levelNum, w);
+        //d.Monitor(w.io, w);
+        //d.Monitor(w.overworldTile, w);
     } else {
         try {
             var offset = e.GetOffset();
@@ -89,37 +93,38 @@ update {
             vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             vars.ready = true;
         } catch (Exception ex) {
-            t.DbgOnce(ex);
+            d.DbgOnce(ex);
             return false;
         }
     }
+    t.HistNow();
 }
 
 start {
-    var t = vars.t; var s = vars.ss;
+    var d = vars.d; var s = vars.ss;
     var startDuration = DateTimeOffset.Now.ToUnixTimeMilliseconds() - vars.memFoundTime;
     if (s.StartStatus(startDuration)) {
-        t.Dbg("Start: " + s.StartReasons());
+        d.Dbg("Start: " + s.StartReasons());
         return true;
     }
 }
 
 reset {
-    var t = vars.t; var s = vars.ss; var e = vars.e;
+    var d = vars.d; var s = vars.ss; var e = vars.e;
     bool smcChanged = e.SmcChanged();
     if (s.ResetStatus(vars.ready, smcChanged)) {
         var reasons = s.ResetReasons(vars.ready, smcChanged);
-        t.Dbg("Reset: " + reasons);
+        d.Dbg("Reset: " + reasons);
         vars.ready = false;
         return true;
     }
 }
 
 split {
-    var t = vars.t; var w = vars.ws; var s = vars.ss;
+    var d = vars.d; var w = vars.ws; var s = vars.ss;
 
     string runName = string.Join(" - ", timer.Run.GameName, timer.Run.CategoryName);
-    t.DbgOnce("Run: '"+runName+"'", "run");
+    d.DbgOnce("Run: '"+runName+"'", "run");
 
     // Override Default split variables for individual runs. Customize Splits Tutorial: https://github.com/amcknight/kaizosplits?tab=readme-ov-file#custom-splits
     switch (runName) {
@@ -150,6 +155,7 @@ split {
         case "Love Yourself - Welcome Home%":
             s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
         break;
+        case "Nonsense - 16 Exit":
         case "Nonsense - 24 Exit":
             s.block = w.CPEntrance && w.Curr(w.roomNum) == 101; // Extra CP at beginning of Angry Parachutes when icy
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
@@ -157,19 +163,19 @@ split {
     }
 
     if (s.UndoStatus()) {
-        t.Dbg("Undo: " + s.UndoReasons());
+        d.Dbg("Undo: " + s.UndoReasons());
         new TimerModel { CurrentState = timer }.UndoSplit();
     }
 
     vars.endMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
     if (s.SplitStatus()) {
-        t.Dbg("Split: " + s.SplitReasons());
+        d.Dbg("Split: " + s.SplitReasons());
         long lag = vars.endMs - vars.startMs;
         if (!s.SkipStatus(lag)) {
             return true;
         }
-        t.Dbg("Skip: " + s.SkipReasons(lag));
+        d.Dbg("Skip: " + s.SkipReasons(lag));
         new TimerModel { CurrentState = timer }.SkipSplit();
     }
 }
