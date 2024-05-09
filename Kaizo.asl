@@ -131,36 +131,22 @@ split {
     // Override Default split variables for individual runs. Customize Splits Tutorial: https://github.com/amcknight/kaizosplits?tab=readme-ov-file#custom-splits
     switch (runName) {
         case "Bunbun World - 100%":
-            s.other =
-                w.ShiftsIn(w.levelNum, 80, w.roomNum) || // Six-Screen Suites
-                w.ShiftIn( w.levelNum, 45, w.roomNum, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
-                w.ShiftIn( w.levelNum, 45, w.roomNum, 9, 10) || // Mt. Ninji Ending
-                w.ShiftIn( w.levelNum, 48, w.roomNum, 12, 254) || // Slippery Spirits to Boss
-                w.ShiftsIn(w.levelNum, 37, w.roomNum) || // Cotton Candy Castle
-                w.ShiftIn( w.levelNum, 78, w.roomNum, 42, 74) || // Dizzy Drifting Secret pipe
-                w.ShiftIn( w.levelNum, 51, w.roomNum, 15, 198) || // Dolphin Dreams
-                w.ShiftsIn(w.levelNum, 68, w.roomNum) || // Breathtaking
-                w.ShiftsIn(w.levelNum, 61, w.roomNum) || // Night Sky Scamper
-                w.ShiftIn( w.levelNum, 52, w.roomNum, 16, 225) || // Bunbun Bastion
-                w.ShiftIn( w.levelNum, 52, w.io, 3, 20) || // any% ending
-                w.ShiftsIn(w.levelNum, 62, w.roomNum) || // Culmination Castle
-                w.ShiftIn( w.levelNum, 53, w.roomNum, 17, 198) // Bowser's Tower
-                ;
-            s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
+            s.other = w.ShiftIn( w.levelNum, 52, w.io, 3, 20); // any% ending
+            s.credits = w.ShiftToIn(w.levelNum, 53, w.io, 33) && w.Curr(w.levelNum) == 53;
         break;
         case "Cute Kaizo World - 100%":
             s.credits = w.ShiftTo(w.io, 21);
         break;
         case "Easyland - Beat the Game":
-            s.credits = w.Curr(w.submap) == 6 && w.GmFadeToLevel && w.Curr(w.overworldTile) == 97;
+            s.credits = w.Curr(w.submap) == 6 && w.Curr(w.overworldTile) == 97 && w.GmFadeToLevel;
         break;
         case "Love Yourself - Welcome Home%":
-            s.credits = w.EnterDoor && w.Curr(w.roomNum) == 66 && w.Curr(w.levelNum) == 85;
+            s.credits = w.Curr(w.levelNum) == 85 && w.Curr(w.roomNum) == 66 && w.EnterDoor;
         break;
         case "Nonsense - 16 Exit":
         case "Nonsense - 24 Exit":
             s.block = w.CPEntrance && w.Curr(w.roomNum) == 101; // Extra CP at beginning of Angry Parachutes when icy
-            s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37);
+            s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37); // Peach drop
         break;
     }
 
