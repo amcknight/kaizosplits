@@ -51,12 +51,13 @@ init {
 update {
     var t = vars.t; var d = vars.d; var e = vars.e; var w = vars.ws; var s = vars.ss; var r = vars.r;
     
-    t.Update();
+    // Stuff that should happen after split or start or reset but before real update
+    t.HistEnd();
     if (vars.tick % vars.ticksUntilShowHist == 0) print(t.ToString());
     if (d.HasLines()) print(d.ClearLines());
     vars.tick++;
-    bool recheck = vars.tick % vars.ticksUntilRecheckGame == 0;
     
+    bool recheck = vars.tick % vars.ticksUntilRecheckGame == 0;
     if (!vars.ready || recheck) {
         try {
             e.Ready();
@@ -97,6 +98,7 @@ update {
             return false;
         }
     }
+    t.HistMid();
 }
 
 start {

@@ -17,7 +17,7 @@ namespace SMW {
             histMid = new int[numBuckets];
         }
 
-        public void HistNow() {
+        public void HistMid() {
             if (!hasUpdated) return;
 
             long ms = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -30,7 +30,7 @@ namespace SMW {
             histMid[hindex]++;
         }
 
-        public void Update() {
+        public void HistEnd() {
             long ms = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             int durMs = (int)(ms - prevMs);
             prevMs = ms;

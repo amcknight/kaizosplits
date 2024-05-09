@@ -17,8 +17,11 @@ startup {
 
 update {
     var t = vars.t;
-    t.Update();
+
+    // Stuff that should happen after split or start or reset but before real update
+    t.HistEnd();
     if (vars.tick % vars.ticksUntilShowHist == 0) print(t.ToString());
     vars.tick++;
-    t.HistNow();
+
+    t.HistMid();
 }
