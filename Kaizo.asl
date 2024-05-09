@@ -24,9 +24,10 @@ startup {
     Assembly smwAsm = Assembly.Load(smwBytes);
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(smwAsm.GetType("SMW.Debugger"));
-    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
     vars.ss.Init(maxLagMs, minStartDurationMs);
+    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
+    vars.ws.Init(vars.ss.UsedMemory());
 
     vars.ranges = new Dictionary<int, int>() {};
     vars.settingsDict = new Dictionary<string, bool>();
@@ -131,19 +132,19 @@ split {
     switch (runName) {
         case "Bunbun World - 100%":
             s.other =
-                w.RoomShiftsInLevel(80) || // Six-Screen Suites
-                w.RoomShiftInLevel(45, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
-                w.RoomShiftInLevel(45, 9, 10) || // Mt. Ninji Ending
-                w.RoomShiftInLevel(48, 12, 254) || // Slippery Spirits to Boss
-                w.RoomShiftsInLevel(37) || // Cotton Candy Castle
-                w.RoomShiftInLevel(78, 42, 74) || // Dizzy Drifting Secret pipe
-                w.RoomShiftInLevel(51, 15, 198) || // Dolphin Dreams
-                w.RoomShiftsInLevel(68) || // Breathtaking
-                w.RoomShiftsInLevel(61) || // Night Sky Scamper
-                w.RoomShiftInLevel(52, 16, 225) || // Bunbun Bastion
-                w.ShiftIn(w.levelNum, 52, w.io, 3, 20) || // any% ending
-                w.RoomShiftsInLevel(62) || // Culmination Castle
-                w.RoomShiftInLevel(53, 17, 198) // Bowser's Tower
+                w.ShiftsIn(w.levelNum, 80, w.roomNum) || // Six-Screen Suites
+                w.ShiftIn( w.levelNum, 45, w.roomNum, 9, 11) || // Mt. Ninji Secret. This should split on 1-up triggering the pipe instead
+                w.ShiftIn( w.levelNum, 45, w.roomNum, 9, 10) || // Mt. Ninji Ending
+                w.ShiftIn( w.levelNum, 48, w.roomNum, 12, 254) || // Slippery Spirits to Boss
+                w.ShiftsIn(w.levelNum, 37, w.roomNum) || // Cotton Candy Castle
+                w.ShiftIn( w.levelNum, 78, w.roomNum, 42, 74) || // Dizzy Drifting Secret pipe
+                w.ShiftIn( w.levelNum, 51, w.roomNum, 15, 198) || // Dolphin Dreams
+                w.ShiftsIn(w.levelNum, 68, w.roomNum) || // Breathtaking
+                w.ShiftsIn(w.levelNum, 61, w.roomNum) || // Night Sky Scamper
+                w.ShiftIn( w.levelNum, 52, w.roomNum, 16, 225) || // Bunbun Bastion
+                w.ShiftIn( w.levelNum, 52, w.io, 3, 20) || // any% ending
+                w.ShiftsIn(w.levelNum, 62, w.roomNum) || // Culmination Castle
+                w.ShiftIn( w.levelNum, 53, w.roomNum, 17, 198) // Bowser's Tower
                 ;
             s.credits = w.ShiftTo(w.io, 33) && w.Curr(w.levelNum) == 53; // Final Bowser hit (little late) (create a ShiftsToIn?)
         break;

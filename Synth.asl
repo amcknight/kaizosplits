@@ -23,9 +23,10 @@ startup {
     Assembly smwAsm = Assembly.Load(smwBytes);
     vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(smwAsm.GetType("SMW.Debugger"));
-    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
     vars.ss.Init(maxLagMs, minStartDurationMs);
+    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
+    vars.ws.Init(vars.ss.UsedMemory());
     vars.r = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
     vars.r.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
 

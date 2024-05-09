@@ -13,11 +13,7 @@ namespace SMW {
         public ushort firstRoom;
         public List<MemoryWatcher<byte>> xs = new List<MemoryWatcher<byte>>();
 
-        private string[] enabledMemory = {
-            "fileSelect", "luigiLives", "submap", "fanfare", "bossDefeat", "io", "yellowSwitch", "greenSwitch", "blueSwitch", "redSwitch",
-            "roomCounter", "midway", "cpEntrance", "pipe", "playerAnimation", "levelStart", "weirdLevVal", "overworldPortal",
-            "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile"
-        };
+        private string[] enabledMemory;
 
         public Watchers() {
             died = false;
@@ -25,6 +21,10 @@ namespace SMW {
             roomStep = false;
             prevIO = 256; // junk default value
             firstRoom = 0; // junk default value
+        }
+
+        public void Init(string[] enabledMemory) {
+            this.enabledMemory = enabledMemory;
         }
 
         public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
@@ -296,21 +296,17 @@ namespace SMW {
             return Prev(w) < c && Curr(w) >= c;
         }
 
-        public bool RoomShiftInLevel(ushort level, ushort fromRoom, ushort toRoom) {
-            return Shift(roomNum, fromRoom, toRoom) && Curr(levelNum) == level;
-        }
-        
-        public bool RoomShiftsInLevel(ushort level) {
-            return Shifted(roomNum) && Curr(roomCounter) > 0 && Curr(levelNum) == level;
-        }
-
         public bool ShiftIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from, byte to) {
             return Shift(shiftW, from, to) && Curr(inW) == inVal;
         }
-
+        public bool ShiftToIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte to) {
+            return ShiftTo(shiftW, to) && Curr(inW) == inVal;
+        }
+        public bool ShiftFromIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from) {
+            return ShiftFrom(shiftW, from) && Curr(inW) == inVal;
+        }
         public bool ShiftsIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW) {
             return Shifted(shiftW) && Curr(inW) == inVal;
         }
-
     }
 }

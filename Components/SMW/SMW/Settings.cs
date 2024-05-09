@@ -31,6 +31,7 @@ namespace SMW {
 
         private bool prevFinished = false;
         private Watchers w;
+        private int newKey = 0;
 
         private List<ISetting> settings = new List<ISetting>{
             new Group("Start when", "Start splits when...", kids: new List<ISetting>{
@@ -90,7 +91,15 @@ namespace SMW {
             }
         }
 
-        private int newKey = 0;
+
+        public string[] UsedMemory() {
+            return new string[] {
+                "fileSelect", "luigiLives", "submap", "fanfare", "bossDefeat", "io", "yellowSwitch", "greenSwitch", "blueSwitch", "redSwitch",
+                "roomCounter", "midway", "cpEntrance", "pipe", "playerAnimation", "levelStart", "weirdLevVal", "overworldPortal",
+                "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile"
+            };
+        }
+
         private string NewKey() {
             return "K" + newKey++;
         }
