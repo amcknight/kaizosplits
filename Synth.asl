@@ -14,21 +14,20 @@ startup {
     vars.tick = 0;
     int maxLagMs = 100;
     int minStartDurationMs = 1000;
+    string recPath = "C:/Users/thedo/Git/kaizosplits/runs"; // Folder to write recorded runs to
 
-    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
-    Assembly snesAsm = Assembly.Load(snesBytes);
-    vars.e = Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
-
-    byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
-    Assembly smwAsm = Assembly.Load(smwBytes);
-    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Timer"));
-    vars.d =  Activator.CreateInstance(smwAsm.GetType("SMW.Debugger"));
-    vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
-    vars.ss.Init(maxLagMs, minStartDurationMs);
-    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
-    vars.ws.Init(vars.ss.UsedMemory());
+    byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
+    Assembly asm = Assembly.Load(bytes);
+    vars.e =  Activator.CreateInstance(asm.GetType("SNES.Emu"));
+    vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
+    vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
+    vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
+    vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
     vars.r = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
-    vars.r.Init("C:/Users/thedo/Git/kaizosplits/runs");  // Folder to write recorded runs to
+
+    vars.ss.Init(maxLagMs, minStartDurationMs);
+    vars.ws.Init(vars.ss.UsedMemory());
+    vars.r.Init(recPath);
 
     vars.ranges = new Dictionary<int, int>() {};
     vars.settingsDict = new Dictionary<string, bool>();

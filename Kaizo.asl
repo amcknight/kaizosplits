@@ -51,7 +51,7 @@ update {
 
     // Stuff that should happen after split or start or reset but before real update
     t.HistEnd();
-    if (vars.tick % vars.ticksUntilShowHist == 0) print(t.ToString());
+    // if (vars.tick % vars.ticksUntilShowHist == 0) print(t.ToString());
     if (d.HasLines()) print(d.ClearLines());
     vars.startMs = vars.endMs;
     vars.tick++;
