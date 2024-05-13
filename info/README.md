@@ -5,7 +5,7 @@ Installation
 
 1) Install the DLLs for Livesplit to find
   - Find your LiveSplit folder
-  - Copy `SNES.dll` and `SMW.dll` into the `Components` folder inside the LiveSplit folder
+  - Copy `SMW.dll` into the `Components` folder inside the LiveSplit folder
 
 2) Use the Kaiso.asl as your Scripable autosplitter
   - Put the `Kaizo.asl` somewhere. I keep it where I keep my splits files but it can be anywhere.

@@ -16,17 +16,15 @@ startup {
     int maxLagMs = 100;
     int minStartDurationMs = 1000;
 
-    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
-    Assembly snesAsm = Assembly.Load(snesBytes);
-    vars.e = Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
+    byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
+    Assembly asm = Assembly.Load(bytes);
+    vars.e =  Activator.CreateInstance(asm.GetType("SNES.Emu"));
+    vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
+    vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
+    vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
+    vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
 
-    byte[] smwBytes = File.ReadAllBytes("Components/SMW.dll");
-    Assembly smwAsm = Assembly.Load(smwBytes);
-    vars.t =  Activator.CreateInstance(smwAsm.GetType("SMW.Timer"));
-    vars.d =  Activator.CreateInstance(smwAsm.GetType("SMW.Debugger"));
-    vars.ss = Activator.CreateInstance(smwAsm.GetType("SMW.Settings"));
     vars.ss.Init(maxLagMs, minStartDurationMs);
-    vars.ws = Activator.CreateInstance(smwAsm.GetType("SMW.Watchers"));
     vars.ws.Init(vars.ss.UsedMemory());
 
     vars.ranges = new Dictionary<int, int>() {};

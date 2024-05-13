@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMW", "SMW\SMW.csproj", "{1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiveSplit.Core", "..\..\..\LiveSplit\src\LiveSplit.Core\LiveSplit.Core.csproj", "{6DE847DB-20A3-4848-AEEE-1B4364AECDFB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SNES", "SNES\SNES.csproj", "{B15C1A14-C30D-4834-8D87-37AC59412F2F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,12 +26,6 @@ Global
 		{6DE847DB-20A3-4848-AEEE-1B4364AECDFB}.Release Candidate|Any CPU.Build.0 = Release Candidate|Any CPU
 		{6DE847DB-20A3-4848-AEEE-1B4364AECDFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DE847DB-20A3-4848-AEEE-1B4364AECDFB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B15C1A14-C30D-4834-8D87-37AC59412F2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B15C1A14-C30D-4834-8D87-37AC59412F2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B15C1A14-C30D-4834-8D87-37AC59412F2F}.Release Candidate|Any CPU.ActiveCfg = Release|Any CPU
-		{B15C1A14-C30D-4834-8D87-37AC59412F2F}.Release Candidate|Any CPU.Build.0 = Release|Any CPU
-		{B15C1A14-C30D-4834-8D87-37AC59412F2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B15C1A14-C30D-4834-8D87-37AC59412F2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
