@@ -7,6 +7,7 @@ namespace SNES {
             { 15675392, "1.9.4"  }, // retroarch
             { 16793600, "1.16.0" }, // retroarch
             { 17264640, "1.17.0" }, // retroarch
+            { 18350080, "1.21.0" }, // retroarch
             {  6991872, "1.57"   }, // snes9x
             {  9027584, "1.60"   }, // snes9x
             {  9158656, "1.61"   }, // snes9x
@@ -82,19 +83,23 @@ namespace SNES {
             { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD69926) },
             { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8E80F) },
             { "retroarch 1.17.0", new DeepPointer("retroarch.exe", 0xEFF8A9) },
-        };
+            { "retroarch 1.21.0", new DeepPointer("retroarch.exe", 0xFB5BD1) },
+        }; 
         public static Dictionary<string, DeepPointer> corePathPtr = new Dictionary<string, DeepPointer> {
             { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD6A900) },
             { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8F7E9) },
             { "retroarch 1.17.0", new DeepPointer("retroarch.exe", 0xEEB59A) },
+            { "retroarch 1.21.0", new DeepPointer("retroarch.exe", 0xFB157C) },
         };
         public static Dictionary<string, DeepPointer> coreVersionPtr = new Dictionary<string, DeepPointer> {
             { "retroarch 1.9.4",  new DeepPointer("retroarch.exe", 0xD67600) },
             { "retroarch 1.16.0", new DeepPointer("retroarch.exe", 0xE8C4E9) },
             { "retroarch 1.17.0", new DeepPointer("retroarch.exe", 0xEFD5A9) },
+            { "retroarch 1.21.0", new DeepPointer("retroarch.exe", 0xFBE399) },
         };
         public static Dictionary<string, int> coreMem = new Dictionary<string, int> {
             { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
+            { "snes9x_libretro.dll 1.63 49f4845",   0x3BB164 },
             { "bsnes_libretro.dll 115",             0x7D39DC },
         };
         public static Dictionary<string, DeepPointer> coreMemPtr = new Dictionary<string, DeepPointer> {
