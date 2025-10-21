@@ -84,6 +84,7 @@ update {
         
         //d.Monitor(w.roomNum, w);
         //d.Monitor(w.levelNum, w);
+        //d.Monitor(w.gameMode, w);
         //d.Monitor(w.io, w);
         //d.Monitor(w.overworldTile, w);
     } else {
@@ -128,6 +129,9 @@ split {
 
     // Override Default split variables for individual runs. Customize Splits Tutorial: https://github.com/amcknight/kaizosplits?tab=readme-ov-file#custom-splits
     switch (runName) {
+        case "Beautiful (Not So) Dangerous - 100%":
+            s.block = w.CPEntrance && w.Curr(w.roomNum) == 197; // pre-intro
+        break;
         case "Bunbun World - 100%":
             s.other = w.ShiftIn(w.levelNum, 52, w.io, 3, 20); // any% ending
             s.credits = w.ShiftToIn(w.levelNum, 53, w.io, 33) && w.Curr(w.levelNum) == 53;

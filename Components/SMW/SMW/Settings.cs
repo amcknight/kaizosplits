@@ -39,7 +39,7 @@ namespace SMW {
                 new Setting("livesSet", "Luigi >1 Life", "Start when Luigi's lives is set to more than 1. Good for one player speedruns when Players Selected is broken"),
             }),
             new Group("Reset when", "Reset splits when...", kids: new List<ISetting>{
-                new Setting("playersUnselect", "# Players not Selected", "Reset when the number of players is not selected and so probably back in the menu"),
+                new Setting("playersUnselect", "Players not Selected", "Reset when the number of players is not selected and so probably back in the menu"),
                 new Setting("livesUnset", "Luigi 1 Life", "Reset when Luigi has one life. Good for one player speedruns when Players not Selected is broken"),
                 new Setting("gameChanged", "Game Change", "Reset when changed game. Turn this off for multi-game runs"),
             }),

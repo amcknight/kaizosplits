@@ -164,7 +164,7 @@ namespace SMW {
         public bool LevelStart => ToLevelStart;
         public bool PeachRelease => ToPeachRelease;
         public bool Midway => ToMidway && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
-        public bool CPEntrance => Shifted(cpEntrance) && !ShiftTo(cpEntrance, firstRoom);
+        public bool CPEntrance => Shifted(cpEntrance) && !ShiftTo(cpEntrance, firstRoom) && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
         public bool CP => Midway || CPEntrance;
         public bool Room => roomStep;
         public bool Submap => SubmapShift;
