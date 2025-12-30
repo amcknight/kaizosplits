@@ -15,6 +15,7 @@ startup {
     vars.tick = 0;
     int maxLagMs = 100;
     int minStartDurationMs = 1000;
+    int minSplitCooldownMs = 500;
 
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
@@ -24,7 +25,7 @@ startup {
     vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
     vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
 
-    vars.ss.Init(maxLagMs, minStartDurationMs);
+    vars.ss.Init(maxLagMs, minStartDurationMs, minSplitCooldownMs);
     vars.ws.Init(vars.ss.UsedMemory());
 
     vars.ranges = new Dictionary<int, int>() {};
@@ -83,7 +84,7 @@ update {
         // MONITOR HERE for monitoring even while not in a run
         
         //d.Monitor(w.roomNum, w);
-        //d.Monitor(w.levelNum, w);
+        //d.Monitor(w.moonCounter, w);
         //d.Monitor(w.gameMode, w);
         //d.Monitor(w.io, w);
         //d.Monitor(w.overworldTile, w);
@@ -129,6 +130,10 @@ split {
 
     // Override Default split variables for individual runs. Customize Splits Tutorial: https://github.com/amcknight/kaizosplits?tab=readme-ov-file#custom-splits
     switch (runName) {
+        case "Babby Builds Wevels - 100%":
+        case "Babby Builds Wevels - SwagMoon%":
+            s.credits = w.ShiftTo(w.levelNum, 34);
+        break;
         case "Beautiful (Not So) Dangerous - 100%":
             s.block = w.CPEntrance && w.Curr(w.roomNum) == 197; // pre-intro
         break;
@@ -163,10 +168,17 @@ split {
         d.Dbg("Split: " + s.SplitReasons());
         long lag = vars.endMs - vars.startMs;
         if (!s.SkipStatus(lag)) {
+            s.lastSplitTime = vars.startMs;
             return true;
         }
         d.Dbg("Skip: " + s.SkipReasons(lag));
         new TimerModel { CurrentState = timer }.SkipSplit();
+    } else {
+        var blockedReasons = s.BlockedReasons();
+        var splitReasons = s.SplitReasons();
+        if (blockedReasons != "" && splitReasons != "") {
+            d.Dbg("Blocked: " + blockedReasons + " (" + splitReasons + ")");
+        }
     }
 }
 

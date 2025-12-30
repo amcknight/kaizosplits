@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
+using LiveSplit.Model;
 
 namespace SMW {
     public class Settings {
@@ -21,6 +23,7 @@ namespace SMW {
         public bool palaces;
         public bool rooms;
         public bool skipOnLag;
+        public bool splitCooldown;
 
         public bool other = false;
         public bool credits = false;
@@ -28,6 +31,8 @@ namespace SMW {
 
         public long maxLag;
         public long minStartDuration;
+        public long minSplitCooldown;
+        public long lastSplitTime = -1;
 
         private bool prevFinished = false;
         private Watchers w;
@@ -62,6 +67,7 @@ namespace SMW {
                 new Setting("rooms", "Room Change", "your room transitions", on: false),
             }),
             new Setting("skipOnLag", "Autoskip Lag Splits", "Autoskip splits that might have had more than 100ms of lag"),
+            new Setting("splitCooldown", "Prevent Double Splits", "Prevent splits within 500ms of the previous split", on: false),
         };
 
         public List<string> keys = new List<string> {};
@@ -69,9 +75,10 @@ namespace SMW {
 
         public Settings() { }
 
-        public void Init(long maxLag, long minStartDuration) {
+        public void Init(long maxLag, long minStartDuration, long minSplitCooldown) {
             this.maxLag = maxLag;
             this.minStartDuration = minStartDuration;
+            this.minSplitCooldown = minSplitCooldown;
             BuildEntries(settings);
         }
 
@@ -96,12 +103,17 @@ namespace SMW {
             return new string[] {
                 "fileSelect", "luigiLives", "submap", "fanfare", "bossDefeat", "io", "yellowSwitch", "greenSwitch", "blueSwitch", "redSwitch",
                 "roomCounter", "midway", "cpEntrance", "pipe", "playerAnimation", "levelStart", "weirdLevVal", "overworldPortal",
-                "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile"
+                "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile", "moonCounter"
             };
         }
 
         private string NewKey() {
             return "K" + newKey++;
+        }
+
+        private bool withinCooldown() {
+            var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            return now - lastSplitTime < minSplitCooldown;
         }
 
         public void Update(Dictionary<string, bool> settings, Watchers ws) {
@@ -123,11 +135,12 @@ namespace SMW {
             palaces = settings["palaces"];
             rooms = settings["rooms"];
             skipOnLag = settings["skipOnLag"];
+            splitCooldown = settings["splitCooldown"];
             w = ws;
         }
 
         public bool SplitStatus() {
-            return (!block && !w.gameOvered && (
+            return !block && !w.gameOvered && !(splitCooldown && withinCooldown()) && (
                 (exits && w.LevelExit) ||
                 (introExit && w.Intro) ||
                 (worlds && w.Overworld) ||
@@ -142,7 +155,7 @@ namespace SMW {
                 (rooms && w.Room) ||
                 other ||
                 credits
-                ));
+                );
         }
 
         public string SplitReasons() {
@@ -223,6 +236,14 @@ namespace SMW {
         public string SkipReasons(long lag) {
             List<string> reasons = new List<string>();
             if (lag > maxLag) reasons.Add("LAG "+lag);
+            return string.Join(" ", reasons);
+        }
+
+        public string BlockedReasons() {
+            List<string> reasons = new List<string>();
+            if (block) reasons.Add("Block");
+            if (w.gameOvered) reasons.Add("GameOver");
+            if (splitCooldown && withinCooldown()) reasons.Add("Cooldown");
             return string.Join(" ", reasons);
         }
     }
