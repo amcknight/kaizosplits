@@ -117,7 +117,10 @@ reset {
     if (s.ResetStatus(vars.ready, smcChanged)) {
         var reasons = s.ResetReasons(vars.ready, smcChanged);
         d.Dbg("Reset: " + reasons);
-        vars.ready = false;
+        if (!vars.running) {
+            vars.ready = false;
+        }
+
         return true;
     }
 }

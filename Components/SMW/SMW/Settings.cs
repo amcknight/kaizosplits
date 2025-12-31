@@ -193,8 +193,7 @@ namespace SMW {
         }
 
         public bool ResetStatus(bool memOffsetKnown, bool isGameChanged) {
-            return !memOffsetKnown ||
-                (gameChanged && isGameChanged) ||
+            return (gameChanged && isGameChanged) ||
                 (playersUnselect && w.FromFileSelect && !w.gameOvered) ||
                 (livesUnset && w.ToOneLuigiLife && !w.gameOvered)
                 ;
@@ -202,7 +201,6 @@ namespace SMW {
 
         public string ResetReasons(bool memOffsetKnown, bool isGameChanged) {
             List<string> reasons = new List<string>();
-            if (!memOffsetKnown) reasons.Add("LostMemoryOffset");
             if (isGameChanged) reasons.Add("GameChanged");
             if (w.FromFileSelect) reasons.Add("FileUnselected");
             if (w.ToOneLuigiLife) reasons.Add("OneLife");
