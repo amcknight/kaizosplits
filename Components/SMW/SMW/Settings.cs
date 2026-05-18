@@ -103,7 +103,7 @@ namespace SMW {
             return new string[] {
                 "fileSelect", "luigiLives", "submap", "fanfare", "bossDefeat", "io", "yellowSwitch", "greenSwitch", "blueSwitch", "redSwitch",
                 "roomCounter", "midway", "cpEntrance", "pipe", "playerAnimation", "levelStart", "weirdLevVal", "overworldPortal",
-                "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile", "moonCounter"
+                "levelNum", "roomNum", "exitMode", "gameMode", "overworldTile", "moonCounter", "yoshiCoin"
             };
         }
 

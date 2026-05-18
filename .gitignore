@@ -3,3 +3,4 @@
 Components/SMW/*/bin
 Components/SMW/*/obj
 runs/*
+.claude/settings.local.json

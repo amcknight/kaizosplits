@@ -83,7 +83,11 @@ update {
         
         // MONITOR HERE for monitoring even while not in a run
         
-        //d.Monitor(w.roomNum, w);
+        // d.Monitor(w.roomNum, w);
+        d.Monitor(w.levelNum, w);
+        d.Monitor(w.exitMode, w);
+        d.Monitor(w.cpEntrance, w);
+        d.Monitor(w.midway, w);
         //d.Monitor(w.moonCounter, w);
         //d.Monitor(w.gameMode, w);
         //d.Monitor(w.io, w);
@@ -157,6 +161,26 @@ split {
         case "Nonsense - 24 Exit":
             s.block = w.CPEntrance && w.Curr(w.roomNum) == 101; // Extra CP at beginning of Angry Parachutes when icy
             s.credits = w.ShiftIn(w.levelNum, 94, w.io, 255, 37); // Peach drop
+        break;
+        case "Toothpaste World - Any%":
+            s.credits = w.ShiftTo(w.levelNum, 54);
+        break;
+        case "Yoshi's Revenge - 46* Exit":
+        case "Yoshi's Revenge - Credits%":
+        case "Yoshi's Revenge - Torn Apart IL":
+            s.other = 
+                w.ShiftIn(w.levelNum, 32, w.roomNum, 46, 47) || // Maze to Bosses
+                w.Stepped(w.yoshiCoin) && !(
+                    w.Curr(w.levelNum) == 52 ||                           // Last Journey
+                    (w.Curr(w.levelNum) == 32 && w.Curr(w.roomNum) != 48) // Torn Apart
+                );
+            s.block = w.CPEntrance && w.Curr(w.levelNum) == 32 && w.Prev(w.roomNum) == 46 || // Maze midways
+                      w.CPEntrance && w.Curr(w.levelNum) == 31 && w.Curr(w.roomNum) == 31 || // Madness 1 midways
+                      w.CPEntrance && w.Curr(w.levelNum) == 86 && (                          // Tengoku galoomba skip
+                        w.Curr(w.roomNum) == 102 ||
+                        w.Curr(w.roomNum) == 103 ||
+                        w.Curr(w.roomNum) == 104);
+            s.credits = w.Curr(w.levelNum) == 52 && w.GotGoal;
         break;
     }
 

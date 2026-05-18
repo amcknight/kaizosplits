@@ -149,7 +149,8 @@ namespace SMW {
         public bool ExitDoor => Shift(playerAnimation, 13, 0);
 
         // Composite Conditions
-        public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
+        // public bool ToExit => ShiftFrom(exitMode, 0) && !ShiftTo(exitMode, 128);
+        public bool ToExit => Shifted(exitMode) && Curr(exitMode) != 0 && Curr(exitMode) != 128;
         public bool EnteredPipe => Shifted(pipe) && Curr(pipe) < 4 && (Curr(playerAnimation) == 5 || Curr(playerAnimation) == 6);
         public bool Put => GmPrepareLevel && !died;
         public bool Spawn => GmPrepareLevel && died;
@@ -164,7 +165,7 @@ namespace SMW {
         public bool LevelStart => ToLevelStart;
         public bool PeachRelease => ToPeachRelease;
         public bool Midway => ToMidway && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
-        public bool CPEntrance => Shifted(cpEntrance) && !ShiftTo(cpEntrance, firstRoom) && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
+        public bool CPEntrance => InLevel && Shifted(cpEntrance) && !ShiftTo(cpEntrance, firstRoom) && !GotOrb && !GotGoal && !GotKey && !GotFadeout;
         public bool CP => Midway || CPEntrance;
         public bool Room => roomStep;
         public bool Submap => SubmapShift;
