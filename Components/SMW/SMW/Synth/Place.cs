@@ -1,13 +1,13 @@
 ﻿
 namespace SMW {
     public class Place {
-        readonly ushort submap;
-        readonly ushort level;
-        readonly ushort room;
-        readonly ushort x;
-        readonly ushort y;
+        readonly uint submap;
+        readonly uint level;
+        readonly uint room;
+        readonly uint x;
+        readonly uint y;
 
-        public Place(ushort submap, ushort level, ushort room, ushort x, ushort y) {
+        public Place(uint submap, uint level, uint room, uint x, uint y) {
             this.submap = submap;
             this.level = level;
             this.room = room;

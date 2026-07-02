@@ -1,4 +1,4 @@
-﻿using LiveSplit.ComponentUtil;
+using LiveSplit.ComponentUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +9,9 @@ namespace SMW {
         public bool died;
         public bool gameOvered;
         public bool roomStep;
-        public ushort prevIO;
-        public ushort firstRoom;
-        public List<MemoryWatcher<byte>> xs = new List<MemoryWatcher<byte>>();
+        public uint prevIO;
+        public uint firstRoom;
+        public List<MemoryWatcher> xs = new List<MemoryWatcher>();
 
         private string[] enabledMemory;
 
@@ -28,74 +28,71 @@ namespace SMW {
         }
 
         public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
-            foreach (KeyValuePair<int, string> entry in Memory.intMap) {
-                if (enabledMemory.Contains(entry.Value)) {
-                    Add(new MemoryWatcher<uint>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
+            foreach (MemEntry entry in Memory.entries) {
+                if (!enabledMemory.Contains(entry.Name)) continue;
+                IntPtr addr = (IntPtr)memoryOffset + entry.Offset;
+                MemoryWatcher mw;
+                switch (entry.Size) {
+                    case MemSize.Byte:  mw = new MemoryWatcher<byte>(addr)   { Name = entry.Name }; break;
+                    case MemSize.Short: mw = new MemoryWatcher<ushort>(addr) { Name = entry.Name }; break;
+                    case MemSize.Int:   mw = new MemoryWatcher<uint>(addr)   { Name = entry.Name }; break;
+                    default: throw new ArgumentOutOfRangeException();
                 }
-            }
-            foreach (KeyValuePair<int, string> entry in Memory.shortMap) {
-                if (enabledMemory.Contains(entry.Value)) {
-                    Add(new MemoryWatcher<ushort>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
-                }
-            }
-            foreach (KeyValuePair<int, string> entry in Memory.byteMap) {
-                if (enabledMemory.Contains(entry.Value)) {
-                    Add(new MemoryWatcher<byte>((IntPtr)memoryOffset + entry.Key) { Name = entry.Value });
-                }
+                Add(mw);
             }
             foreach (KeyValuePair<int, int> entry in ranges) {
                 for (int i = entry.Key; i < entry.Value; i++) {
-                    MemoryWatcher<byte> x = new MemoryWatcher<byte>((IntPtr)memoryOffset + i) { Name = "i" + i.ToString("X4") };
+                    MemoryWatcher x = new MemoryWatcher<byte>((IntPtr)memoryOffset + i) { Name = "i" + i.ToString("X4") };
                     xs.Add(x);
                     Add(x);
                 }
             }
         }
 
-        public MemoryWatcher<byte> fileSelect => (MemoryWatcher<byte>)this["fileSelect"];
-        public MemoryWatcher<byte> marioLives => (MemoryWatcher<byte>)this["marioLives"];
-        public MemoryWatcher<byte> luigiLives => (MemoryWatcher<byte>)this["luigiLives"];
-        public MemoryWatcher<byte> submap => (MemoryWatcher<byte>)this["submap"];
-        public MemoryWatcher<byte> fanfare => (MemoryWatcher<byte>)this["fanfare"];
-        public MemoryWatcher<byte> victory => (MemoryWatcher<byte>)this["victory"];
-        public MemoryWatcher<byte> bossDefeat => (MemoryWatcher<byte>)this["bossDefeat"];
-        public MemoryWatcher<byte> io => (MemoryWatcher<byte>)this["io"];
-        public MemoryWatcher<byte> yellowSwitch => (MemoryWatcher<byte>)this["yellowSwitch"];
-        public MemoryWatcher<byte> greenSwitch => (MemoryWatcher<byte>)this["greenSwitch"];
-        public MemoryWatcher<byte> blueSwitch => (MemoryWatcher<byte>)this["blueSwitch"];
-        public MemoryWatcher<byte> redSwitch => (MemoryWatcher<byte>)this["redSwitch"];
-        public MemoryWatcher<byte> roomCounter => (MemoryWatcher<byte>)this["roomCounter"];
-        public MemoryWatcher<byte> peach => (MemoryWatcher<byte>)this["peach"];
-        public MemoryWatcher<byte> midway => (MemoryWatcher<byte>)this["midway"];
-        public MemoryWatcher<byte> cpEntrance => (MemoryWatcher<byte>)this["cpEntrance"];
-        public MemoryWatcher<byte> pipe => (MemoryWatcher<byte>)this["pipe"];
-        public MemoryWatcher<byte> playerAnimation => (MemoryWatcher<byte>)this["playerAnimation"];
-        public MemoryWatcher<byte> yoshiCoin => (MemoryWatcher<byte>)this["yoshiCoin"];
-        public MemoryWatcher<byte> levelStart => (MemoryWatcher<byte>)this["levelStart"];
-        public MemoryWatcher<byte> weirdLevVal => (MemoryWatcher<byte>)this["weirdLevVal"];
-        public MemoryWatcher<byte> eventsTriggered => (MemoryWatcher<byte>)this["eventsTriggered"];
-        public MemoryWatcher<byte> overworldPortal => (MemoryWatcher<byte>)this["overworldPortal"];
-        public MemoryWatcher<byte> levelNum => (MemoryWatcher<byte>)this["levelNum"];
-        public MemoryWatcher<byte> roomNum => (MemoryWatcher<byte>)this["roomNum"];
-        public MemoryWatcher<byte> exitMode => (MemoryWatcher<byte>)this["exitMode"];
-        public MemoryWatcher<byte> player => (MemoryWatcher<byte>)this["player"];
-        public MemoryWatcher<byte> gameMode => (MemoryWatcher<byte>)this["gameMode"];
-        public MemoryWatcher<byte> overworldTile => (MemoryWatcher<byte>)this["overworldTile"];
-        public MemoryWatcher<byte> buttonsHeld1 => (MemoryWatcher<byte>)this["buttonsHeld1"];
-        public MemoryWatcher<byte> buttonsPress1 => (MemoryWatcher<byte>)this["buttonsPress1"];
-        public MemoryWatcher<byte> buttonsHeld2 => (MemoryWatcher<byte>)this["buttonsHeld2"];
-        public MemoryWatcher<byte> buttonsPress2 => (MemoryWatcher<byte>)this["buttonsPress2"];
+        public MemoryWatcher fileSelect => this["fileSelect"];
+        public MemoryWatcher marioLives => this["marioLives"];
+        public MemoryWatcher luigiLives => this["luigiLives"];
+        public MemoryWatcher submap => this["submap"];
+        public MemoryWatcher fanfare => this["fanfare"];
+        public MemoryWatcher victory => this["victory"];
+        public MemoryWatcher bossDefeat => this["bossDefeat"];
+        public MemoryWatcher io => this["io"];
+        public MemoryWatcher yellowSwitch => this["yellowSwitch"];
+        public MemoryWatcher greenSwitch => this["greenSwitch"];
+        public MemoryWatcher blueSwitch => this["blueSwitch"];
+        public MemoryWatcher redSwitch => this["redSwitch"];
+        public MemoryWatcher roomCounter => this["roomCounter"];
+        public MemoryWatcher peach => this["peach"];
+        public MemoryWatcher midway => this["midway"];
+        public MemoryWatcher cpEntrance => this["cpEntrance"];
+        public MemoryWatcher pipe => this["pipe"];
+        public MemoryWatcher playerAnimation => this["playerAnimation"];
+        public MemoryWatcher yoshiCoin => this["yoshiCoin"];
+        public MemoryWatcher levelStart => this["levelStart"];
+        public MemoryWatcher weirdLevVal => this["weirdLevVal"];
+        public MemoryWatcher eventsTriggered => this["eventsTriggered"];
+        public MemoryWatcher overworldPortal => this["overworldPortal"];
+        public MemoryWatcher levelNum => this["levelNum"];
+        public MemoryWatcher roomNum => this["roomNum"];
+        public MemoryWatcher exitMode => this["exitMode"];
+        public MemoryWatcher player => this["player"];
+        public MemoryWatcher gameMode => this["gameMode"];
+        public MemoryWatcher overworldTile => this["overworldTile"];
+        public MemoryWatcher buttonsHeld1 => this["buttonsHeld1"];
+        public MemoryWatcher buttonsPress1 => this["buttonsPress1"];
+        public MemoryWatcher buttonsHeld2 => this["buttonsHeld2"];
+        public MemoryWatcher buttonsPress2 => this["buttonsPress2"];
 
-        public MemoryWatcher<ushort> playerX => (MemoryWatcher<ushort>)this["playerX"];
-        public MemoryWatcher<ushort> playerY => (MemoryWatcher<ushort>)this["playerY"];
-        public MemoryWatcher<ushort> marioOverworldX => (MemoryWatcher<ushort>)this["marioOverworldX"];
-        public MemoryWatcher<ushort> marioOverworldY => (MemoryWatcher<ushort>)this["marioOverworldY"];
+        public MemoryWatcher playerX => this["playerX"];
+        public MemoryWatcher playerY => this["playerY"];
+        public MemoryWatcher marioOverworldX => this["marioOverworldX"];
+        public MemoryWatcher marioOverworldY => this["marioOverworldY"];
 
         // Temporary Test Watchers. keep or drop these
-        public MemoryWatcher<byte> levelMode => (MemoryWatcher<byte>)this["levelMode"];
-        public MemoryWatcher<byte> inWater => (MemoryWatcher<byte>)this["inWater"];
-        public MemoryWatcher<byte> moonCounter => (MemoryWatcher<byte>)this["moonCounter"];
-        public MemoryWatcher<uint> layer1Pointer => (MemoryWatcher<uint>)this["layer1Pointer"];
+        public MemoryWatcher levelMode => this["levelMode"];
+        public MemoryWatcher inWater => this["inWater"];
+        public MemoryWatcher moonCounter => this["moonCounter"];
+        public MemoryWatcher layer1Pointer => this["layer1Pointer"];
 
 
         // Ongoing state
@@ -203,110 +200,55 @@ namespace SMW {
             if (Spawn) died = false;
         }
 
-        public ushort Prev(MemoryWatcher<byte> w) {
-            return Convert.ToUInt16(w.Old);
+        // Type-erased accessors. Reads the boxed object on the abstract base
+        // class — works for any MemoryWatcher<byte|ushort|uint>. Returns uint
+        // because that's wide enough for every value we read from SNES memory.
+        public uint Prev(MemoryWatcher w) {
+            return Convert.ToUInt32(w.Old ?? (uint)0);
         }
 
-        public ushort Prev(MemoryWatcher<ushort> w) {
-            return Convert.ToUInt16(w.Old);
+        public uint Curr(MemoryWatcher w) {
+            return Convert.ToUInt32(w.Current ?? (uint)0);
         }
 
-        public uint Prev(MemoryWatcher<uint> w) {
-            return Convert.ToUInt32(w.Old);
+        public bool Shift(MemoryWatcher w, uint o, uint c) {
+            return Compare.Shift(Prev(w), Curr(w), o, c);
         }
 
-        public ushort Curr(MemoryWatcher<byte> w) {
-            return Convert.ToUInt16(w.Current);
+        public bool ShiftTo(MemoryWatcher w, uint c) {
+            return Compare.ShiftTo(Prev(w), Curr(w), c);
         }
 
-        public ushort Curr(MemoryWatcher<ushort> w) {
-            return Convert.ToUInt16(w.Current);
+        public bool ShiftFrom(MemoryWatcher w, uint o) {
+            return Compare.ShiftFrom(Prev(w), Curr(w), o);
         }
 
-        public uint Curr(MemoryWatcher<uint> w) {
-            return Convert.ToUInt32(w.Current);
+        public bool Shifted(MemoryWatcher w) {
+            return Compare.Shifted(Prev(w), Curr(w));
         }
 
-        public bool Shift(MemoryWatcher<byte> w, ushort o, ushort c) {
-            return Prev(w) == o && Curr(w) == c;
-        }
-        public bool Shift(MemoryWatcher<ushort> w, ushort o, ushort c) {
-            return Prev(w) == o && Curr(w) == c;
-        }
-        public bool Shift(MemoryWatcher<uint> w, ushort o, ushort c) {
-            return Prev(w) == o && Curr(w) == c;
+        public bool StepTo(MemoryWatcher w, uint c) {
+            return Compare.StepTo(Prev(w), Curr(w), c);
         }
 
-        public bool ShiftTo(MemoryWatcher<byte> w, ushort c) {
-            return Prev(w) != c && Curr(w) == c;
-        }
-        public bool ShiftTo(MemoryWatcher<ushort> w, ushort c) {
-            return Prev(w) != c && Curr(w) == c;
-        }
-        public bool ShiftTo(MemoryWatcher<uint> w, ushort c) {
-            return Prev(w) != c && Curr(w) == c;
+        public bool Stepped(MemoryWatcher w) {
+            return Compare.Stepped(Prev(w), Curr(w));
         }
 
-        public bool ShiftFrom(MemoryWatcher<byte> w, ushort o) {
-            return Prev(w) == o && Curr(w) != o;
-        }
-        public bool ShiftFrom(MemoryWatcher<ushort> w, ushort o) {
-            return Prev(w) == o && Curr(w) != o;
-        }
-        public bool ShiftFrom(MemoryWatcher<uint> w, ushort o) {
-            return Prev(w) == o && Curr(w) != o;
+        public bool Crossed(MemoryWatcher w, uint c) {
+            return Compare.Crossed(Prev(w), Curr(w), c);
         }
 
-        public bool Shifted(MemoryWatcher<byte> w) {
-            return Prev(w) != Curr(w);
-        }
-        public bool Shifted(MemoryWatcher<ushort> w) {
-            return Prev(w) != Curr(w);
-        }
-        public bool Shifted(MemoryWatcher<uint> w) {
-            return Prev(w) != Curr(w);
-        }
-
-        public bool StepTo(MemoryWatcher<byte> w, ushort c) {
-            return Curr(w) == c && Prev(w) + 1 == Curr(w);
-        }
-        public bool StepTo(MemoryWatcher<ushort> w, ushort c) {
-            return Curr(w) == c && Prev(w) + 1 == Curr(w);
-        }
-        public bool StepTo(MemoryWatcher<uint> w, ushort c) {
-            return Curr(w) == c && Prev(w) + 1 == Curr(w);
-        }
-
-        public bool Stepped(MemoryWatcher<byte> w) {
-            return Prev(w) + 1 == Curr(w);
-        }
-        public bool Stepped(MemoryWatcher<ushort> w) {
-            return Prev(w) + 1 == Curr(w);
-        }
-        public bool Stepped(MemoryWatcher<uint> w) {
-            return Prev(w) + 1 == Curr(w);
-        }
-
-        public bool Crossed(MemoryWatcher<byte> w, ushort c) {
-            return Prev(w) < c && Curr(w) >= c;
-        }
-        public bool Crossed(MemoryWatcher<ushort> w, ushort c) {
-            return Prev(w) < c && Curr(w) >= c;
-        }
-        public bool Crossed(MemoryWatcher<uint> w, ushort c) {
-            return Prev(w) < c && Curr(w) >= c;
-        }
-
-        public bool ShiftIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from, byte to) {
+        public bool ShiftIn(MemoryWatcher inW, uint inVal, MemoryWatcher shiftW, uint from, uint to) {
             return Shift(shiftW, from, to) && Curr(inW) == inVal;
         }
-        public bool ShiftToIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte to) {
+        public bool ShiftToIn(MemoryWatcher inW, uint inVal, MemoryWatcher shiftW, uint to) {
             return ShiftTo(shiftW, to) && Curr(inW) == inVal;
         }
-        public bool ShiftFromIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW, byte from) {
+        public bool ShiftFromIn(MemoryWatcher inW, uint inVal, MemoryWatcher shiftW, uint from) {
             return ShiftFrom(shiftW, from) && Curr(inW) == inVal;
         }
-        public bool ShiftsIn(MemoryWatcher<byte> inW, byte inVal, MemoryWatcher<byte> shiftW) {
+        public bool ShiftsIn(MemoryWatcher inW, uint inVal, MemoryWatcher shiftW) {
             return Shifted(shiftW) && Curr(inW) == inVal;
         }
     }

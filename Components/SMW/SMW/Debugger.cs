@@ -15,7 +15,7 @@ namespace SMW {
 
         public void Update(Watchers ws) {
             if (showDebug)
-                foreach (MemoryWatcher<byte> w in ws.xs)
+                foreach (MemoryWatcher w in ws.xs)
                     Monitor(w, ws);
         }
 
@@ -52,21 +52,7 @@ namespace SMW {
             return changed;
         }
 
-        public void Monitor(MemoryWatcher<byte> w, Watchers ws) {
-            if (!showDebug) return;
-            if (ws.Shifted(w)) {
-                Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
-            }
-        }
-
-        public void Monitor(MemoryWatcher<ushort> w, Watchers ws) {
-            if (!showDebug) return;
-            if (ws.Shifted(w)) {
-                Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
-            }
-        }
-
-        public void Monitor(MemoryWatcher<uint> w, Watchers ws) {
+        public void Monitor(MemoryWatcher w, Watchers ws) {
             if (!showDebug) return;
             if (ws.Shifted(w)) {
                 Dbg(w.Name + ": " + ws.Prev(w) + "->" + ws.Curr(w));
