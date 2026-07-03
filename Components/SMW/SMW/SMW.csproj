@@ -12,4 +12,27 @@
     <ProjectReference Include="..\..\..\..\LiveSplit\src\LiveSplit.Core\LiveSplit.Core.csproj" />
   </ItemGroup>
 
+  <!-- Auto-copy the built DLL into LiveSplit so you don't have to do it by hand.
+       Set LiveSplitComponentsDir to your LiveSplit\Components path in the git-ignored
+       SMW.csproj.user file (see SMW.csproj.user for the template). Skips silently when
+       unset or the folder is absent (other machines / CI). A direct file overwrite
+       works even while the Components folder is open in Explorer. -->
+  <Target Name="CopyToLiveSplit" AfterTargets="Build"
+          Condition="'$(LiveSplitComponentsDir)' != '' And Exists('$(LiveSplitComponentsDir)')">
+    <!-- LiveSplit locks the DLL while running (it scans Components\ for factories),
+         so a failed copy just means "LiveSplit is open" - warn, don't break the build. -->
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(LiveSplitComponentsDir)"
+          OverwriteReadOnlyFiles="true"
+          SkipUnchangedFiles="false"
+          Retries="2" RetryDelayMilliseconds="200"
+          ContinueOnError="true">
+      <Output TaskParameter="CopiedFiles" ItemName="_DeployedDll" />
+    </Copy>
+    <Message Condition="'@(_DeployedDll)' != ''" Importance="high"
+             Text="Deployed $(TargetFileName) -> $(LiveSplitComponentsDir)" />
+    <Warning Condition="'@(_DeployedDll)' == ''"
+             Text="Did not deploy $(TargetFileName): LiveSplit likely has it locked. Close LiveSplit and rebuild to deploy." />
+  </Target>
+
 </Project>
