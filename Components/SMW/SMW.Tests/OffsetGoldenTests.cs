@@ -234,6 +234,7 @@ namespace SMW.Tests {
         private static readonly Dictionary<string, int> ExpectedCoreMem = new Dictionary<string, int> {
             { "snes9x_libretro.dll 1.62.3 ec4ebfc", 0x3BA164 },
             { "snes9x_libretro.dll 1.63 49f4845",   0x3BB164 },
+            { "snes9x_libretro.dll 1.63 185488c",   0x3BB164 },
             { "bsnes_libretro.dll 115",             0x7D39DC },
         };
 

@@ -141,6 +141,7 @@ namespace SNES {
         private static readonly CoreProfile[] _cores = new[] {
             new CoreProfile { Dll = "snes9x_libretro.dll", Version = "1.62.3 ec4ebfc", DirectMem = 0x3BA164 },
             new CoreProfile { Dll = "snes9x_libretro.dll", Version = "1.63 49f4845",   DirectMem = 0x3BB164 },
+            new CoreProfile { Dll = "snes9x_libretro.dll", Version = "1.63 185488c",  DirectMem = 0x3BB164 }, // same 1.63 offset as 49f4845; verify in-game
             new CoreProfile { Dll = "bsnes_libretro.dll",  Version = "115",            DirectMem = 0x7D39DC },
             new CoreProfile {
                 Dll = "snes9x2010_libretro.dll", Version = "1.52.4 d8b10c4",

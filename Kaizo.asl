@@ -154,8 +154,20 @@ split {
         case "Easyland - Beat the Game":
             s.credits = w.Curr(w.submap) == 6 && w.Curr(w.overworldTile) == 97 && w.GmFadeToLevel;
         break;
+        case "Jono Hack - Any%":
+            //42: 6,20,250
+            //39: 3,253H,3,252,251
+            //38: 2,H,106,107,255
+            //53: 17,18,8,10,16,13
+            //5:  5,203,19,7
+            s.block = w.Curr(w.levelNum) == 39 && w.Room;
+            s.other = w.ShiftToIn(w.levelNum, 39, w.roomNum, 252) || w.ShiftToIn(w.levelNum, 39, w.roomNum, 251);
+        break;
         case "Love Yourself - Welcome Home%":
             s.credits = w.Curr(w.levelNum) == 85 && w.Curr(w.roomNum) == 66 && w.EnterDoor;
+        break;
+        case "Ninji Story - Any%":
+            s.other = w.ShiftToIn(w.levelNum, 57, w.roomNum, 2);
         break;
         case "Nonsense - 16 Exit":
         case "Nonsense - 24 Exit":
