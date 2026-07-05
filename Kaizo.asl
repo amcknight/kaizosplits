@@ -23,17 +23,15 @@ startup {
     // assemblies resolve references through normal probing, which cannot see
     // other byte-loaded assemblies — the AssemblyResolve hook hands SMW.dll's
     // SNES reference the already-loaded assembly. Byte-loaded assemblies stack
-    // a handler per script reload; resolving to the latest loaded SNES keeps
-    // stale handlers harmless.
+    // a handler per script reload; each script reload stacks another handler;
+    // all of them read the shared AppDomain slot, which each startup overwrites,
+    // so the newest SNES.dll always wins.
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
+    AppDomain.CurrentDomain.SetData("SNES.LatestAssembly", snesAsm);
     AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
         if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
-        Assembly latest = null;
-        foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies()) {
-            if (a.GetName().Name == "SNES") latest = a;
-        }
-        return latest;
+        return (Assembly)AppDomain.CurrentDomain.GetData("SNES.LatestAssembly");
     };
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
