@@ -4,6 +4,7 @@ state("bsnes"){}
 state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
+state("mesen"){}
 state("emuhawk"){}
 
 startup {
@@ -17,9 +18,18 @@ startup {
     int minStartDurationMs = 1000;
     int minSplitCooldownMs = 500;
 
+    // Two-assembly load: SNES.dll (shared WRAM resolver, source of truth in
+    // snes_offsets) first, then SMW.dll which references it. Byte-loaded
+    // assemblies resolve references through normal probing, which cannot see
+    // other byte-loaded assemblies — the AssemblyResolve hook hands SMW.dll's
+    // SNES reference the already-loaded assembly.
+    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
+    Assembly snesAsm = Assembly.Load(snesBytes);
+    AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) =>
+        new AssemblyName(rArgs.Name).Name == "SNES" ? snesAsm : null;
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
-    vars.e =  Activator.CreateInstance(asm.GetType("SNES.Emu"));
+    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
     vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
     vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\LiveSplit\src\LiveSplit.Core\LiveSplit.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\snes_offsets\src\SNES\SNES.csproj" />
   </ItemGroup>
 
   <!-- Auto-copy the built DLL into LiveSplit so you don't have to do it by hand.
