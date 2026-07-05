@@ -16,9 +16,26 @@ startup {
     int minStartDurationMs = 1000;
     string recPath = "C:/Users/thedo/Git/kaizosplits/runs"; // Folder to write recorded runs to
 
+    // Two-assembly load: SNES.dll (shared WRAM resolver, source of truth in
+    // snes_offsets) first, then SMW.dll which references it. Byte-loaded
+    // assemblies resolve references through normal probing, which cannot see
+    // other byte-loaded assemblies — the AssemblyResolve hook hands SMW.dll's
+    // SNES reference the already-loaded assembly. Byte-loaded assemblies stack
+    // a handler per script reload; resolving to the latest loaded SNES keeps
+    // stale handlers harmless.
+    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
+    Assembly snesAsm = Assembly.Load(snesBytes);
+    AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
+        if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
+        Assembly latest = null;
+        foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies()) {
+            if (a.GetName().Name == "SNES") latest = a;
+        }
+        return latest;
+    };
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
-    vars.e =  Activator.CreateInstance(asm.GetType("SNES.Emu"));
+    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
     vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
     vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));

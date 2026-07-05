@@ -22,11 +22,19 @@ startup {
     // snes_offsets) first, then SMW.dll which references it. Byte-loaded
     // assemblies resolve references through normal probing, which cannot see
     // other byte-loaded assemblies — the AssemblyResolve hook hands SMW.dll's
-    // SNES reference the already-loaded assembly.
+    // SNES reference the already-loaded assembly. Byte-loaded assemblies stack
+    // a handler per script reload; resolving to the latest loaded SNES keeps
+    // stale handlers harmless.
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
-    AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) =>
-        new AssemblyName(rArgs.Name).Name == "SNES" ? snesAsm : null;
+    AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
+        if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
+        Assembly latest = null;
+        foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies()) {
+            if (a.GetName().Name == "SNES") latest = a;
+        }
+        return latest;
+    };
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
     vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
