@@ -28,6 +28,8 @@ startup {
     // so the newest SNES.dll always wins.
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
+    // Shared process-wide slot: if two scripts (Kaizo + Synth) are live, last startup wins for both
+    // — fine while they byte-load the same Components/SNES.dll; don't diverge the deployed file.
     AppDomain.CurrentDomain.SetData("SNES.LatestAssembly", snesAsm);
     AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
         if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
