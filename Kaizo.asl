@@ -4,7 +4,6 @@ state("bsnes"){}
 state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
-state("mesen"){}
 state("emuhawk"){}
 
 startup {
