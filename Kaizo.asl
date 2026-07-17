@@ -62,7 +62,11 @@ startup {
 }
 
 init {
-    vars.e.Init(game);
+    try {
+        vars.e.Init(game);
+    } catch (System.ComponentModel.Win32Exception) {
+        // Transient process read while the emulator is still settling; LiveSplit re-runs init.
+    }
 }
 
 update {
