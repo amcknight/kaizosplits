@@ -226,6 +226,11 @@ namespace SMW {
             return false;
         }
 
+        public string UndoReasons() {
+            // UndoStatus() has exactly one trigger: a death after the level was
+            // already finished (goal/orb/key/boss/palace).
+            return "DiedAfterFinish";
+        }
 
         public bool SkipStatus(long lag) {
             return skipOnLag && lag > maxLag && !credits;
