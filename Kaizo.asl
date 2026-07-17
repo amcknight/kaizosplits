@@ -28,8 +28,7 @@ startup {
     // so the newest SNES.dll always wins.
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
-    // Shared process-wide slot: if two scripts (Kaizo + Synth) are live, last startup wins for both
-    // — fine while they byte-load the same Components/SNES.dll; don't diverge the deployed file.
+    // Process-wide slot: last startup wins for all live scripts — don't diverge the deployed SNES.dll.
     AppDomain.CurrentDomain.SetData("SNES.LatestAssembly", snesAsm);
     AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
         if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
@@ -37,10 +36,7 @@ startup {
     };
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
-    // Staleness check: byte-loads refresh only on script reload — restart
-    // LiveSplit after a rebuild, then confirm these timestamps moved.
-    print("Kaizo.asl: loaded SNES.dll v" + snesAsm.GetName().Version + ", modified " + File.GetLastWriteTime("Components/SNES.dll"));
-    print("Kaizo.asl: loaded SMW.dll v" + asm.GetName().Version + ", modified " + File.GetLastWriteTime("Components/SMW.dll"));
+    print("Loaded SNES.dll " + File.GetLastWriteTime("Components/SNES.dll") + " / SMW.dll " + File.GetLastWriteTime("Components/SMW.dll"));
     vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
     vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
@@ -127,10 +123,8 @@ update {
                 return false;
             }
         }
-    } catch (Exception ex) {
-        // The game can die between ticks before Ready() notices (content
-        // closed, emulator quit); same handling as the Ready() catch above,
-        // instead of letting a raw Win32Exception escape update.
+    } catch (System.ComponentModel.Win32Exception ex) {
+        // Game can die mid-tick before Ready() notices; same handling as the Ready() catch.
         d.DbgOnce(ex);
         vars.ready = false;
         return vars.running;

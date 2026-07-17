@@ -19,8 +19,7 @@ startup {
 
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
-    // Shared process-wide slot: if two scripts (Kaizo + Synth) are live, last startup wins for both
-    // — fine while they byte-load the same Components/SNES.dll; don't diverge the deployed file.
+    // Process-wide slot: last startup wins for all live scripts — don't diverge the deployed SNES.dll.
     AppDomain.CurrentDomain.SetData("SNES.LatestAssembly", snesAsm);
     AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
         if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
@@ -110,10 +109,8 @@ update {
                 return false;
             }
         }
-    } catch (Exception ex) {
-        // The game can die between ticks before Ready() notices (content
-        // closed, emulator quit); same handling as the Ready() catch above,
-        // instead of letting a raw Win32Exception escape update.
+    } catch (System.ComponentModel.Win32Exception ex) {
+        // Game can die mid-tick before Ready() notices; same handling as the Ready() catch.
         d.DbgOnce(ex);
         vars.ready = false;
         return vars.running;

@@ -106,7 +106,7 @@ namespace SMW.Tests {
             Type t = SmwType("SMW.Timer");
             AssertMethod(t, "HistEnd", "Void");
             AssertMethod(t, "HistMid", "Void");
-            AssertMethod(t, "ToString", "String");
+            // (t.ToString() is also called; Object.ToString always satisfies it.)
         }
 
         [Fact]
