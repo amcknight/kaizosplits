@@ -4,6 +4,7 @@ state("bsnes"){}
 state("retroarch"){}
 state("higan"){} 
 state("snes9x-rr"){}
+state("mesen"){}
 state("emuhawk"){} 
 
 startup {
@@ -16,14 +17,6 @@ startup {
     int minStartDurationMs = 1000;
     string recPath = "C:/Users/thedo/Git/kaizosplits/runs"; // Folder to write recorded runs to
 
-    // Two-assembly load: SNES.dll (shared WRAM resolver, source of truth in
-    // snes_offsets) first, then SMW.dll which references it. Byte-loaded
-    // assemblies resolve references through normal probing, which cannot see
-    // other byte-loaded assemblies — the AssemblyResolve hook hands SMW.dll's
-    // SNES reference the already-loaded assembly. Byte-loaded assemblies stack
-    // a handler per script reload; each script reload stacks another handler;
-    // all of them read the shared AppDomain slot, which each startup overwrites,
-    // so the newest SNES.dll always wins.
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
     // Shared process-wide slot: if two scripts (Kaizo + Synth) are live, last startup wins for both
@@ -40,7 +33,7 @@ startup {
     vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
     vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
     vars.ws = Activator.CreateInstance(asm.GetType("SMW.Watchers"));
-    vars.r = Activator.CreateInstance(asm.GetType("SMW.Recorder"));
+    vars.r =  Activator.CreateInstance(asm.GetType("SMW.Recorder"));
 
     vars.ss.Init(maxLagMs, minStartDurationMs);
     vars.ws.Init(vars.ss.UsedMemory());
@@ -85,35 +78,45 @@ update {
         }
     }
 
-    d.DbgOnce("SMC: " + e.Smc(), "smc");
-    if (vars.ready) {
-        // The order here matters (for Spawn recording)
-        w.UpdateAll(game);
-        var sd = vars.settingsDict;
-        sd.Clear();
-        foreach (string k in s.keys) {
-            sd[k] = settings[k];
+    try {
+        d.DbgOnce("SMC: " + e.Smc(), "smc");
+        if (vars.ready) {
+            // The order here matters (for Spawn recording)
+            w.UpdateAll(game);
+            var sd = vars.settingsDict;
+            sd.Clear();
+            foreach (string k in s.keys) {
+                sd[k] = settings[k];
+            }
+            s.Update(sd, w);
+            d.Update(w);
+            w.UpdateState();
+
+            // MONITOR HERE for monitoring even while not in a run
+
+            //d.Monitor(w.roomNum, w);
+            //d.Monitor(w.levelNum, w);
+            //d.Monitor(w.io, w);
+            //d.Monitor(w.overworldTile, w);
+        } else {
+            try {
+                var offset = e.GetOffset();
+                w.SetMemoryOffset(offset, vars.ranges);
+                vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                vars.ready = true;
+                d.DbgOnce("WRAM found at 0x" + offset.ToString("X"), "wram");
+            } catch (Exception ex) {
+                d.DbgOnce(ex);
+                return false;
+            }
         }
-        s.Update(sd, w);
-        d.Update(w);
-        w.UpdateState();
-        
-        // MONITOR HERE for monitoring even while not in a run
-        
-        //d.Monitor(w.roomNum, w);
-        //d.Monitor(w.levelNum, w);
-        //d.Monitor(w.io, w);
-        //d.Monitor(w.overworldTile, w);
-    } else {
-        try {
-            var offset = e.GetOffset();
-            w.SetMemoryOffset(offset, vars.ranges);
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
-        } catch (Exception ex) {
-            d.DbgOnce(ex);
-            return false;
-        }
+    } catch (Exception ex) {
+        // The game can die between ticks before Ready() notices (content
+        // closed, emulator quit); same handling as the Ready() catch above,
+        // instead of letting a raw Win32Exception escape update.
+        d.DbgOnce(ex);
+        vars.ready = false;
+        return vars.running;
     }
     t.HistMid();
 }

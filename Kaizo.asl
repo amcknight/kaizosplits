@@ -4,6 +4,7 @@ state("bsnes"){}
 state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
+state("mesen"){}
 state("emuhawk"){}
 
 startup {
@@ -36,6 +37,10 @@ startup {
     };
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
+    // Staleness check: byte-loads refresh only on script reload — restart
+    // LiveSplit after a rebuild, then confirm these timestamps moved.
+    print("Kaizo.asl: loaded SNES.dll v" + snesAsm.GetName().Version + ", modified " + File.GetLastWriteTime("Components/SNES.dll"));
+    print("Kaizo.asl: loaded SMW.dll v" + asm.GetName().Version + ", modified " + File.GetLastWriteTime("Components/SMW.dll"));
     vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
     vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
@@ -85,40 +90,50 @@ update {
         }
     }
     
-    d.DbgOnce("SMC: " + e.Smc(), "smc");
-    if (vars.ready) {
-        // The order here matters (for Spawn recording)
-        w.UpdateAll(game);
-        var sd = vars.settingsDict;
-        sd.Clear();
-        foreach (string k in s.keys) {
-            sd[k] = settings[k];
+    try {
+        d.DbgOnce("SMC: " + e.Smc(), "smc");
+        if (vars.ready) {
+            // The order here matters (for Spawn recording)
+            w.UpdateAll(game);
+            var sd = vars.settingsDict;
+            sd.Clear();
+            foreach (string k in s.keys) {
+                sd[k] = settings[k];
+            }
+            s.Update(sd, w);
+            d.Update(w);
+            w.UpdateState();
+
+            // MONITOR HERE for monitoring even while not in a run
+
+            // d.Monitor(w.roomNum, w);
+            d.Monitor(w.levelNum, w);
+            d.Monitor(w.exitMode, w);
+            d.Monitor(w.cpEntrance, w);
+            d.Monitor(w.midway, w);
+            //d.Monitor(w.moonCounter, w);
+            //d.Monitor(w.gameMode, w);
+            //d.Monitor(w.io, w);
+            //d.Monitor(w.overworldTile, w);
+        } else {
+            try {
+                var offset = e.GetOffset();
+                w.SetMemoryOffset(offset, vars.ranges);
+                vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                vars.ready = true;
+                d.DbgOnce("WRAM found at 0x" + offset.ToString("X"), "wram");
+            } catch (Exception ex) {
+                d.DbgOnce(ex);
+                return false;
+            }
         }
-        s.Update(sd, w);
-        d.Update(w);
-        w.UpdateState();
-        
-        // MONITOR HERE for monitoring even while not in a run
-        
-        // d.Monitor(w.roomNum, w);
-        d.Monitor(w.levelNum, w);
-        d.Monitor(w.exitMode, w);
-        d.Monitor(w.cpEntrance, w);
-        d.Monitor(w.midway, w);
-        //d.Monitor(w.moonCounter, w);
-        //d.Monitor(w.gameMode, w);
-        //d.Monitor(w.io, w);
-        //d.Monitor(w.overworldTile, w);
-    } else {
-        try {
-            var offset = e.GetOffset();
-            w.SetMemoryOffset(offset, vars.ranges);
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
-        } catch (Exception ex) {
-            d.DbgOnce(ex);
-            return false;
-        }
+    } catch (Exception ex) {
+        // The game can die between ticks before Ready() notices (content
+        // closed, emulator quit); same handling as the Ready() catch above,
+        // instead of letting a raw Win32Exception escape update.
+        d.DbgOnce(ex);
+        vars.ready = false;
+        return vars.running;
     }
     t.HistMid();
 }
