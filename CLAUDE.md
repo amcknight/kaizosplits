@@ -11,8 +11,9 @@
   `docs/merge-gate.md` before merging. The .asl call surface is pinned by
   `Components/SMW/SMW.Tests/ContractTests.cs` — edit an .asl call site and
   that file together.
-- Kaizo.asl is the main show; Synth.asl is a peripheral experiment. Mirror
-  cheap changes into it; don't let it drive design.
+- Kaizo.asl is the only .asl. The run-recording experiment survives as
+  SMW.Recorder (contract-pinned); regenerate a shell from Kaizo.asl if
+  revived.
 - Preserve behavior exactly when refactoring Kaizo.asl and the Settings/
   Watchers split path; ordering is often load-bearing.
 - SNES.dll is deliberately consumed unpinned (sibling ProjectReference) while

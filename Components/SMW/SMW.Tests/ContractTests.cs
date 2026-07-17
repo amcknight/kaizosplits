@@ -6,14 +6,14 @@ using Xunit;
 
 namespace SMW.Tests {
 
-    // Pins the reflection contract that Kaizo.asl and Synth.asl consume from the
-    // built SNES.dll + SMW.dll pair. The DLLs are loaded exactly the way the .asl
-    // files load them (byte-load + shared AppDomain slot + AssemblyResolve hook),
+    // Pins the reflection contract that Kaizo.asl consumes from the built
+    // SNES.dll + SMW.dll pair. The DLLs are loaded exactly the way the .asl
+    // loads them (byte-load + shared AppDomain slot + AssemblyResolve hook),
     // so a failure here is a break the .asl would hit inside LiveSplit.
     //
     // Discipline: when you edit an .asl call site, update the matching assertion
     // here (and vice versa). The lists are hand-maintained, derived from the
-    // member accesses actually present in Kaizo.asl / Synth.asl.
+    // member accesses actually present in Kaizo.asl.
     public class ContractTests {
 
         static readonly Assembly SnesAsm;
@@ -172,6 +172,9 @@ namespace SMW.Tests {
 
         [Fact]
         public void Recorder_AslContract() {
+            // Dormant run-recording experiment: the Synth.asl shell was deleted;
+            // SMW.Recorder and this pin are kept so a regenerated shell binds
+            // unchanged.
             Type r = SmwType("SMW.Recorder");
             AssertMethod(r, "Init", "Void", "String");
             AssertMethod(r, "StartReasons", "Void", "String");
