@@ -14,15 +14,22 @@
   </ItemGroup>
 
   <!-- Auto-copy the built DLL into LiveSplit so you don't have to do it by hand.
-       Set LiveSplitComponentsDir to your LiveSplit\Components path in the git-ignored
-       SMW.csproj.user file (see SMW.csproj.user for the template). Skips silently when
-       unset or the folder is absent (other machines / CI). A direct file overwrite
-       works even while the Components folder is open in Explorer. -->
+       Set LiveSplitComponentsDir in a git-ignored SMW.csproj.user next to this file:
+         <Project><PropertyGroup>
+           <LiveSplitComponentsDir>C:\path\to\LiveSplit\Components</LiveSplitComponentsDir>
+         </PropertyGroup></Project>
+       Skips silently when unset or the folder is absent (other machines / CI).
+       A direct file overwrite works even while the Components folder is open in Explorer. -->
   <Target Name="CopyToLiveSplit" AfterTargets="Build"
           Condition="'$(LiveSplitComponentsDir)' != '' And Exists('$(LiveSplitComponentsDir)')">
     <!-- LiveSplit locks the DLL while running (it scans Components\ for factories),
          so a failed copy just means "LiveSplit is open" - warn, don't break the build. -->
-    <Copy SourceFiles="$(TargetPath)"
+    <ItemGroup>
+      <!-- SMW.dll and the SNES.dll it was just built against: deploy as a pair
+           so LiveSplit can never see a mismatched set. -->
+      <_DeployPair Include="$(TargetPath);$(TargetDir)SNES.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DeployPair)"
           DestinationFolder="$(LiveSplitComponentsDir)"
           OverwriteReadOnlyFiles="true"
           SkipUnchangedFiles="false"
@@ -30,10 +37,10 @@
           ContinueOnError="true">
       <Output TaskParameter="CopiedFiles" ItemName="_DeployedDll" />
     </Copy>
-    <Message Condition="'@(_DeployedDll)' != ''" Importance="high"
-             Text="Deployed $(TargetFileName) -> $(LiveSplitComponentsDir)" />
-    <Warning Condition="'@(_DeployedDll)' == ''"
-             Text="Did not deploy $(TargetFileName): LiveSplit likely has it locked. Close LiveSplit and rebuild to deploy." />
+    <Message Condition="'@(_DeployedDll->Count())' == '2'" Importance="high"
+             Text="Deployed @(_DeployedDll->'%(Filename)%(Extension)', ', ') -> $(LiveSplitComponentsDir)" />
+    <Warning Condition="'@(_DeployedDll->Count())' != '2'"
+             Text="Deployed only [@(_DeployedDll->'%(Filename)%(Extension)', ', ')] of the SMW.dll+SNES.dll pair: LiveSplit likely has the rest locked. Close LiveSplit and rebuild to deploy the pair." />
   </Target>
 
 </Project>
