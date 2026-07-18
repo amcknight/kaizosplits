@@ -9,3 +9,4 @@ runs/*
 # local-only docs: agent scaffolding and notes already handed upstream
 docs/superpowers/
 docs/snes-dll-consumer-notes.md
+docs/diagnostics/

@@ -50,3 +50,17 @@ On one combo, verify the known-good sequence in LiveSplit's debug output
 
 All green -> merge. Any FAIL -> fix, or explicitly drop the combo from the
 list above with a note in the merge commit explaining why.
+
+## Run record — SNES.dll 1.2.0+c3470e48 (2026-07-18)
+
+Suites green (145+124). Live: mesen PASS; retroarch+snes9x (no run-ahead)
+fully green incl. Start/Split/Reset and the R2 SMC-swap check;
+**retroarch+bsnes FAIL** (run-ahead burst decoy defeats arbitration) —
+dropped pending snes_offsets 1.2.1; run-ahead configs generally are the
+known gap. Full evidence: docs/snes-dll-consumer-notes.md (local).
+
+Merge-commit sentence to carry per §4: "Gate: bsnes and run-ahead combos
+dropped this round — arbitration mispicks run-ahead WRAM copies (R3/R8 in
+consumer notes, upstream fix targeted for 1.2.1); verified matrix is
+no-run-ahead RetroArch+snes9x and Mesen (snes9x-x64 standalone untested
+this round)."
