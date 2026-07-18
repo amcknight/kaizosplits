@@ -67,6 +67,10 @@ init {
     } catch (System.ComponentModel.Win32Exception) {
         // Transient process read while the emulator is still settling; LiveSplit re-runs init.
     }
+    // init means a (re)connected process: the previous session's WRAM offset
+    // must never be read through it (stale reads fired a garbage Reset on
+    // emulator hot-swap, 2026-07-18). Force rediscovery.
+    vars.ready = false;
 }
 
 update {
