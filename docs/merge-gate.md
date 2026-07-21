@@ -64,3 +64,17 @@ dropped this round — arbitration mispicks run-ahead WRAM copies (R3/R8 in
 consumer notes, upstream fix targeted for 1.2.1); verified matrix is
 no-run-ahead RetroArch+snes9x and Mesen (snes9x-x64 standalone untested
 this round)."
+
+## Run record — SNES.dll 1.3.0+0e2363fe (2026-07-20/21, partial)
+
+Suites green (147+138). Live: bsnes-core matrix fully green — no-run-ahead,
+run-ahead in-level (**R3 closed**, committed base provenance-verified),
+title-screen fresh discovery ×2, mid-session reconnect (after the consumer
+Watchers rebind fix); uncovered standalones both discovered and split
+(bsnes nightly 2026-05-23, snes9x-x64 1.63) — first-ever uncovered-build
+passes; mesen green incl. the Agnosthesia witness-margin test (gfx 61/64
+in-level). Dropped this round, run next session: retroarch+snes9x baseline
+and +run-ahead title screen (R8 remains upstream-open), SMC-flip poke,
+bsnes 115 standalone. Correctness unblemished; discovery latency (7–20 s,
+region-serialized scan) is the v1.4 priority — full evidence and timing
+tables: docs/snes-dll-consumer-notes.md.
