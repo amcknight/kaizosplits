@@ -28,6 +28,10 @@ namespace SMW {
         }
 
         public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
+            // Rebind = replace: the string indexer returns the first name match,
+            // so a stale generation from a previous process would shadow these.
+            Clear();
+            xs.Clear();
             foreach (MemEntry entry in Memory.entries) {
                 if (!enabledMemory.Contains(entry.Name)) continue;
                 IntPtr addr = (IntPtr)memoryOffset + entry.Offset;
