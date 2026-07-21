@@ -28,8 +28,8 @@ namespace SMW {
         }
 
         public void SetMemoryOffset(long memoryOffset, Dictionary<int, int> ranges) {
-            // Rebind = replace: the string indexer returns the first name match,
-            // so a stale generation from a previous process would shadow these.
+            // Start from empty. The name indexer returns the first match, so
+            // leftover watchers from a previous process would hide the new ones.
             Clear();
             xs.Clear();
             foreach (MemEntry entry in Memory.entries) {

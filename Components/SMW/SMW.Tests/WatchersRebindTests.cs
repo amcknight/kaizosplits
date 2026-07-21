@@ -2,11 +2,9 @@ using System.Collections.Generic;
 using Xunit;
 
 namespace SMW.Tests {
-    // Reconnect path: SetMemoryOffset runs once per discovery, and a process
-    // reconnect discovers again with a new offset. The list must hold exactly
-    // one generation — MemoryWatcherList's string indexer returns the FIRST
-    // name match, so a retained stale generation permanently shadows the
-    // rebound watchers (silent dead watchers, dead Start; seen live 2026-07-20).
+    // SetMemoryOffset runs again whenever the emulator process changes.
+    // The name indexer returns the first match, so old watchers must be
+    // removed or they permanently hide the new ones.
     public class WatchersRebindTests {
 
         [Fact]

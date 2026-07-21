@@ -6,14 +6,10 @@ using Xunit;
 
 namespace SMW.Tests {
 
-    // Pins the reflection contract that Kaizo.asl consumes from the built
-    // SNES.dll + SMW.dll pair. The DLLs are loaded exactly the way the .asl
-    // loads them (byte-load + shared AppDomain slot + AssemblyResolve hook),
-    // so a failure here is a break the .asl would hit inside LiveSplit.
-    //
-    // Discipline: when you edit an .asl call site, update the matching assertion
-    // here (and vice versa). The lists are hand-maintained, derived from the
-    // member accesses actually present in Kaizo.asl.
+    // Every member Kaizo.asl touches in SNES.dll and SMW.dll, asserted against
+    // the built DLLs loaded the same way the script loads them. A failure here
+    // means the script would break inside LiveSplit.
+    // When an .asl call site changes, change the matching assertion here too.
     public class ContractTests {
 
         static readonly Assembly SnesAsm;
@@ -94,7 +90,7 @@ namespace SMW.Tests {
 
         [Fact]
         public void EmuStatus_AslContract() {
-            // Status-first logging reads these off the Status() snapshot.
+            // Kaizo.asl reads these from Status() when logging discovery progress.
             Type s = SnesType("SNES.EmuStatus");
             AssertReadable(s, "MethodName");
             AssertReadable(s, "Generation");

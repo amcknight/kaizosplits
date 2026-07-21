@@ -18,17 +18,12 @@ startup {
     int minStartDurationMs = 1000;
     int minSplitCooldownMs = 500;
 
-    // Two-assembly load: SNES.dll (shared WRAM resolver, source of truth in
-    // snes_offsets) first, then SMW.dll which references it. Byte-loaded
-    // assemblies resolve references through normal probing, which cannot see
-    // other byte-loaded assemblies — the AssemblyResolve hook hands SMW.dll's
-    // SNES reference the already-loaded assembly. Byte-loaded assemblies stack
-    // a handler per script reload; each script reload stacks another handler;
-    // all of them read the shared AppDomain slot, which each startup overwrites,
-    // so the newest SNES.dll always wins.
+    // Load SNES.dll first, then SMW.dll which references it. Assemblies loaded
+    // from bytes cannot find each other on their own, so the AssemblyResolve
+    // hook below hands SMW.dll the SNES.dll we just loaded. Every script
+    // reload overwrites the shared slot, so the newest SNES.dll always wins.
     byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
     Assembly snesAsm = Assembly.Load(snesBytes);
-    // Process-wide slot: last startup wins for all live scripts — don't diverge the deployed SNES.dll.
     AppDomain.CurrentDomain.SetData("SNES.LatestAssembly", snesAsm);
     AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
         if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
@@ -67,12 +62,10 @@ init {
     } catch (System.ComponentModel.Win32Exception) {
         // Transient process read while the emulator is still settling; LiveSplit re-runs init.
     }
-    // init means a (re)connected process: the previous session's WRAM offset
-    // must never be read through it (stale reads fired a garbage Reset on
-    // emulator hot-swap, 2026-07-18). Force rediscovery.
+    // This is a new or reconnected process, so the old WRAM offset must never
+    // be read through it. Force rediscovery.
     vars.ready = false;
-    // Fresh logging conversation per connection: stale DbgOnce state suppressed
-    // the new session's first status line (seen live 2026-07-21).
+    // Start the log fresh too, so the new connection's first message shows.
     vars.d.ClearOnce();
 }
 
@@ -128,15 +121,13 @@ update {
                 w.SetMemoryOffset(offset, vars.ranges);
                 vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 vars.ready = true;
-                // Plain Dbg: rediscovery at the same address must still print.
+                // Always announce a find, even at the same address as last time.
                 var found = e.Status();
                 d.Dbg("WRAM found at 0x" + offset.ToString("X")
                     + " (" + found.MethodName + " gen=" + found.Generation + ")");
             } catch (Exception ex) {
-                // Status-first (R4): the throw is control flow, not telemetry.
-                // Key the line on LastError only — state names flip every retry
-                // cycle and would defeat the dedup; the error changes only when
-                // something new is worth reading.
+                // Still searching. Log one line each time the error changes,
+                // so a steady retry loop stays quiet instead of repeating.
                 var st = e.Status();
                 string err = st.LastError;
                 d.DbgOnce("WRAM search: "
