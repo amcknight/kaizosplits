@@ -89,6 +89,16 @@ namespace SMW.Tests {
             AssertMethod(e, "GetOffset", "Int64");
             AssertMethod(e, "Smc", "String");
             AssertMethod(e, "SmcChanged", "Boolean");
+            AssertMethod(e, "Status", "EmuStatus");
+        }
+
+        [Fact]
+        public void EmuStatus_AslContract() {
+            // Status-first logging reads these off the Status() snapshot.
+            Type s = SnesType("SNES.EmuStatus");
+            AssertReadable(s, "MethodName");
+            AssertReadable(s, "Generation");
+            AssertReadable(s, "LastError");
         }
 
         [Fact]
@@ -118,6 +128,7 @@ namespace SMW.Tests {
             AssertMethod(d, "Dbg", "Void", "String");
             AssertMethod(d, "DbgOnce", null, "Exception");
             AssertMethod(d, "DbgOnce", null, "String", "Object");
+            AssertMethod(d, "ClearOnce", "Void");
             AssertMethod(d, "Monitor", "Void", "MemoryWatcher", "Watchers");
         }
 

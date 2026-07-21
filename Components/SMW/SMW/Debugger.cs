@@ -29,6 +29,12 @@ namespace SMW {
             return lines;
         }
 
+        // New process connection = new conversation: forget per-tag dedup state
+        // so the first status line of a session is never eaten by the last one.
+        public void ClearOnce() {
+            prevMsg.Clear();
+        }
+
         public void Dbg(string msg) {
             if (!showDebug) return;
             debugInfo.Add(msg);

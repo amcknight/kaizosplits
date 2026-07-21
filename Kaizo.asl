@@ -71,6 +71,9 @@ init {
     // must never be read through it (stale reads fired a garbage Reset on
     // emulator hot-swap, 2026-07-18). Force rediscovery.
     vars.ready = false;
+    // Fresh logging conversation per connection: stale DbgOnce state suppressed
+    // the new session's first status line (seen live 2026-07-21).
+    vars.d.ClearOnce();
 }
 
 update {
@@ -125,9 +128,19 @@ update {
                 w.SetMemoryOffset(offset, vars.ranges);
                 vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 vars.ready = true;
-                d.DbgOnce("WRAM found at 0x" + offset.ToString("X"), "wram");
+                // Plain Dbg: rediscovery at the same address must still print.
+                var found = e.Status();
+                d.Dbg("WRAM found at 0x" + offset.ToString("X")
+                    + " (" + found.MethodName + " gen=" + found.Generation + ")");
             } catch (Exception ex) {
-                d.DbgOnce(ex);
+                // Status-first (R4): the throw is control flow, not telemetry.
+                // Key the line on LastError only — state names flip every retry
+                // cycle and would defeat the dedup; the error changes only when
+                // something new is worth reading.
+                var st = e.Status();
+                string err = st.LastError;
+                d.DbgOnce("WRAM search: "
+                    + (string.IsNullOrEmpty(err) ? "in progress" : err), "status");
                 return false;
             }
         }
