@@ -5,3 +5,8 @@ Components/SMW/*/obj
 runs/*
 .claude/settings.local.json
 *.user
+
+# local-only docs: agent scaffolding and notes already handed upstream
+docs/superpowers/
+docs/snes-dll-consumer-notes.md
+docs/diagnostics/

@@ -29,6 +29,12 @@ namespace SMW {
             return lines;
         }
 
+        // Forget which messages were already printed. Call on a new connection
+        // so its first message is not swallowed as a repeat of the old one.
+        public void ClearOnce() {
+            prevMsg.Clear();
+        }
+
         public void Dbg(string msg) {
             if (!showDebug) return;
             debugInfo.Add(msg);

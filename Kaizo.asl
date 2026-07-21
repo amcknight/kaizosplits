@@ -4,6 +4,7 @@ state("bsnes"){}
 state("retroarch"){}
 state("higan"){}
 state("snes9x-rr"){}
+state("mesen"){}
 state("emuhawk"){}
 
 startup {
@@ -17,9 +18,21 @@ startup {
     int minStartDurationMs = 1000;
     int minSplitCooldownMs = 500;
 
+    // Load SNES.dll first, then SMW.dll which references it. Assemblies loaded
+    // from bytes cannot find each other on their own, so the AssemblyResolve
+    // hook below hands SMW.dll the SNES.dll we just loaded. Every script
+    // reload overwrites the shared slot, so the newest SNES.dll always wins.
+    byte[] snesBytes = File.ReadAllBytes("Components/SNES.dll");
+    Assembly snesAsm = Assembly.Load(snesBytes);
+    AppDomain.CurrentDomain.SetData("SNES.LatestAssembly", snesAsm);
+    AppDomain.CurrentDomain.AssemblyResolve += (rSender, rArgs) => {
+        if (new AssemblyName(rArgs.Name).Name != "SNES") return null;
+        return (Assembly)AppDomain.CurrentDomain.GetData("SNES.LatestAssembly");
+    };
     byte[] bytes = File.ReadAllBytes("Components/SMW.dll");
     Assembly asm = Assembly.Load(bytes);
-    vars.e =  Activator.CreateInstance(asm.GetType("SNES.Emu"));
+    print("Loaded SNES.dll " + File.GetLastWriteTime("Components/SNES.dll") + " / SMW.dll " + File.GetLastWriteTime("Components/SMW.dll"));
+    vars.e =  Activator.CreateInstance(snesAsm.GetType("SNES.Emu"));
     vars.t =  Activator.CreateInstance(asm.GetType("SMW.Timer"));
     vars.d =  Activator.CreateInstance(asm.GetType("SMW.Debugger"));
     vars.ss = Activator.CreateInstance(asm.GetType("SMW.Settings"));
@@ -44,7 +57,16 @@ startup {
 }
 
 init {
-    vars.e.Init(game);
+    try {
+        vars.e.Init(game);
+    } catch (System.ComponentModel.Win32Exception) {
+        // Transient process read while the emulator is still settling; LiveSplit re-runs init.
+    }
+    // This is a new or reconnected process, so the old WRAM offset must never
+    // be read through it. Force rediscovery.
+    vars.ready = false;
+    // Start the log fresh too, so the new connection's first message shows.
+    vars.d.ClearOnce();
 }
 
 update {
@@ -68,40 +90,56 @@ update {
         }
     }
     
-    d.DbgOnce("SMC: " + e.Smc(), "smc");
-    if (vars.ready) {
-        // The order here matters (for Spawn recording)
-        w.UpdateAll(game);
-        var sd = vars.settingsDict;
-        sd.Clear();
-        foreach (string k in s.keys) {
-            sd[k] = settings[k];
+    try {
+        d.DbgOnce("SMC: " + e.Smc(), "smc");
+        if (vars.ready) {
+            // The order here matters (for Spawn recording)
+            w.UpdateAll(game);
+            var sd = vars.settingsDict;
+            sd.Clear();
+            foreach (string k in s.keys) {
+                sd[k] = settings[k];
+            }
+            s.Update(sd, w);
+            d.Update(w);
+            w.UpdateState();
+
+            // MONITOR HERE for monitoring even while not in a run
+
+            // d.Monitor(w.roomNum, w);
+            d.Monitor(w.levelNum, w);
+            d.Monitor(w.exitMode, w);
+            d.Monitor(w.cpEntrance, w);
+            d.Monitor(w.midway, w);
+            //d.Monitor(w.moonCounter, w);
+            //d.Monitor(w.gameMode, w);
+            //d.Monitor(w.io, w);
+            //d.Monitor(w.overworldTile, w);
+        } else {
+            try {
+                var offset = e.GetOffset();
+                w.SetMemoryOffset(offset, vars.ranges);
+                vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                vars.ready = true;
+                // Always announce a find, even at the same address as last time.
+                var found = e.Status();
+                d.Dbg("WRAM found at 0x" + offset.ToString("X")
+                    + " (" + found.MethodName + " gen=" + found.Generation + ")");
+            } catch (Exception ex) {
+                // Still searching. Log one line each time the error changes,
+                // so a steady retry loop stays quiet instead of repeating.
+                var st = e.Status();
+                string err = st.LastError;
+                d.DbgOnce("WRAM search: "
+                    + (string.IsNullOrEmpty(err) ? "in progress" : err), "status");
+                return false;
+            }
         }
-        s.Update(sd, w);
-        d.Update(w);
-        w.UpdateState();
-        
-        // MONITOR HERE for monitoring even while not in a run
-        
-        // d.Monitor(w.roomNum, w);
-        d.Monitor(w.levelNum, w);
-        d.Monitor(w.exitMode, w);
-        d.Monitor(w.cpEntrance, w);
-        d.Monitor(w.midway, w);
-        //d.Monitor(w.moonCounter, w);
-        //d.Monitor(w.gameMode, w);
-        //d.Monitor(w.io, w);
-        //d.Monitor(w.overworldTile, w);
-    } else {
-        try {
-            var offset = e.GetOffset();
-            w.SetMemoryOffset(offset, vars.ranges);
-            vars.memFoundTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            vars.ready = true;
-        } catch (Exception ex) {
-            d.DbgOnce(ex);
-            return false;
-        }
+    } catch (System.ComponentModel.Win32Exception ex) {
+        // Game can die mid-tick before Ready() notices; same handling as the Ready() catch.
+        d.DbgOnce(ex);
+        vars.ready = false;
+        return vars.running;
     }
     t.HistMid();
 }
